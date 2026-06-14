@@ -1,0 +1,41 @@
+# Grounding protocol (RaDevs) — read reality, never guess
+
+The most damaging failure mode is confidently guessing instead of checking — especially for
+external integrations. This protocol is mandatory for any work that touches an external service,
+SDK, webhook, or third-party API.
+
+## Two sources of ground truth
+
+- **Laravel / framework** — use the Laravel Boost MCP tools **first**: `search-docs` (version-aware
+  documentation for the installed packages), `application-info` (installed packages, versions,
+  Eloquent models), `database-schema`, `database-query`, `last-error`, log readers. Do not recall
+  Laravel APIs from memory when Boost can confirm them.
+- **External third-party APIs** (payments, booking, messaging, etc.) — Boost does **not** cover
+  these. Fetch the official documentation (WebFetch / WebSearch) and quote the exact capability
+  statements.
+
+## Rules
+
+1. **Source of truth.** Every claim about an external capability must be backed by a cited source
+   (URL + quote) or explicitly marked `UNKNOWN — must verify`. No capability is assumed just because
+   "most providers have it".
+2. **Capability matrix before integration code.** Produce a table: *feature needed → supported? →
+   evidence (quote/endpoint) → fallback if not*. Resolve every `UNKNOWN` with the user before coding.
+3. **Executable proof.** An integration is not "done" until a real sandbox/API call exercises the
+   path. If you cannot call it, you cannot claim it works.
+4. **Confidence labeling.** Separate `verified` (with evidence) from `assumed`. Default to
+   "assumed / uncertain" when unsure.
+5. **Banned phrasing.** No unqualified "done", "100%", or "fully working" without evidence. Always
+   state what was verified and how.
+
+## How to run it
+
+Use the `ground-integration` skill to drive the capability matrix. Spawn the **grounded-researcher**
+agent for the documentation sweep (it must cite sources) and the **adversarial-verifier** agent to
+challenge any "it works" claim before completion.
+
+## Reference case
+
+An agent claimed a payment provider supported card tokenization and declared the work done; the
+provider did not support it at all. A capability matrix plus an executable sandbox call would have
+caught this before a single line of integration code was written.

@@ -1,0 +1,16 @@
+{
+  "name": "yasmax",
+  "owner": {
+    "name": "RaDevs"
+  },
+  "plugins": [
+    {
+      "name": "groundwork",
+      "source": "./",
+      "description": "RaDevs AI-SDD workflow for Laravel backends: grounded SDD, an integration grounding protocol, and enforced Laravel standards with tool-gates."
+    }
+  ],
+  "metadata": {
+    "description": "RaDevs internal Claude Code plugins for Laravel backend development."
+  }
+}

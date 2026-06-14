@@ -1,0 +1,13 @@
+{
+  "runner": "sail",
+  "commands": {
+    "format": "./vendor/bin/sail pint",
+    "format_test": "./vendor/bin/sail composer format:test",
+    "analyse": "./vendor/bin/sail composer analyse",
+    "test": "./vendor/bin/sail artisan test"
+  },
+  "gates": {
+    "format_on_edit": true,
+    "analyse_on_stop": true
+  }
+}
