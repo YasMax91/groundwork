@@ -2,18 +2,23 @@
 
 Generic spec-driven workflow for any RaDevs Laravel project. Domain facts live in the
 project's `AGENTS.md`; this file is the process. Read together with
-[grounding-protocol.md](grounding-protocol.md) and [laravel-standards.md](laravel-standards.md).
+[grounding-protocol.md](grounding-protocol.md), [laravel-standards.md](laravel-standards.md), and
+[tdd-protocol.md](tdd-protocol.md).
 
 ## Operating modes
 
-State the current mode when starting non-trivial work.
+State the current mode when starting non-trivial work. Discovery is wide; the change is narrow —
+scope the edit tightly, never the investigation.
 
-- **Discovery** — inspect files, search code, read docs/CRD, summarize current behavior, list
-  affected files, draft assumptions. No edits.
+- **Discovery** — inspect files, search code, read docs/CRD, summarize current behavior. Map the
+  connections outward (callers, consumers, events, jobs, policies, FK/cascades, covering tests), not
+  just the directly-involved files. Draft assumptions. No edits.
 - **Spec** — create/update a spec under `docs/specs/`. No production code.
 - **Plan** — propose steps, list changed files, tests, verification, deployment impact. No edits
   until approved.
-- **Implementation** — edit per the approved spec, add focused tests, run gates. Keep scope tight.
+- **Implementation** — test-first (red→green→refactor): write the failing test, implement to green,
+  refactor under the gates. Edit per the approved spec; keep scope tight. See
+  [tdd-protocol.md](tdd-protocol.md).
 - **Review** — review the diff for violations, missing tests, risks. No silent changes.
 
 ## Task classification (classify before working)
@@ -32,25 +37,30 @@ State the current mode when starting non-trivial work.
 
 1. Read the project `AGENTS.md`.
 2. Classify the task.
-3. Inspect the real code first — prefer Boost MCP tools (`application-info`, `database-schema`,
-   `search-docs`) over recalling from memory.
-4. Consult the CRD for business intent when the task touches domain/API/schema/permissions/
+3. Inspect the directly-involved code first — prefer Boost MCP tools (`application-info`,
+   `database-schema`, `search-docs`) over recalling from memory.
+4. Map the connections (blast radius) outward — callers/consumers, events/listeners, observers, jobs,
+   scheduled commands, policies, FK/cascades, API consumers of the response shape, and covering tests.
+   For L2+ spawn the `impact-mapper` agent; for L0/L1 a quick self-trace is enough.
+5. Consult the CRD for business intent when the task touches domain/API/schema/permissions/
    financial behavior/notifications/reports/integrations/deployment.
-5. Do not write code in the first response.
-6. Draft a short, implementation-oriented spec.
-7. Produce an implementation plan.
-8. List assumptions, conflicts, risks, verification steps.
-9. Stop and wait for explicit approval.
+6. Do not write code in the first response.
+7. Draft a short, implementation-oriented spec.
+8. Produce an implementation plan.
+9. List assumptions, conflicts, risks, verification steps.
+10. Stop and wait for explicit approval.
 
 First-response structure: current understanding · classification · files/docs to inspect ·
-business/CRD areas affected · draft spec · acceptance criteria · plan · risks/assumptions ·
-stop point.
+connections / blast radius · business/CRD areas affected · draft spec · acceptance criteria · plan ·
+risks/assumptions · stop point.
 
 ## Definition of Ready
 
-Goal clear · current behavior inspected · affected files identified · acceptance criteria written ·
-validation/authorization/API/DB/queue impact known · tests listed · deployment risks identified ·
-assumptions documented.
+Goal clear · current behavior inspected · affected files identified · connections mapped (callers,
+events, jobs, policies, FK/cascades, consumers of the response shape, covering tests) · acceptance
+criteria written · validation/authorization/API/DB/queue impact known · tests listed (the red list —
+fail-first tests covering the criteria, for L2+/bug fixes) · deployment
+risks identified · assumptions documented.
 
 ## Human approval gates (stop and ask)
 
@@ -63,7 +73,8 @@ broad refactor/formatting/file deletion.
 
 implementation matches the approved spec · public API preserved or intentionally changed ·
 validation via FormRequest · authorization handled · business logic in services · resources preserve
-response shape · multi-step writes transactional · focused tests added/updated · OpenAPI updated when
+response shape · multi-step writes transactional · focused tests written test-first (red→green) and
+passing · OpenAPI updated when
 contracts change · format + static analysis run (or skip reason stated) · migration/deployment impact
 documented · final report covers changed behavior, files, verification, risks, skipped work.
 
@@ -72,7 +83,9 @@ see [grounding-protocol.md](grounding-protocol.md).
 
 ## Self-review checklist (before the final response)
 
-followed the spec? · only related files changed? · API contracts preserved? · controllers thin? ·
+followed the spec? · only related files changed? · impact map honored (each flagged consumer handled
+or noted out of scope)? · API contracts preserved? · controllers thin? ·
 logic in services? · validation in FormRequest? · authorization present where needed? · multi-step
 writes transactional? · resources preserve shape? · N+1 handled? · migrations production-safe? ·
-tests added/updated? · gates run or skip-reason stated? · risks/assumptions documented?
+tests written test-first (red→green) for covered work? · gates run or skip-reason stated? ·
+risks/assumptions documented?

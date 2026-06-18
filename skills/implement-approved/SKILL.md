@@ -9,6 +9,10 @@ Only proceed if the spec/plan was **explicitly approved in this conversation**. 
 
 ## How to implement
 
+- **Work test-first** for L2+ and bug fixes: for each slice write the failing test before the code,
+  implement to green, then refactor under the gates — no production code for a covered slice before a
+  red test exists. Match the test to the layer (feature for contract/validation/authz/shape; unit for
+  services/calculations/state transitions). See the TDD protocol (`guidelines/tdd-protocol.md`).
 - Follow the approved spec's acceptance criteria; keep changes scoped to the task.
 - Respect architecture boundaries (see the Laravel standards):
   - validation + request authorization in **FormRequest**
@@ -22,9 +26,11 @@ Only proceed if the spec/plan was **explicitly approved in this conversation**. 
   `database-schema` rather than guessing column names.
 - Preserve public API shapes, route names, validation semantics, and permissions unless the spec
   explicitly changes them. Update OpenAPI when a contract changes.
-- Add or update **focused tests** for behavior, validation, authorization, response shape, workflow
-  transitions, money, migrations, and any fixed bug (regression test).
+- Drive the work with **focused tests written first** — behavior, validation, authorization, response
+  shape, workflow transitions, money, migrations, and any fixed bug (failing regression test before
+  the fix).
 
 ## Before finishing
 
-Run the `final-check` skill (format + static analysis + targeted tests + Definition of Done).
+Run the `final-check` skill (format + static analysis + the green test gate + Definition of Done).
+Report the red→green order for the behavior you changed.

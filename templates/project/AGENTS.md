@@ -10,7 +10,9 @@
 - Classify every non-trivial task (L0–L4); start in Discovery; no code before an approved plan.
 - Ground external-API claims with cited official docs + a capability matrix + sandbox proof — never
   guess. Use Boost (`search-docs`, `application-info`, `database-schema`) for framework facts.
-- Run the gates (format, static analysis, tests) before "done". Never report unqualified "100% done".
+- Work **test-first** for L2+ features and bug fixes (failing test → green → refactor). Run the gates
+  (format, static analysis, tests) before "done"; the Stop gate runs the suite on changed PHP. Never
+  report unqualified "100% done".
 - Thin controllers · logic in services · FormRequest validation · JsonResource shape · transactions
   for multi-step writes · external calls behind clients/services.
 
@@ -20,7 +22,7 @@
 
 ## Tech stack & runtime                 <!-- from composer / sail / Boost -->
 
-<PHP & Laravel versions, DB, cache/queue, auth, key packages; how to run via Sail>
+<PHP & Laravel versions, DB engine (MySQL/Postgres — the target for both code and tests), cache/queue, auth, key packages; how to run via Sail>
 
 ## Domain entities                      <!-- from db schema + models -->
 

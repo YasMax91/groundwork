@@ -25,5 +25,9 @@ file/line references and a suggested fix; do not silently change code during rev
 - **Queues / scheduler / cache** — side effects behind jobs/events; cache is not the source of truth;
   deployment accounts for cache/config rebuild.
 - **N+1 / performance** — relationships eager-loaded intentionally on list endpoints.
+- **Test-first discipline** — for L2+/bug fixes the covered behavior has fail-first tests (red→green);
+  a bug fix has a regression test that failed before the fix. See the TDD protocol
+  (`guidelines/tdd-protocol.md`).
 
-End with: confirmed risks (ranked) · required approvals · missing tests · suggested fixes.
+End with: confirmed risks (ranked) · required approvals · missing or after-the-fact tests ·
+suggested fixes.

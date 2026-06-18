@@ -18,9 +18,10 @@ What is rejected, and why.
 
 events / broadcasts / notifications dispatched on transition.
 
-## Tests
+## Tests (write first — red list)
 
-allowed transitions · blocked transitions · side effects.
+Unit-first for the transition map (allowed transitions · blocked transitions); feature for
+endpoint-level side effects. Written before the code.
 
 ## Risks
 

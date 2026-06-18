@@ -22,8 +22,9 @@ client/service · error handling · retries · idempotency · secrets/config.
 
 The sandbox/API call that must succeed before this is "done".
 
-## Tests
+## Tests (write first — red list)
 
-Faked integration: dispatch · error paths · retries · side effects.
+Faked integration, written before the code: dispatch · error paths · retries · side effects. The
+executable proof above is the first red test for the happy path.
 
 ## Risks

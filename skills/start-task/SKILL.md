@@ -11,19 +11,33 @@ Stay in **Discovery mode**: inspect and plan only, do not edit files until the p
 1. **Read the project `AGENTS.md`** for domain facts, invariants, permission rules, and runtime
    commands.
 2. **Classify the task** (L0 tiny → L4 critical). State the level and what it implies.
-3. **Inspect the real code first.** Prefer Boost MCP tools — `application-info`, `database-schema`,
-   `search-docs` — over recalling from memory. Read the actual routes, requests, controllers,
-   services, models, resources, migrations, and tests involved.
-4. **Consult the CRD** for business intent when the task touches domain/API/schema/permissions/
+3. **Inspect the directly-involved code.** Prefer Boost MCP tools — `application-info`,
+   `database-schema`, `search-docs` — over recalling from memory. Read the actual routes, requests,
+   controllers, services, models, resources, migrations, and tests the task names.
+4. **Map the connections — do not stop at the involved files.** Discovery is wide; only the change is
+   narrow. Trace outward in *both* directions from every touched symbol: who calls it, and what it
+   pulls in. Chase the Laravel edges grep alone misses — events/listeners, observers, jobs, scheduled
+   commands, policies/Gates/permission checks, `FormRequest`s reused across endpoints, the
+   `JsonResource` shape and its API consumers, FK/cascade relationships, other modules on the same
+   tables, and the tests covering any of it.
+   - **L2+** (normal feature and up): spawn the **`impact-mapper`** agent and base the plan on its
+     connection map.
+   - **L0/L1**: a quick outward trace yourself (a few targeted greps) is enough — no agent needed.
+5. **Consult the CRD** for business intent when the task touches domain/API/schema/permissions/
    financial behavior/notifications/reports/integrations/deployment.
-5. **If the task touches an external API**, run the `ground-integration` skill before designing.
-6. **Produce the first response in this structure** (no code yet):
-   current understanding · classification · files/docs to inspect · business/CRD areas affected ·
-   draft spec · acceptance criteria · implementation plan · risks & assumptions · stop point.
-7. **Stop and wait for explicit approval** before implementing.
+6. **If the task touches an external API**, run the `ground-integration` skill before designing.
+7. **Produce the first response in this structure** (no code yet):
+   current understanding · classification · files/docs to inspect · connections / blast radius ·
+   business/CRD areas affected · draft spec · acceptance criteria · test plan (red list — fail-first
+   tests for L2+/bug fixes) · implementation plan · risks & assumptions · stop point.
+8. **Stop and wait for explicit approval** before implementing.
 
 ## Rules
 
+- **Map before you plan.** Discovery is wide, the change is narrow — scope the edit tightly, never
+  the investigation. An unmapped consumer is an unlisted risk.
 - Do not invent business rules — derive them from CRD, code, or an explicit user decision.
 - Label every claim as `verified` (with evidence) or `assumed`. Never use unqualified "done".
+- **Plan tests first.** For L2+ and bug fixes, turn the acceptance criteria into a red list — the
+  fail-first tests written before code. See the TDD protocol (`guidelines/tdd-protocol.md`).
 - For a normal feature or risky change, write a spec with the `spec` skill before implementing.

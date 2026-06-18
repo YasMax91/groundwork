@@ -32,6 +32,19 @@ enforced by tool-gates (Pint / Larastan / PHPUnit). Confirm version-specific det
 - **Migrations**: additive and production-safe; nullable/backfilled columns; never edit
   shipped migrations; add indexes for new query patterns.
 
+## Database engine
+
+- **Target MySQL (primary) or PostgreSQL** — whichever the project actually runs. The engine is
+  declared in `.groundwork.json` `database.default` and recorded in `AGENTS.md`; honor it. **Never
+  default to SQLite** and do not assume SQLite semantics.
+- **Tests run on the project's engine, not in-memory SQLite** — a green on SQLite is a false green
+  for an engine-specific defect. See [tdd-protocol.md](tdd-protocol.md).
+- **Engine-specific surfaces** — confirm against the target engine with Boost `search-docs` for the
+  installed version: column changes in migrations (`change()` / drop-recreate), foreign-key
+  enforcement, JSON columns & functions, `LIKE`/`ILIKE` case-sensitivity, `enum`, fullText indexes,
+  `decimal`/money precision, date/time functions. What SQLite silently tolerates, MySQL or Postgres
+  may reject.
+
 ## Don't (anti-patterns)
 
 - No Repository pattern wrapping Eloquent; no DDD/hexagonal/CQRS for an API monolith. Add structure
@@ -40,9 +53,15 @@ enforced by tool-gates (Pint / Larastan / PHPUnit). Confirm version-specific det
 
 ## Tooling / gates
 
-- **Format**: Pint (`sail pint`) — runs automatically on edit via the plugin hook.
-- **Static analysis**: Larastan / PHPStan (`sail composer analyse`) — the done-gate; catches the
-  "wrong shape / 500 to the frontend" class early.
-- **Tests**: PHPUnit (`sail artisan test`) — feature tests for API/validation/authorization/response
-  shape; unit tests for services and calculations; a regression test for every bug fix.
+- **Run every Laravel/PHP command through Sail locally** — `artisan`, `composer`, Pint, Larastan,
+  tests, `tinker`, `migrate`, `make:*`, queue/scheduler, everything. Never invoke `php`, `composer`,
+  `artisan`, or `phpunit`/`pest` directly on the host. The runner is `sail` by default
+  (`.groundwork.json` `runner`); honor a project override there.
+- **Format**: Pint (`./vendor/bin/sail pint`) — runs automatically on edit via the plugin hook.
+- **Static analysis**: Larastan / PHPStan (`./vendor/bin/sail composer analyse`) — the done-gate;
+  catches the "wrong shape / 500 to the frontend" class early.
+- **Tests**: PHPUnit (`./vendor/bin/sail artisan test`) — feature tests for API/validation/
+  authorization/response shape; unit tests for services and calculations; a regression test for
+  every bug fix. Write them **test-first** for L2+ features and bug fixes — see
+  [tdd-protocol.md](tdd-protocol.md).
 - Use Boost tools for schema, docs, and version facts instead of guessing.

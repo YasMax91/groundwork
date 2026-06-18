@@ -12,8 +12,9 @@
 
 ## Fix (smallest safe change)
 
-## Regression test
+## Regression test (write first — red→green)
 
-Fails before the fix, passes after.
+A failing test that reproduces the bug **before** the fix; passes after. Written first — a test that
+is green on its first run proves nothing.
 
 ## Risks

@@ -7,10 +7,15 @@ repositories.
 ## What's inside
 
 - **Process (AI-SDD)** — skills: `start-task`, `spec`, `implement-approved`, `risk-review`,
-  `final-check`, `init`.
+  `final-check`, `init`. Discovery fans out via the `impact-mapper` agent — the full blast radius
+  before planning, so changes stay scoped without missing a consumer.
+- **TDD** — `tdd-protocol`: test-first (red→green→refactor) for L2+ features and bug fixes; the test
+  suite is a Stop gate. The layered split matches the standards — feature tests for the contract,
+  unit tests for services/calculations/state transitions.
 - **Grounding** — `grounding-protocol` + the `ground-integration` skill + the `grounded-researcher`
   and `adversarial-verifier` agents. Read reality, never guess.
-- **Standards + gates** — `laravel-standards` + hooks: Pint on edit, static analysis as a done-gate.
+- **Standards + gates** — `laravel-standards` + hooks: Pint on edit, static analysis and the test
+  suite as done-gates.
 - **Templates** — thin project `AGENTS.md` / `CLAUDE.md` / `.groundwork.json` and six spec templates.
 
 ## Grounding split
@@ -50,16 +55,17 @@ agents in `/agents`, and confirm the hooks fire on edits.
 
 ## Per-project configuration — `.groundwork.json`
 
-Overrides the gate commands (`format`, `analyse`, `test`) and toggles (`format_on_edit`,
-`analyse_on_stop`). Defaults to Sail.
+Declares the runner and the **database engine** (`database.default` — `mysql`/`pgsql`, the target for
+code and tests; never SQLite), and overrides the gate commands (`format`, `analyse`, `test`) and
+toggles (`format_on_edit`, `analyse_on_stop`, `test_on_stop`). Defaults to Sail + MySQL.
 
 ## Layout
 
 ```
 .claude-plugin/   plugin.json · marketplace.json
 skills/           start-task · spec · implement-approved · risk-review · final-check · ground-integration · init
-agents/           grounded-researcher · adversarial-verifier
-hooks/            hooks.json · format-on-edit.sh · done-gate.sh
-guidelines/       ai-sdd-process · grounding-protocol · laravel-standards
+agents/           impact-mapper · grounded-researcher · adversarial-verifier
+hooks/            hooks.json · format-on-edit.sh · done-gate.sh · test-gate.sh
+guidelines/       ai-sdd-process · grounding-protocol · laravel-standards · tdd-protocol
 templates/        project/ · specs/
 ```

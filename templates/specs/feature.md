@@ -29,9 +29,11 @@
 
 - [ ] ...
 
-## Tests
+## Tests (write first — the red list)
 
-- feature:
-- unit:
+Each acceptance criterion becomes a fail-first test before the code. Match the layer:
+
+- feature (contract / validation / authz / response shape):
+- unit (services / calculations / state transitions):
 
 ## Risks / assumptions / deployment notes

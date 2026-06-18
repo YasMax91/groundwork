@@ -21,6 +21,10 @@ cannot be derived.
 Use Boost and the codebase as the source of truth, and label every section:
 
 - **Tech stack & runtime** — `composer.json`, Sail config, Boost `application-info`. `[from code]`
+- **Database engine** — `config/database.php` default + `.env` `DB_CONNECTION`. Set
+  `.groundwork.json` `database.default` to it (MySQL/Postgres). If `phpunit.xml` / `.env.testing`
+  runs tests on SQLite (`:memory:`) while the app targets MySQL/Postgres, flag it — tests must run on
+  the real engine. `[from code]`
 - **Domain entities** — Boost `database-schema` + Eloquent models. `[from code]`
 - **Repo layout** — the real directory tree. `[from code]`
 - **Permissions & financial visibility** — routes + middleware + `spatie/permission` + fields like
@@ -35,7 +39,7 @@ Use Boost and the codebase as the source of truth, and label every section:
 1. Copy `templates/project/AGENTS.md`, `CLAUDE.md`, and `.groundwork.json` into the repo.
 2. Fill the domain sections from discovery; keep each `[confidence]` label until the user confirms.
 3. The thin `AGENTS.md`/`CLAUDE.md` hold **domain only** + a pointer to this plugin for process,
-   grounding, and Laravel standards. Do not duplicate the generic process.
+   grounding, TDD, and Laravel standards. Do not duplicate the generic process.
 4. Run `./vendor/bin/sail composer require laravel/boost --dev` then
    `./vendor/bin/sail artisan boost:install` (Boost appends its `<laravel-boost-guidelines>` block;
    it coexists with the domain contract). Point the MCP command at Sail if needed.

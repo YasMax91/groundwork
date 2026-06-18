@@ -18,8 +18,8 @@ changes) require explicit approval.
 
 ## OpenAPI updates
 
-## Tests
+## Tests (write first — red list)
 
-Request validation (valid + invalid) and response shape.
+Feature-first, written before the code: request validation (valid + invalid) and response shape.
 
 ## Risks

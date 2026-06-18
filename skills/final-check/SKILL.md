@@ -12,7 +12,9 @@ Run the gates and the self-review before declaring the work done. Use the projec
 - Format: `./vendor/bin/sail composer format:test` (or `format` to apply).
 - Static analysis: `./vendor/bin/sail composer analyse`.
 - Tests: the narrowest relevant first, then broader — e.g.
-  `./vendor/bin/sail artisan test --filter=...`, then `./vendor/bin/sail composer test`.
+  `./vendor/bin/sail artisan test --filter=...`, then `./vendor/bin/sail composer test`. They must be
+  **green** — the Stop gate also runs the suite on changed PHP (`gates.test_on_stop`). Confirm the
+  tests for the changed behavior were written **test-first** (red→green).
 
 Report results honestly. If a gate could not run (Sail/services unavailable), say so explicitly.
 
@@ -21,13 +23,15 @@ Report results honestly. If a gate could not run (Sail/services unavailable), sa
 followed the spec? · only related files changed? · API contracts preserved? · controllers thin? ·
 logic in services? · validation in FormRequest? · authorization present? · multi-step writes
 transactional? · resources preserve shape? · N+1 handled? · migrations production-safe? · tests
-added/updated? · OpenAPI updated when contracts changed? · gates run or skip-reason stated?
+written test-first (red→green)? · OpenAPI updated when contracts changed? · gates run or skip-reason
+stated?
 
 ## Handoff summary
 
 1. Behavior change first (not just files).
 2. Key files changed and why.
-3. What was verified, with the exact commands run.
+3. What was verified, with the exact commands run — including the red→green order (test failed before
+   the code, passes after) for the changed behavior.
 4. How to test manually or with targeted automated tests.
 5. Risks, deployment notes, migrations, cache/config/queue/scheduler impact, API-contract changes.
 6. Anything skipped, deferred, or not run.

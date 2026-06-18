@@ -1,5 +1,8 @@
 {
   "runner": "sail",
+  "database": {
+    "default": "mysql"
+  },
   "commands": {
     "format": "./vendor/bin/sail pint",
     "format_test": "./vendor/bin/sail composer format:test",
@@ -8,6 +11,7 @@
   },
   "gates": {
     "format_on_edit": true,
-    "analyse_on_stop": true
+    "analyse_on_stop": true,
+    "test_on_stop": true
   }
 }

@@ -22,7 +22,8 @@ SDK, webhook, or third-party API.
 2. **Capability matrix before integration code.** Produce a table: *feature needed → supported? →
    evidence (quote/endpoint) → fallback if not*. Resolve every `UNKNOWN` with the user before coding.
 3. **Executable proof.** An integration is not "done" until a real sandbox/API call exercises the
-   path. If you cannot call it, you cannot claim it works.
+   path — run it locally through Sail (e.g. `./vendor/bin/sail artisan tinker` or a feature test). If
+   you cannot call it, you cannot claim it works.
 4. **Confidence labeling.** Separate `verified` (with evidence) from `assumed`. Default to
    "assumed / uncertain" when unsure.
 5. **Banned phrasing.** No unqualified "done", "100%", or "fully working" without evidence. Always
