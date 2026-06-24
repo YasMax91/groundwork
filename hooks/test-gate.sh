@@ -7,7 +7,7 @@ set -uo pipefail
 # Resolve gate command + opt-out from .groundwork.json (defaults to Sail + artisan test).
 cmd='./vendor/bin/sail artisan test'
 if [ -f .groundwork.json ]; then
-  [ "$(jq -r '.gates.test_on_stop // true' .groundwork.json 2>/dev/null || echo true)" = "false" ] && exit 0
+  [ "$(jq -r '.gates.test_on_stop' .groundwork.json 2>/dev/null)" = "false" ] && exit 0
   override="$(jq -r '.commands.test // empty' .groundwork.json 2>/dev/null || true)"
   [ -n "$override" ] && cmd="$override"
 fi

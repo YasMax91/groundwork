@@ -38,3 +38,15 @@ stated?
 7. Assumptions or CRD/code conflicts.
 
 Never report unqualified "100% done". State what is `verified` vs `assumed`.
+
+## Close the checkpoint
+
+When the handoff is clean and the gates are green, mark the task done in
+`.claude/groundwork/task-state.md` (or delete the file) so the next session starts fresh instead of
+resuming a finished task. If work remains, leave the checkpoint reflecting the true remaining state.
+
+## Next: frontend handoff
+
+If the gates are green and the change touched the frontend-facing surface, run the
+**`frontend-handoff`** skill next — document the final contract for the frontend developer in
+`ai/frontend/`, then offer to commit.

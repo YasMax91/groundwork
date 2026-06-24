@@ -1,5 +1,6 @@
 ---
 description: Review the current diff or plan for domain, API, permission, financial-visibility, migration, workflow, integration, and deployment risks. Use before finalizing risky backend changes.
+effort: high
 ---
 
 # Risk review
@@ -27,7 +28,7 @@ file/line references and a suggested fix; do not silently change code during rev
 - **N+1 / performance** — relationships eager-loaded intentionally on list endpoints.
 - **Test-first discipline** — for L2+/bug fixes the covered behavior has fail-first tests (red→green);
   a bug fix has a regression test that failed before the fix. See the TDD protocol
-  (`guidelines/tdd-protocol.md`).
+  (`${CLAUDE_SKILL_DIR}/../../guidelines/tdd-protocol.md`).
 
 End with: confirmed risks (ranked) · required approvals · missing or after-the-fact tests ·
 suggested fixes.

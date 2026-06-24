@@ -21,7 +21,7 @@ a useful spec beats a perfect document.
 5. **Record the technical approach and tradeoffs** — if the CRD intent is right but a different
    technical shape is safer, document why.
 6. **List risks, assumptions, and the verification plan** (which tests — written test-first — and
-   which gates). See the TDD protocol (`guidelines/tdd-protocol.md`).
+   which gates). See the TDD protocol (`${CLAUDE_SKILL_DIR}/../../guidelines/tdd-protocol.md`).
 7. **Hand off with a Russian summary (выжимка).** After the spec file is saved, post a short Russian
    digest to chat so the user grasps the essentials without reading the full English document — cover
    что строим (goal), что входит в MVP и что отложено, ключевые технические решения и компромиссы,

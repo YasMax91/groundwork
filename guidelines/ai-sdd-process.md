@@ -76,7 +76,12 @@ validation via FormRequest · authorization handled · business logic in service
 response shape · multi-step writes transactional · focused tests written test-first (red→green) and
 passing · OpenAPI updated when
 contracts change · format + static analysis run (or skip reason stated) · migration/deployment impact
-documented · final report covers changed behavior, files, verification, risks, skipped work.
+documented · frontend handoff docs in `ai/frontend` created/updated when the change touches the
+frontend-facing surface (run the `frontend-handoff` skill after the gates are green) · final report
+covers changed behavior, files, verification, risks, skipped work.
+
+After the final implementation and the frontend handoff, **ask whether to commit**; on yes, make a
+single-line commit with no AI attribution (the `frontend-handoff` skill drives this).
 
 Never declare done with failing tests or static-analysis errors. Never use unqualified "100% done" —
 see [grounding-protocol.md](grounding-protocol.md).

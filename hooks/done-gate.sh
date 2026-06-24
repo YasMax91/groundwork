@@ -7,7 +7,7 @@ set -uo pipefail
 # Resolve gate command + opt-out from .groundwork.json (defaults to Sail + composer analyse).
 cmd='./vendor/bin/sail composer analyse'
 if [ -f .groundwork.json ]; then
-  [ "$(jq -r '.gates.analyse_on_stop // true' .groundwork.json 2>/dev/null || echo true)" = "false" ] && exit 0
+  [ "$(jq -r '.gates.analyse_on_stop' .groundwork.json 2>/dev/null)" = "false" ] && exit 0
   override="$(jq -r '.commands.analyse // empty' .groundwork.json 2>/dev/null || true)"
   [ -n "$override" ] && cmd="$override"
 fi

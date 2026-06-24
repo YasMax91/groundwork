@@ -1,5 +1,6 @@
 ---
 description: Ground an external/third-party API integration before coding — fetch official docs, build a capability matrix, mark unknowns, and require sandbox proof. Use whenever a task touches an external service, SDK, webhook, or a payment/booking/messaging provider.
+effort: high
 ---
 
 # Ground an external integration

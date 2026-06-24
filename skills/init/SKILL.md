@@ -43,4 +43,10 @@ Use Boost and the codebase as the source of truth, and label every section:
 4. Run `./vendor/bin/sail composer require laravel/boost --dev` then
    `./vendor/bin/sail artisan boost:install` (Boost appends its `<laravel-boost-guidelines>` block;
    it coexists with the domain contract). Point the MCP command at Sail if needed.
-5. Present everything for review, highlighting only the `[assumed]` and `[needs you]` items.
+5. **Enable working memory.** The `.groundwork.json` `memory` block (`session_context`,
+   `checkpoint`, `impact_cache`, all default `true`) drives the `SessionStart`/`PreCompact` hooks and
+   the task checkpoint + impact-map cache the workflow skills keep under `.claude/groundwork/`. Add
+   `.claude/groundwork/` to the repo `.gitignore` — it is per-developer working memory, not a
+   deliverable (a team that wants a shared discovery cache can un-ignore `impact/`). Format reference:
+   `${CLAUDE_SKILL_DIR}/../../guidelines/working-memory.md`.
+6. Present everything for review, highlighting only the `[assumed]` and `[needs you]` items.

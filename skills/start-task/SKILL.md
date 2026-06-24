@@ -20,8 +20,11 @@ Stay in **Discovery mode**: inspect and plan only, do not edit files until the p
    commands, policies/Gates/permission checks, `FormRequest`s reused across endpoints, the
    `JsonResource` shape and its API consumers, FK/cascade relationships, other modules on the same
    tables, and the tests covering any of it.
-   - **L2+** (normal feature and up): spawn the **`impact-mapper`** agent and base the plan on its
-     connection map.
+   - **L2+** (normal feature and up): base the plan on the **`impact-mapper`** connection map, but
+     **reuse the cache first** — check `.claude/groundwork/impact/<slug>.md` and re-spawn the agent only
+     if the seeds changed since it was written; otherwise overwrite the cache with the fresh map.
+     This avoids re-running the most expensive fan-out on iterative work. Rules:
+     `${CLAUDE_SKILL_DIR}/../../guidelines/working-memory.md`.
    - **L0/L1**: a quick outward trace yourself (a few targeted greps) is enough — no agent needed.
 5. **Consult the CRD** for business intent when the task touches domain/API/schema/permissions/
    financial behavior/notifications/reports/integrations/deployment.
@@ -30,7 +33,12 @@ Stay in **Discovery mode**: inspect and plan only, do not edit files until the p
    current understanding · classification · files/docs to inspect · connections / blast radius ·
    business/CRD areas affected · draft spec · acceptance criteria · test plan (red list — fail-first
    tests for L2+/bug fixes) · implementation plan · risks & assumptions · stop point.
-8. **Stop and wait for explicit approval** before implementing.
+8. **Write the task checkpoint** to `.claude/groundwork/task-state.md` — mode, level, spec path, the
+   slice/red list, assumptions, open approvals — so the work survives a restart or compaction (the
+   `SessionStart` hook re-injects it automatically, no re-reading). This bookkeeping file under
+   `.claude/groundwork/` is workflow memory, not a code edit, so it is allowed in Discovery. Format:
+   `${CLAUDE_SKILL_DIR}/../../guidelines/working-memory.md`.
+9. **Stop and wait for explicit approval** before implementing.
 
 ## Rules
 
@@ -39,5 +47,5 @@ Stay in **Discovery mode**: inspect and plan only, do not edit files until the p
 - Do not invent business rules — derive them from CRD, code, or an explicit user decision.
 - Label every claim as `verified` (with evidence) or `assumed`. Never use unqualified "done".
 - **Plan tests first.** For L2+ and bug fixes, turn the acceptance criteria into a red list — the
-  fail-first tests written before code. See the TDD protocol (`guidelines/tdd-protocol.md`).
+  fail-first tests written before code. See the TDD protocol (`${CLAUDE_SKILL_DIR}/../../guidelines/tdd-protocol.md`).
 - For a normal feature or risky change, write a spec with the `spec` skill before implementing.

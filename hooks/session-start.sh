@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+# RaDevs plugin :: SessionStart hook.
+# Cheaply re-inject project state at session start / resume / post-compact so the
+# agent does not re-read the same files every time. Emits `additionalContext` JSON.
+# Silent on non-RaDevs projects and on any error — it must never break a session.
+set -uo pipefail
+
+# Only act in a RaDevs-initialized project.
+[ -f .groundwork.json ] || exit 0
+# Respect the opt-out toggle.
+[ "$(jq -r '.memory.session_context' .groundwork.json 2>/dev/null)" = "false" ] && exit 0
+
+ctx=""
+add() { ctx="${ctx}$1
+"; }
+
+# --- runner + DB engine (the contract the agent must honor) ---
+runner="$(jq -r '.runner // "sail"' .groundwork.json 2>/dev/null || echo sail)"
+engine="$(jq -r '.database.default // "mysql"' .groundwork.json 2>/dev/null || echo mysql)"
+add "RaDevs workflow active. Runner: ${runner}. DB engine: ${engine} — code and tests target this engine, never SQLite."
+
+# --- git state ---
+if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo '?')"
+  dirty="$(git status --porcelain 2>/dev/null | head -20 || true)"
+  if [ -n "$dirty" ]; then
+    n="$(printf '%s\n' "$dirty" | grep -c . || true)"
+    add "Git: on ${branch}, ${n} uncommitted path(s):"
+    add "$(printf '%s\n' "$dirty" | sed 's/^/  /')"
+  else
+    add "Git: on ${branch}, working tree clean."
+  fi
+fi
+
+# --- active task checkpoint (the working-memory file the skills maintain) ---
+state=".claude/groundwork/task-state.md"
+if [ -f "$state" ]; then
+  add "Active task checkpoint (${state}) — resume from here; it is the source of truth for task state:"
+  add "$(head -45 "$state" | sed 's/^/  /')"
+fi
+
+# --- most recent spec (by mtime) ---
+spec="$(find docs/specs -type f -name '*.md' 2>/dev/null -exec ls -t {} + 2>/dev/null | head -1 || true)"
+[ -n "$spec" ] && add "Most recent spec: ${spec}"
+
+# Emit as SessionStart additionalContext. jq handles escaping; per-section caps
+# above keep this small so it stays cheap on every session.
+jq -nc --arg c "$ctx" '{hookSpecificOutput:{hookEventName:"SessionStart",additionalContext:$c}}' 2>/dev/null || true
+exit 0

@@ -12,6 +12,15 @@
   "gates": {
     "format_on_edit": true,
     "analyse_on_stop": true,
-    "test_on_stop": true
+    "test_on_stop": true,
+    "trim_tool_output": false
+  },
+  "memory": {
+    "session_context": true,
+    "checkpoint": true,
+    "impact_cache": true
+  },
+  "docs": {
+    "frontend": "ai/frontend"
   }
 }

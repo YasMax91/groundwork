@@ -16,7 +16,7 @@ esac
 # Resolve format command + opt-out from .groundwork.json (defaults to Sail + Pint).
 cmd='./vendor/bin/sail pint'
 if [ -f .groundwork.json ]; then
-  [ "$(jq -r '.gates.format_on_edit // true' .groundwork.json 2>/dev/null || echo true)" = "false" ] && exit 0
+  [ "$(jq -r '.gates.format_on_edit' .groundwork.json 2>/dev/null)" = "false" ] && exit 0
   override="$(jq -r '.commands.format // empty' .groundwork.json 2>/dev/null || true)"
   [ -n "$override" ] && cmd="$override"
 fi
