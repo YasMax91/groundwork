@@ -49,4 +49,11 @@ Use Boost and the codebase as the source of truth, and label every section:
    `.claude/groundwork/` to the repo `.gitignore` — it is per-developer working memory, not a
    deliverable (a team that wants a shared discovery cache can un-ignore `impact/`). Format reference:
    `${CLAUDE_SKILL_DIR}/../../guidelines/working-memory.md`.
-6. Present everything for review, highlighting only the `[assumed]` and `[needs you]` items.
+6. **Offer the status line (optional).** Ask whether to add a persistent RaDevs status bar
+   (`branch · engine · mode · level · spec`). If yes, add to the project `.claude/settings.json`:
+   `"statusLine": { "type": "command", "command": "<resolved path>/hooks/statusline.sh" }` — resolve
+   the plugin path at init time (plugin-root resolution inside `settings.json` is not guaranteed), and
+   set `.groundwork.json` `ui.statusline` to `true`. Ask the user to confirm it renders once with
+   `claude --debug`. The in-action hook messages and the session banner (`ui.status_messages`, default
+   on) need no wiring.
+7. Present everything for review, highlighting only the `[assumed]` and `[needs you]` items.

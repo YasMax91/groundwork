@@ -1,8 +1,8 @@
 # RaDevs Laravel-back plugin — enhancement roadmap
 
 Status: **complete** (2026-06-26) — Wave 1 (E4/E7/E6) v0.5.0 · Wave 0 spike · Wave 2 (E1) v0.6.0
-(E2 dropped) · Wave 3 (E3) v0.7.0 · Wave 4 (E5/E8/E9) v0.8.0. All waves shipped & conformance-verified ·
-Owner: RaDevs
+(E2 dropped) · Wave 3 (E3) v0.7.0 · Wave 4 (E5/E8/E9) v0.8.0 · Wave 5 (status/UI, post-roadmap UX
+request) v0.9.0. All shipped & conformance-verified · Owner: RaDevs
 
 A prioritized, grounded backlog of improvements to the `groundwork` plugin. The current
 plugin (v0.4.0) already implements most of the 2025–2026 frontier — just-in-time context via
@@ -272,7 +272,10 @@ Order by de-risking + value, not by tier number:
 - **Wave 3 — Deep workflows: E3.** ✅ **shipped in v0.7.0 (2026-06-26)** →
   [wave-3-deep-skills.md](wave-3-deep-skills.md). AC1–AC6 CONFORMS; AC7 live smoke passed.
 - **Wave 4 — Polish: E5, E8, E9.** ✅ **shipped in v0.8.0 (2026-06-26)** →
-  [wave-4-polish.md](wave-4-polish.md). Conformance CONFORMS. **Roadmap complete.**
+  [wave-4-polish.md](wave-4-polish.md). Conformance CONFORMS. **Original roadmap complete.**
+- **Wave 5 — Status / UI (post-roadmap, user UX request).** ✅ **shipped in v0.9.0 (2026-06-26)** →
+  [wave-5-status-ui.md](wave-5-status-ui.md). Status line + in-action messages + session banner;
+  conformance CONFORMS, fail-safe.
 
 Each wave is shippable on its own (commit + version bump + `/plugin reinstall` per the rollout
 convention). Suggested: Wave 1 → `v0.5.0`, Wave 2 → `v0.6.0`, Wave 3 → `v0.7.0`, Wave 4 → `v0.8.0`.

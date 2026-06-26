@@ -35,6 +35,9 @@ repositories.
   source of truth before the transcript is thinned. The workflow skills keep a terse task checkpoint
   and a cached `impact-mapper` blast-radius map under `.claude/groundwork/` — context stays light, but
   nothing is forgotten across stops, restarts, or compaction.
+- **Status / UI** — a persistent status line (`branch · engine · mode · level · spec`, opt-in via
+  `init` + `ui.statusline`), in-action hook messages (`RaDevs: running tests…`), and a session banner +
+  title. All fail-safe — unsupported display fields degrade to a no-op.
 - **Templates** — thin project `AGENTS.md` / `CLAUDE.md` / `.groundwork.json` and six spec templates.
 
 ## Grounding split
@@ -97,7 +100,7 @@ once with `claude --debug` in your project before enabling.
 .claude-plugin/   plugin.json · marketplace.json
 skills/           start-task · spec · implement-approved · risk-review · final-check · ground-integration · frontend-handoff · init · deep-grounding · deep-discovery · deep-review
 agents/           impact-mapper · grounded-researcher · adversarial-verifier · conformance-reviewer
-hooks/            hooks.json · session-start.sh · pre-compact.sh · format-on-edit.sh · done-gate.sh · test-gate.sh · trim-output.sh · pre-tool-guard.sh
+hooks/            hooks.json · session-start.sh · pre-compact.sh · format-on-edit.sh · done-gate.sh · test-gate.sh · trim-output.sh · pre-tool-guard.sh · statusline.sh
 guidelines/       ai-sdd-process · grounding-protocol · laravel-standards · tdd-protocol · working-memory
 templates/        project/ · specs/ · frontend/
 ```

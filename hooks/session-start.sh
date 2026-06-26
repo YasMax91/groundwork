@@ -43,7 +43,24 @@ fi
 spec="$(find docs/specs -type f -name '*.md' 2>/dev/null -exec ls -t {} + 2>/dev/null | head -1 || true)"
 [ -n "$spec" ] && add "Most recent spec: ${spec}"
 
-# Emit as SessionStart additionalContext. jq handles escaping; per-section caps
-# above keep this small so it stays cheap on every session.
-jq -nc --arg c "$ctx" '{hookSpecificOutput:{hookEventName:"SessionStart",additionalContext:$c}}' 2>/dev/null || true
+# --- status banner + session title (Wave 5; honor ui.status_messages) ---
+title="RaDevs: ${branch:-?}"
+banner=""
+if [ "$(jq -r '.ui.status_messages' .groundwork.json 2>/dev/null)" != "false" ]; then
+  mode_line=""
+  if [ -f "$state" ]; then
+    m="$(grep -iE '^[[:space:]]*-?[[:space:]]*Mode:'  "$state" 2>/dev/null | head -1 | sed -E 's/^[^:]*:[[:space:]]*//' | awk -F'|' '{print $1}' | awk '{print $1}')"
+    l="$(grep -iE '^[[:space:]]*-?[[:space:]]*Level:' "$state" 2>/dev/null | head -1 | sed -E 's/^[^:]*:[[:space:]]*//' | awk '{print $1}')"
+    [ -n "$m" ] && { title="RaDevs: ${m}${l:+ $l}"; mode_line=" · ${m}${l:+ $l}"; }
+  fi
+  banner="RaDevs · ${branch:-?} · ${engine}${mode_line}"
+fi
+
+# Emit the SessionStart output. jq handles escaping. sessionTitle/systemMessage are added
+# only when set, and are ignored by CC versions that don't render them (additionalContext
+# always works). Per-section caps above keep this cheap on every session.
+jq -nc --arg c "$ctx" --arg t "$title" --arg m "$banner" \
+  '{hookSpecificOutput:{hookEventName:"SessionStart",additionalContext:$c}}
+   + (if $t != "" then {sessionTitle:$t} else {} end)
+   + (if $m != "" then {systemMessage:$m} else {} end)' 2>/dev/null || true
 exit 0

@@ -25,5 +25,9 @@
   },
   "docs": {
     "frontend": "ai/frontend"
+  },
+  "ui": {
+    "statusline": false,
+    "status_messages": true
   }
 }
