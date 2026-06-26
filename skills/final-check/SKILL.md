@@ -23,8 +23,16 @@ Report results honestly. If a gate could not run (Sail/services unavailable), sa
 followed the spec? · only related files changed? · API contracts preserved? · controllers thin? ·
 logic in services? · validation in FormRequest? · authorization present? · multi-step writes
 transactional? · resources preserve shape? · N+1 handled? · migrations production-safe? · tests
-written test-first (red→green)? · OpenAPI updated when contracts changed? · gates run or skip-reason
-stated?
+written test-first (red→green)? · each acceptance-criterion ID mapped to a passing test? · OpenAPI
+updated when contracts changed? · gates run or skip-reason stated?
+
+## Conformance review (L2+)
+
+Before the handoff, spawn the **conformance-reviewer** agent on the working diff (`git diff`) against
+the spec's acceptance-criterion IDs. In a fresh context it judges each AC `met` / `partial` / `unmet`
+and reports only correctness/requirement gaps. Fix any unmet-AC gap, or fold it into the handoff as a
+stated gap. Skip for L0/L1. This is distinct from the adversarial-verifier (which challenges "it works"
+claims).
 
 ## Handoff summary
 

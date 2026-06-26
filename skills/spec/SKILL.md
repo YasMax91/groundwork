@@ -16,8 +16,12 @@ a useful spec beats a perfect document.
    decision that justifies it.
 3. **Separate Stage A / MVP scope from future-stage notes.** Future notes guide naming and
    boundaries; they do not expand the current implementation.
-4. **Write acceptance criteria** that are testable and map to the verification plan — each becomes a
-   fail-first test (the red list) for L2+/bug fixes.
+4. **Write acceptance criteria in EARS form** with stable IDs and a test pointer — each becomes a
+   fail-first test (the red list) for L2+/bug fixes. Five EARS forms (combine for complex):
+   `THE SYSTEM SHALL <r>` · `WHEN <trigger> …` · `WHILE <state> …` · `IF <cond> THEN …` ·
+   `WHERE <feature> …`. IDs (`AC1`, `AC2`, …) are stable — **append, never renumber**; a renumber
+   breaks the `→ test:` links and the checkpoint. Keep it proportional: trivial CRUD gets a plain
+   "returns 201 + shape" criterion, not invented branches.
 5. **Record the technical approach and tradeoffs** — if the CRD intent is right but a different
    technical shape is safer, document why.
 6. **List risks, assumptions, and the verification plan** (which tests — written test-first — and

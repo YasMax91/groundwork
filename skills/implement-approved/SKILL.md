@@ -13,6 +13,8 @@ Only proceed if the spec/plan was **explicitly approved in this conversation**. 
   implement to green, then refactor under the gates — no production code for a covered slice before a
   red test exists. Match the test to the layer (feature for contract/validation/authz/shape; unit for
   services/calculations/state transitions). See the TDD protocol (`${CLAUDE_SKILL_DIR}/../../guidelines/tdd-protocol.md`).
+- **Implementation is single-threaded** — work one TDD slice at a time; do not spawn parallel coding
+  agents. Fan-out is for Discovery and Verification only (see "Fan-out by level" in the process doc).
 - Follow the approved spec's acceptance criteria; keep changes scoped to the task.
 - Respect architecture boundaries (see the Laravel standards):
   - validation + request authorization in **FormRequest**

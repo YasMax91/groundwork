@@ -12,6 +12,11 @@
 
 ## Fix (smallest safe change)
 
+## Acceptance criterion (EARS)
+
+- [ ] **AC1** WHEN <repro condition> THE SYSTEM SHALL <correct behavior> (was: <wrong behavior>).
+      → test: the regression test below
+
 ## Regression test (write first — red→green)
 
 A failing test that reproduces the bug **before** the fix; passes after. Written first — a test that

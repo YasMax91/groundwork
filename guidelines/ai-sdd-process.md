@@ -19,7 +19,9 @@ scope the edit tightly, never the investigation.
 - **Implementation** — test-first (red→green→refactor): write the failing test, implement to green,
   refactor under the gates. Edit per the approved spec; keep scope tight. See
   [tdd-protocol.md](tdd-protocol.md).
-- **Review** — review the diff for violations, missing tests, risks. No silent changes.
+- **Review** — review the diff for violations, missing tests, risks. No silent changes. Two distinct
+  gates: the **adversarial-verifier** challenges "it works" claims (is the claim true?); the
+  **conformance-reviewer** judges the diff against the spec's acceptance-criterion IDs (does it match?).
 
 ## Task classification (classify before working)
 
@@ -32,6 +34,22 @@ scope the edit tightly, never the investigation.
 - **L4 Critical** (financial calc, order lifecycle, permission model, destructive migration,
   external integration behavior, queue/scheduler with business impact) — all of L3 + rollback
   notes + human approval always required.
+
+## Fan-out by level (effort scaling)
+
+Match agent fan-out to task level. Over-spawning wastes ~15× the tokens; coding is a poor multi-agent
+fit, so only Discovery and Verification fan out.
+
+- **L0 Tiny** — no subagents. Inline.
+- **L1 Small** — self-trace (a few targeted greps). No agent.
+- **L2 Normal** — 1 `impact-mapper` (cache-aware). Add `grounded-researcher` only if an external API
+  is touched.
+- **L3 High-risk** — `impact-mapper` + `grounded-researcher` (if integration) for discovery;
+  `conformance-reviewer` + `adversarial-verifier` for verification. May escalate to the deep-* skills.
+- **L4 Critical** — as L3, plus an adversarial panel (≥2 skeptics) on the riskiest claims.
+
+**Implementation is single-threaded.** Work one TDD slice at a time — no parallel coding agents. The
+fan-out above is for Discovery and Verification only.
 
 ## Startup sequence (non-trivial tasks)
 
@@ -74,7 +92,7 @@ broad refactor/formatting/file deletion.
 implementation matches the approved spec · public API preserved or intentionally changed ·
 validation via FormRequest · authorization handled · business logic in services · resources preserve
 response shape · multi-step writes transactional · focused tests written test-first (red→green) and
-passing · OpenAPI updated when
+passing · every acceptance-criterion ID mapped to a passing test (no AC unmapped) · OpenAPI updated when
 contracts change · format + static analysis run (or skip reason stated) · migration/deployment impact
 documented · frontend handoff docs in `ai/frontend` created/updated when the change touches the
 frontend-facing surface (run the `frontend-handoff` skill after the gates are green) · final report
@@ -92,5 +110,5 @@ followed the spec? · only related files changed? · impact map honored (each fl
 or noted out of scope)? · API contracts preserved? · controllers thin? ·
 logic in services? · validation in FormRequest? · authorization present where needed? · multi-step
 writes transactional? · resources preserve shape? · N+1 handled? · migrations production-safe? ·
-tests written test-first (red→green) for covered work? · gates run or skip-reason stated? ·
-risks/assumptions documented?
+tests written test-first (red→green) for covered work? · each acceptance-criterion ID mapped to a
+passing test? · gates run or skip-reason stated? · risks/assumptions documented?

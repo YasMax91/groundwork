@@ -68,8 +68,9 @@ not encode a guess.
   default on; Sail-aware — an unavailable environment never blocks). You cannot declare done with red
   or missing tests. The gate also **warns when the suite resolves to SQLite/`:memory:`** while the
   project targets MySQL/Postgres — that green does not count; rerun on the real engine.
-- **Red→Green is reported.** The handoff states, for the behavior changed, that the test failed
-  before the code and passes after. The gate proves green; the report proves the order.
+- **Red→Green is reported, per criterion.** Each red-list test names the acceptance-criterion ID
+  (`AC1`, `AC2`, …) it proves. The handoff states, for each covered AC, that its test failed before
+  the code and passes after. The gate proves green; the report proves the order and the AC mapping.
 
 ## Don't
 

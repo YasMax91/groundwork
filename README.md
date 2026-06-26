@@ -7,15 +7,18 @@ repositories.
 ## What's inside
 
 - **Process (AI-SDD)** — skills: `start-task`, `spec`, `implement-approved`, `risk-review`,
-  `final-check`, `init`. Discovery fans out via the `impact-mapper` agent — the full blast radius
-  before planning, so changes stay scoped without missing a consumer.
+  `final-check`, `init`. Discovery fans out via the `impact-mapper` agent (scaled by task level
+  L0–L4) — the full blast radius before planning, so changes stay scoped without missing a consumer.
+  Two review gates: `adversarial-verifier` (is the "it works" claim true?) and `conformance-reviewer`
+  (does the diff satisfy the spec's acceptance criteria?).
 - **Frontend handoff** — after the final implementation and green gates, the `frontend-handoff` skill
   writes documentation for the frontend developer under `ai/frontend/` (a living reference doc per
   area + a dated handoff delta) — what to build, when, how, why, where, and the API contract, in
   Russian, no frontend code — then asks whether to commit (single line, no AI attribution).
 - **TDD** — `tdd-protocol`: test-first (red→green→refactor) for L2+ features and bug fixes; the test
   suite is a Stop gate. The layered split matches the standards — feature tests for the contract,
-  unit tests for services/calculations/state transitions.
+  unit tests for services/calculations/state transitions. Acceptance criteria are EARS statements with
+  stable IDs, each linked to its fail-first test.
 - **Grounding** — `grounding-protocol` + the `ground-integration` skill + the `grounded-researcher`
   and `adversarial-verifier` agents. Read reality, never guess.
 - **Standards + gates** — `laravel-standards` + hooks: Pint on edit, static analysis and the test
@@ -82,7 +85,7 @@ once with `claude --debug` in your project before enabling.
 ```
 .claude-plugin/   plugin.json · marketplace.json
 skills/           start-task · spec · implement-approved · risk-review · final-check · ground-integration · frontend-handoff · init
-agents/           impact-mapper · grounded-researcher · adversarial-verifier
+agents/           impact-mapper · grounded-researcher · adversarial-verifier · conformance-reviewer
 hooks/            hooks.json · session-start.sh · pre-compact.sh · format-on-edit.sh · done-gate.sh · test-gate.sh · trim-output.sh
 guidelines/       ai-sdd-process · grounding-protocol · laravel-standards · tdd-protocol · working-memory
 templates/        project/ · specs/ · frontend/

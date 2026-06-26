@@ -8,6 +8,9 @@ effort: high
 Review the current diff (or the proposed plan) against each category. Report concrete findings with
 file/line references and a suggested fix; do not silently change code during review.
 
+Scope: spec **conformance** (does the diff satisfy each acceptance-criterion ID?) is the
+**conformance-reviewer**'s job in `final-check`. Risk-review stays on the risk categories below.
+
 ## Checklist
 
 - **API contract** — renamed/removed/retyped fields, changed enums, pagination shape, error format,

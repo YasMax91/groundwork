@@ -26,6 +26,8 @@ Stay in **Discovery mode**: inspect and plan only, do not edit files until the p
      This avoids re-running the most expensive fan-out on iterative work. Rules:
      `${CLAUDE_SKILL_DIR}/../../guidelines/working-memory.md`.
    - **L0/L1**: a quick outward trace yourself (a few targeted greps) is enough — no agent needed.
+   - **Fan-out scales with level** — see "Fan-out by level" in
+     `${CLAUDE_SKILL_DIR}/../../guidelines/ai-sdd-process.md`. Only Discovery and Verification fan out.
 5. **Consult the CRD** for business intent when the task touches domain/API/schema/permissions/
    financial behavior/notifications/reports/integrations/deployment.
 6. **If the task touches an external API**, run the `ground-integration` skill before designing.

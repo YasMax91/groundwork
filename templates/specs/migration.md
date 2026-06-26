@@ -28,6 +28,17 @@ model casts & fillable · factories · seeders · resources · tests.
 Write tests first for any behavior that depends on the new schema (casts, backfill, constraints) —
 see the TDD protocol.
 
+## Acceptance criteria (EARS — schema-dependent behavior only)
+
+Stable IDs; append, never renumber. Pure DDL with no observable behavior needs none — state that.
+
+- [ ] **AC1** WHEN <entity> is read after the migration THE SYSTEM SHALL cast <column> to <type>.
+      → test: tests/Unit/<X>Test.php::test_cast
+- [ ] **AC2** WHILE existing rows predate the column THE SYSTEM SHALL present <backfilled / default value>.
+      → test: tests/Feature/<X>Test.php::test_backfill
+- [ ] **AC3** IF a write violates <constraint> THEN THE SYSTEM SHALL reject it at the DB level.
+      → test: tests/Feature/<X>Test.php::test_constraint
+
 ## Rollback risk
 
 ## Deployment
