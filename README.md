@@ -22,7 +22,8 @@ repositories.
 - **Grounding** — `grounding-protocol` + the `ground-integration` skill + the `grounded-researcher`
   and `adversarial-verifier` agents. Read reality, never guess.
 - **Standards + gates** — `laravel-standards` + hooks: Pint on edit, static analysis and the test
-  suite as done-gates.
+  suite as done-gates, and a `PreToolUse` enforcement guard that denies host Laravel/PHP commands
+  (use the runner) and edits to shipped migrations — opt-out per project.
 - **Working memory** — `working-memory` guideline + a `SessionStart` hook that cheaply re-injects
   project state (runner, DB engine, branch, uncommitted files, active spec, the task checkpoint) so
   the agent does not re-read the same files, and a `PreCompact` hook that marks the checkpoint as the
@@ -70,9 +71,14 @@ agents in `/agents`, and confirm the hooks fire on edits.
 
 Declares the runner and the **database engine** (`database.default` — `mysql`/`pgsql`, the target for
 code and tests; never SQLite), and overrides the gate commands (`format`, `analyse`, `test`) and
-toggles (`format_on_edit`, `analyse_on_stop`, `test_on_stop`). A `memory` block toggles the
-working-memory layer (`session_context`, `checkpoint`, `impact_cache` — all default on). Defaults to
-Sail + MySQL.
+toggles (`format_on_edit`, `analyse_on_stop`, `test_on_stop`, plus the `PreToolUse` enforcement
+toggles `enforce_runner` and `lock_shipped_migrations` — default **on** — and `lock_edits_in_discovery`
+— default **off**). A `memory` block toggles the working-memory layer (`session_context`,
+`checkpoint`, `impact_cache` — all default on). Defaults to Sail + MySQL.
+
+The plan-approval gate is the `start-task` → approval → `implement-approved` split; enable
+`lock_edits_in_discovery` (or Claude Code's native `defaultMode: "plan"`) for a hard
+read-only-while-planning gate.
 
 `gates.trim_tool_output` (default **off**) enables a fail-safe `PostToolUse` trimmer that collapses
 passing-test / clean-analysis spam from noisy commands to save context. It never trims when any
@@ -86,7 +92,7 @@ once with `claude --debug` in your project before enabling.
 .claude-plugin/   plugin.json · marketplace.json
 skills/           start-task · spec · implement-approved · risk-review · final-check · ground-integration · frontend-handoff · init
 agents/           impact-mapper · grounded-researcher · adversarial-verifier · conformance-reviewer
-hooks/            hooks.json · session-start.sh · pre-compact.sh · format-on-edit.sh · done-gate.sh · test-gate.sh · trim-output.sh
+hooks/            hooks.json · session-start.sh · pre-compact.sh · format-on-edit.sh · done-gate.sh · test-gate.sh · trim-output.sh · pre-tool-guard.sh
 guidelines/       ai-sdd-process · grounding-protocol · laravel-standards · tdd-protocol · working-memory
 templates/        project/ · specs/ · frontend/
 ```

@@ -56,7 +56,10 @@ enforced by tool-gates (Pint / Larastan / PHPUnit). Confirm version-specific det
 - **Run every Laravel/PHP command through Sail locally** — `artisan`, `composer`, Pint, Larastan,
   tests, `tinker`, `migrate`, `make:*`, queue/scheduler, everything. Never invoke `php`, `composer`,
   `artisan`, or `phpunit`/`pest` directly on the host. The runner is `sail` by default
-  (`.groundwork.json` `runner`); honor a project override there.
+  (`.groundwork.json` `runner`); honor a project override there. **Enforced** by the plugin's
+  `PreToolUse` guard (`gates.enforce_runner`, default on) — a host invocation is denied with the
+  corrected runner command. Editing a shipped (git-tracked) migration is likewise blocked
+  (`gates.lock_shipped_migrations`, default on).
 - **Format**: Pint (`./vendor/bin/sail pint`) — runs automatically on edit via the plugin hook.
 - **Static analysis**: Larastan / PHPStan (`./vendor/bin/sail composer analyse`) — the done-gate;
   catches the "wrong shape / 500 to the frontend" class early.

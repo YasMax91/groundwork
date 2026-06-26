@@ -1,7 +1,7 @@
 # RaDevs Laravel-back plugin — enhancement roadmap
 
-Status: **in progress** — Wave 1 (E4/E7/E6) implemented in v0.5.0 (2026-06-26); Waves 2–4 pending ·
-Owner: RaDevs
+Status: **in progress** (2026-06-26) — Wave 1 (E4/E7/E6) shipped in v0.5.0; Wave 0 spike done; Wave 2
+(E1) shipped in v0.6.0 (E2 dropped). Waves 3–4 pending · Owner: RaDevs
 
 A prioritized, grounded backlog of improvements to the `groundwork` plugin. The current
 plugin (v0.4.0) already implements most of the 2025–2026 frontier — just-in-time context via
@@ -48,7 +48,7 @@ short session. Everything in Wave 2/3 below is contingent on it.
 | ID | Item | Persona | Value | Effort | Risk | Tier |
 |---|---|---|---|---|---|---|
 | E1 | PreToolUse hard-gates (Sail-only, migration-lock, Discovery-lock) | developer | High | M | **Med** | 1 |
-| E2 | Native Plan Mode as the approval gate | architect | High | S–M | Med | 1 |
+| E2 | ~~Native Plan Mode gate~~ — **dropped** (Wave 0: undocumented); covered by E1.c + docs | architect | — | — | — | 1 |
 | E3 | Workflow-driven deep skills (deep-discovery / deep-grounding / deep-review) | architect + doc-analyst | High | L | Med | 1 |
 | E4 | EARS acceptance criteria + clause-ID → test traceability | developer + doc-analyst | High | M | Low | 2 |
 | E5 | `clarify` pass (pre-plan) + `converge` re-check (post-impl) | designer | Med–High | M | Low | 2 |
@@ -95,7 +95,14 @@ short session. Everything in Wave 2/3 below is contingent on it.
   - `E1-AC5` WHEN `./vendor/bin/sail` is absent or not executable (e.g. a fresh clone pre-`composer
     install`), THE hook SHALL NOT block host `composer`/`php` (bootstrap fail-open). (test: hook unit test)
 
-### E2 — Native Plan Mode as the approval gate
+### E2 — Native Plan Mode as the approval gate → **DROPPED / reframed (Wave 0)**
+
+> **Wave 0 result:** skill-driven `EnterPlanMode`/`ExitPlanMode` is undocumented — not buildable from
+> documented primitives. Reframed: the conversational `start-task`→`implement-approved` gate stays; the
+> optional `gates.lock_edits_in_discovery` toggle (E1/Wave 2) is the deterministic hard gate; native
+> plan mode (`defaultMode: "plan"`) is a documented user-level recommendation. See
+> [wave-0-capability-confirmation.md](wave-0-capability-confirmation.md).
+
 - **Persona:** architect.
 - **What:** `start-task` ends its Discovery+Plan output by presenting the plan through `ExitPlanMode`
   (the structured approval checkpoint) instead of a prose "stop and wait". Discovery runs read-only.
@@ -255,12 +262,12 @@ short session. Everything in Wave 2/3 below is contingent on it.
 
 Order by de-risking + value, not by tier number:
 
-- **Wave 0 — Verification spike (S).** Confirm the platform facts in the grounding note above against
-  the user's installed Claude Code. Gate for E1/E2/E3/E9. Output: capability-confirmation note.
+- **Wave 0 — Verification spike (S).** ✅ **DONE 2026-06-26** — see
+  [wave-0-capability-confirmation.md](wave-0-capability-confirmation.md). E1 = GO; E2 = dropped/reframed.
 - **Wave 1 — Methodology hardening (low risk, immediate, no platform dependency): E4, E7, E6.**
   Sharpens every task starting now; pure docs/templates/one agent.
-- **Wave 2 — Enforcement engine: E1, then E2.** After Wave 0 confirms the hook + plan-mode schemas.
-  Highest leverage, highest care.
+- **Wave 2 — Enforcement engine: E1** (E2 dropped). ✅ **shipped in v0.6.0 (2026-06-26)** →
+  [wave-2-enforcement.md](wave-2-enforcement.md). Hook tests 15/15; conformance CONFORMS.
 - **Wave 3 — Deep workflows: E3.** The biggest build; do it once enforcement is stable.
 - **Wave 4 — Polish: E5, E8, E9.** Clarify/converge, ADR capture, pinning/progressive-disclosure.
 

@@ -13,7 +13,10 @@
     "format_on_edit": true,
     "analyse_on_stop": true,
     "test_on_stop": true,
-    "trim_tool_output": false
+    "trim_tool_output": false,
+    "enforce_runner": true,
+    "lock_shipped_migrations": true,
+    "lock_edits_in_discovery": false
   },
   "memory": {
     "session_context": true,
