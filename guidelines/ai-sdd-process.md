@@ -45,7 +45,8 @@ fit, so only Discovery and Verification fan out.
 - **L2 Normal** — 1 `impact-mapper` (cache-aware). Add `grounded-researcher` only if an external API
   is touched.
 - **L3 High-risk** — `impact-mapper` + `grounded-researcher` (if integration) for discovery;
-  `conformance-reviewer` + `adversarial-verifier` for verification. May escalate to the deep-* skills.
+  `conformance-reviewer` + `adversarial-verifier` for verification. May escalate to `deep-discovery` /
+  `deep-grounding` / `deep-review`.
 - **L4 Critical** — as L3, plus an adversarial panel (≥2 skeptics) on the riskiest claims.
 
 **Implementation is single-threaded.** Work one TDD slice at a time — no parallel coding agents. The

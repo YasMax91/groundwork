@@ -21,6 +21,10 @@ repositories.
   stable IDs, each linked to its fail-first test.
 - **Grounding** — `grounding-protocol` + the `ground-integration` skill + the `grounded-researcher`
   and `adversarial-verifier` agents. Read reality, never guess.
+- **Deep skills (L3/L4, opt-in)** — `deep-grounding` · `deep-discovery` · `deep-review`: Workflow-driven
+  multi-agent escalations of grounding / discovery / review, each finding adversarially verified.
+  ~15× tokens, gated to explicit invocation; graceful fallback to the single-agent skill when the
+  `Workflow` tool is unavailable.
 - **Standards + gates** — `laravel-standards` + hooks: Pint on edit, static analysis and the test
   suite as done-gates, and a `PreToolUse` enforcement guard that denies host Laravel/PHP commands
   (use the runner) and edits to shipped migrations — opt-out per project.
@@ -90,7 +94,7 @@ once with `claude --debug` in your project before enabling.
 
 ```
 .claude-plugin/   plugin.json · marketplace.json
-skills/           start-task · spec · implement-approved · risk-review · final-check · ground-integration · frontend-handoff · init
+skills/           start-task · spec · implement-approved · risk-review · final-check · ground-integration · frontend-handoff · init · deep-grounding · deep-discovery · deep-review
 agents/           impact-mapper · grounded-researcher · adversarial-verifier · conformance-reviewer
 hooks/            hooks.json · session-start.sh · pre-compact.sh · format-on-edit.sh · done-gate.sh · test-gate.sh · trim-output.sh · pre-tool-guard.sh
 guidelines/       ai-sdd-process · grounding-protocol · laravel-standards · tdd-protocol · working-memory

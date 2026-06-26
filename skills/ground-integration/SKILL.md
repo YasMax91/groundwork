@@ -8,6 +8,10 @@ effort: high
 External integrations are where guessing does the most damage. Do this **before** writing
 integration code. Boost does not cover third-party APIs — go to their official documentation.
 
+For an **L3/L4** integration with a large or critical API, escalate to **`deep-grounding`** — a
+multi-agent Workflow that builds an adversarially-verified capability matrix (each row refuted-or-
+survived). This single-agent flow stays the default for L0–L2.
+
 ## Steps
 
 1. **Identify the exact provider, product, and API version** in use (or to be used).

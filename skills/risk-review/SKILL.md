@@ -11,6 +11,9 @@ file/line references and a suggested fix; do not silently change code during rev
 Scope: spec **conformance** (does the diff satisfy each acceptance-criterion ID?) is the
 **conformance-reviewer**'s job in `final-check`. Risk-review stays on the risk categories below.
 
+For an **L3/L4** diff, escalate to **`deep-review`** — a multi-agent Workflow that adversarially
+verifies every finding before reporting (only confirmed risks survive).
+
 ## Checklist
 
 - **API contract** — renamed/removed/retyped fields, changed enums, pagination shape, error format,

@@ -1,7 +1,7 @@
 # RaDevs Laravel-back plugin — enhancement roadmap
 
 Status: **in progress** (2026-06-26) — Wave 1 (E4/E7/E6) shipped in v0.5.0; Wave 0 spike done; Wave 2
-(E1) shipped in v0.6.0 (E2 dropped). Waves 3–4 pending · Owner: RaDevs
+(E1) shipped in v0.6.0 (E2 dropped); Wave 3 (E3) shipped in v0.7.0. Wave 4 pending · Owner: RaDevs
 
 A prioritized, grounded backlog of improvements to the `groundwork` plugin. The current
 plugin (v0.4.0) already implements most of the 2025–2026 frontier — just-in-time context via
@@ -268,7 +268,8 @@ Order by de-risking + value, not by tier number:
   Sharpens every task starting now; pure docs/templates/one agent.
 - **Wave 2 — Enforcement engine: E1** (E2 dropped). ✅ **shipped in v0.6.0 (2026-06-26)** →
   [wave-2-enforcement.md](wave-2-enforcement.md). Hook tests 15/15; conformance CONFORMS.
-- **Wave 3 — Deep workflows: E3.** The biggest build; do it once enforcement is stable.
+- **Wave 3 — Deep workflows: E3.** ✅ **shipped in v0.7.0 (2026-06-26)** →
+  [wave-3-deep-skills.md](wave-3-deep-skills.md). AC1–AC6 CONFORMS; AC7 live smoke passed.
 - **Wave 4 — Polish: E5, E8, E9.** Clarify/converge, ADR capture, pinning/progressive-disclosure.
 
 Each wave is shippable on its own (commit + version bump + `/plugin reinstall` per the rollout
