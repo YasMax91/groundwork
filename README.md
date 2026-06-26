@@ -10,7 +10,8 @@ repositories.
   `final-check`, `init`. Discovery fans out via the `impact-mapper` agent (scaled by task level
   L0–L4) — the full blast radius before planning, so changes stay scoped without missing a consumer.
   Two review gates: `adversarial-verifier` (is the "it works" claim true?) and `conformance-reviewer`
-  (does the diff satisfy the spec's acceptance criteria?).
+  (does the diff satisfy the spec's acceptance criteria?). A clarify pass precedes the plan; a converge
+  re-check and ADR capture (`docs/adr/`) close out cross-cutting L3/L4 work.
 - **Frontend handoff** — after the final implementation and green gates, the `frontend-handoff` skill
   writes documentation for the frontend developer under `ai/frontend/` (a living reference doc per
   area + a dated handoff delta) — what to build, when, how, why, where, and the API contract, in

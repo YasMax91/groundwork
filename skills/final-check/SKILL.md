@@ -47,6 +47,13 @@ claims).
 
 Never report unqualified "100% done". State what is `verified` vs `assumed`.
 
+## Converge (re-audit vs the full spec)
+
+Beyond the diff-scoped conformance review, re-audit the spec's **full** acceptance-criteria set against
+implemented reality: which AC IDs are done, which remain, which were deferred. Append any unmet or
+deferred criteria to `.claude/groundwork/task-state.md` as remaining slices so nothing silently drops. If
+everything is satisfied, say so.
+
 ## Close the checkpoint
 
 When the handoff is clean and the gates are green, mark the task done in

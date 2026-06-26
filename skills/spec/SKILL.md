@@ -23,7 +23,10 @@ a useful spec beats a perfect document.
    breaks the `→ test:` links and the checkpoint. Keep it proportional: trivial CRUD gets a plain
    "returns 201 + shape" criterion, not invented branches.
 5. **Record the technical approach and tradeoffs** — if the CRD intent is right but a different
-   technical shape is safer, document why.
+   technical shape is safer, document why. For a **cross-cutting, durable** L3/L4 decision (new
+   dependency, new architectural layer, workflow-state model), also write an ADR to
+   `docs/adr/NNNN-<slug>.md` from `${CLAUDE_SKILL_DIR}/../../templates/adr.md` (≥2 options + chosen +
+   why); keep feature-local trade-offs here in the spec.
 6. **List risks, assumptions, and the verification plan** (which tests — written test-first — and
    which gates). See the TDD protocol (`${CLAUDE_SKILL_DIR}/../../guidelines/tdd-protocol.md`).
 7. **Hand off with a Russian summary (выжимка).** After the spec file is saved, post a short Russian

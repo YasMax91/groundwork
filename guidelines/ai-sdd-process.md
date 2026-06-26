@@ -70,8 +70,9 @@ fan-out above is for Discovery and Verification only.
 10. Stop and wait for explicit approval.
 
 First-response structure: current understanding · classification · files/docs to inspect ·
-connections / blast radius · business/CRD areas affected · draft spec · acceptance criteria · plan ·
-risks/assumptions · stop point.
+connections / blast radius · business/CRD areas affected · draft spec · acceptance criteria ·
+clarifications (ambiguities/conflicts/gaps to resolve before planning) · plan · risks/assumptions ·
+stop point.
 
 ## Definition of Ready
 
@@ -87,6 +88,10 @@ public API contract change · new dependency · destructive migration · workflo
 financial calculation · weakening permissions · deploy/runtime change · new architectural layer ·
 external integration behavior · behavior not supported by CRD/code/explicit user decision ·
 broad refactor/formatting/file deletion.
+
+For a **cross-cutting, durable** decision among these (new dependency, new architectural layer,
+workflow-state model), capture an ADR in `docs/adr/NNNN-<slug>.md` (from `templates/adr.md`) — ≥2
+considered options + the chosen one + why. Feature-local trade-offs stay in the spec.
 
 ## Definition of Done
 

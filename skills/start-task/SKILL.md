@@ -34,8 +34,9 @@ Stay in **Discovery mode**: inspect and plan only, do not edit files until the p
 6. **If the task touches an external API**, run the `ground-integration` skill before designing.
 7. **Produce the first response in this structure** (no code yet):
    current understanding · classification · files/docs to inspect · connections / blast radius ·
-   business/CRD areas affected · draft spec · acceptance criteria · test plan (red list — fail-first
-   tests for L2+/bug fixes) · implementation plan · risks & assumptions · stop point.
+   business/CRD areas affected · draft spec · acceptance criteria · clarifications (ambiguities,
+   conflicts, gaps surfaced as explicit questions to resolve before planning) · test plan (red list —
+   fail-first tests for L2+/bug fixes) · implementation plan · risks & assumptions · stop point.
 8. **Write the task checkpoint** to `.claude/groundwork/task-state.md` — mode, level, spec path, the
    slice/red list, assumptions, open approvals — so the work survives a restart or compaction (the
    `SessionStart` hook re-injects it automatically, no re-reading). This bookkeeping file under
@@ -47,6 +48,9 @@ Stay in **Discovery mode**: inspect and plan only, do not edit files until the p
 
 - **Map before you plan.** Discovery is wide, the change is narrow — scope the edit tightly, never
   the investigation. An unmapped consumer is an unlisted risk.
+- **Clarify before you plan.** Surface ambiguities, conflicting constraints, and gaps as explicit
+  questions; resolve the blocking ones before producing the plan — under-specification is cheapest to
+  fix here.
 - Do not invent business rules — derive them from CRD, code, or an explicit user decision.
 - Label every claim as `verified` (with evidence) or `assumed`. Never use unqualified "done".
 - **Plan tests first.** For L2+ and bug fixes, turn the acceptance criteria into a red list — the
