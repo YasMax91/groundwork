@@ -54,6 +54,11 @@ implemented reality: which AC IDs are done, which remain, which were deferred. A
 deferred criteria to `.claude/groundwork/task-state.md` as remaining slices so nothing silently drops. If
 everything is satisfied, say so.
 
+**Blind-spot re-pass.** Also check for blind spots the *finished* implementation itself created — a
+state that is now async, a new failure path, a consumer the change now affects, data that needs a
+backfill. Surface any material one (per `${CLAUDE_SKILL_DIR}/../../guidelines/blind-spot-protocol.md`)
+as a handoff note or a new slice; "none" is a valid result.
+
 ## Close the checkpoint
 
 When the handoff is clean and the gates are green, mark the task done in

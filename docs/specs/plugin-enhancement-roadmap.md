@@ -1,8 +1,9 @@
 # RaDevs Laravel-back plugin — enhancement roadmap
 
-Status: **complete** (2026-06-26) — Wave 1 (E4/E7/E6) v0.5.0 · Wave 0 spike · Wave 2 (E1) v0.6.0
+Status: **complete** (2026-07-13) — Wave 1 (E4/E7/E6) v0.5.0 · Wave 0 spike · Wave 2 (E1) v0.6.0
 (E2 dropped) · Wave 3 (E3) v0.7.0 · Wave 4 (E5/E8/E9) v0.8.0 · Wave 5 (status/UI, post-roadmap UX
-request) v0.9.0. All shipped & conformance-verified · Owner: RaDevs
+request) v0.9.0 · Wave 6 (blind-spot surfacing, post-roadmap UX request) v0.10.0. All shipped &
+conformance-verified · Owner: RaDevs
 
 A prioritized, grounded backlog of improvements to the `groundwork` plugin. The current
 plugin (v0.4.0) already implements most of the 2025–2026 frontier — just-in-time context via
@@ -276,6 +277,10 @@ Order by de-risking + value, not by tier number:
 - **Wave 5 — Status / UI (post-roadmap, user UX request).** ✅ **shipped in v0.9.0 (2026-06-26)** →
   [wave-5-status-ui.md](wave-5-status-ui.md). Status line + in-action messages + session banner;
   conformance CONFORMS, fail-safe.
+- **Wave 6 — Blind-spot surfacing (post-roadmap, user UX request).** ✅ **shipped in v0.10.0
+  (2026-07-13)** → [wave-6-blind-spot-surfacing.md](wave-6-blind-spot-surfacing.md). Proactive
+  blind-spot protocol + `blind-spot-mapper` agent (fresh context) + pipeline touchpoints across spec /
+  implementation / review / frontend handoff; conformance CONFORMS (W6-AC1–AC11), calibrated against noise.
 
 Each wave is shippable on its own (commit + version bump + `/plugin reinstall` per the rollout
 convention). Suggested: Wave 1 → `v0.5.0`, Wave 2 → `v0.6.0`, Wave 3 → `v0.7.0`, Wave 4 → `v0.8.0`.

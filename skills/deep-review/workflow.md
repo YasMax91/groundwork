@@ -18,6 +18,7 @@ const DIMENSIONS = [
   { key: 'queues-scheduler',     prompt: 'side effects behind jobs/events; cache is not the source of truth; deploy accounts for cache/config rebuild' },
   { key: 'n+1',                  prompt: 'list endpoints eager-load relationships intentionally' },
   { key: 'integration',          prompt: 'behind clients/services; capability claims grounded; errors/retries handled and tested with fakes' },
+  { key: 'other-consequences',   prompt: 'anything the fixed dimensions miss: a domain/product mismatch (right problem? meets the stated goal?), a broken user expectation, an unintended side effect — walk the blind-spot taxonomy' },
 ]
 const FINDING = { type: 'object', required: ['dimension', 'findings'], properties: {
   dimension: { type: 'string' },

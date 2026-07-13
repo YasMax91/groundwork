@@ -54,7 +54,10 @@ docs **and** create a handoff doc.
    template.
 4. Create the dated handoff doc in `ai/frontend/handoff/` from the handoff template — new, changed,
    and breaking parts, with the contract (method, path, request fields + rules, response shape, auth,
-   errors, pagination, states, visibility).
+   errors, pagination, states, visibility). Include a **«Подводные камни»** block: what the frontend
+   must account for or the UI breaks — async states (a request that returns before the work is done),
+   empty/error/loading states, ordering/idempotency of calls, visibility rules. Flag them proactively
+   (per the blind-spot protocol); do not just document the happy-path contract.
 5. Keep it derived from real code; label assumptions. No frontend code.
 6. Post a one-line pointer in chat (Russian) telling the user which docs were created/updated.
 7. Run the commit step.

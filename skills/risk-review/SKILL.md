@@ -6,7 +6,9 @@ effort: high
 # Risk review
 
 Review the current diff (or the proposed plan) against each category. Report concrete findings with
-file/line references and a suggested fix; do not silently change code during review.
+file/line references and a suggested fix; do not silently change code during review. Run it on the
+**plan at task entry**, not only on the finished diff — the cheapest place to catch a risk is before
+the code exists.
 
 Scope: spec **conformance** (does the diff satisfy each acceptance-criterion ID?) is the
 **conformance-reviewer**'s job in `final-check`. Risk-review stays on the risk categories below.
@@ -35,6 +37,11 @@ verifies every finding before reporting (only confirmed risks survive).
 - **Test-first discipline** — for L2+/bug fixes the covered behavior has fail-first tests (red→green);
   a bug fix has a regression test that failed before the fix. See the TDD protocol
   (`${CLAUDE_SKILL_DIR}/../../guidelines/tdd-protocol.md`).
+- **Other consequences (open — beyond the checklist)** — anything the fixed dimensions above do not
+  name: a domain/product mismatch (does this solve the *right* problem and meet the stated goal?), a
+  broken user expectation, an unintended side effect. The escape hatch so an off-list blind spot still
+  surfaces — walk the blind-spot taxonomy
+  (`${CLAUDE_SKILL_DIR}/../../guidelines/blind-spot-protocol.md`).
 
 End with: confirmed risks (ranked) · required approvals · missing or after-the-fact tests ·
 suggested fixes.

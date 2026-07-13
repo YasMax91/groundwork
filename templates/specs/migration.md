@@ -39,6 +39,14 @@ Stable IDs; append, never renumber. Pure DDL with no observable behavior needs n
 - [ ] **AC3** IF a write violates <constraint> THEN THE SYSTEM SHALL reject it at the DB level.
       → test: tests/Feature/<X>Test.php::test_constraint
 
+## Blind spots considered
+
+Dimensions the change did not name but the schema/data demand — existing-row backfill, concurrent
+writes during migration, dependent consumers, cascade behavior (per the blind-spot protocol). Material
+only; "none" is valid.
+
+- <what was missed> → <consequence if ignored> → <closed here / deferred because …>
+
 ## Rollback risk
 
 ## Deployment

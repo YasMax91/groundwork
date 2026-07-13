@@ -35,6 +35,10 @@ Only proceed if the spec/plan was **explicitly approved in this conversation**. 
   in `.claude/groundwork/task-state.md` (see `${CLAUDE_SKILL_DIR}/../../guidelines/working-memory.md`).
   It is what survives a restart or compaction, so the next session resumes mid-task instead of
   re-deriving the plan.
+- **Escalate a blind spot found mid-build.** If a slice reveals a dimension the plan missed with
+  material consequences (a race, a cascade, a broken consumer, a domain rule), **stop and surface it** —
+  do not silently work around it. A silent workaround buries the decision the user should make. See
+  `${CLAUDE_SKILL_DIR}/../../guidelines/blind-spot-protocol.md`.
 
 ## Before finishing
 

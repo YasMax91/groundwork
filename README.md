@@ -12,6 +12,12 @@ repositories.
   Two review gates: `adversarial-verifier` (is the "it works" claim true?) and `conformance-reviewer`
   (does the diff satisfy the spec's acceptance criteria?). A clarify pass precedes the plan; a converge
   re-check and ADR capture (`docs/adr/`) close out cross-cutting L3/L4 work.
+- **Blind-spot surfacing** — the agent proactively raises what you did not think to ask: unintended
+  consequences, missing requirements, and domain/product angles you are not the expert in — each with
+  its consequence and a recommended default, in plain language. A `blind spots` block in the first
+  response (distinct from clarify), the `blind-spot-mapper` agent in a fresh context for L3/L4, and
+  touchpoints across spec, implementation, review, and frontend handoff. Calibrated against noise —
+  material items only, "none" is honest. See `guidelines/blind-spot-protocol.md`.
 - **Frontend handoff** — after the final implementation and green gates, the `frontend-handoff` skill
   writes documentation for the frontend developer under `ai/frontend/` (a living reference doc per
   area + a dated handoff delta) — what to build, when, how, why, where, and the API contract, in
@@ -99,8 +105,8 @@ once with `claude --debug` in your project before enabling.
 ```
 .claude-plugin/   plugin.json · marketplace.json
 skills/           start-task · spec · implement-approved · risk-review · final-check · ground-integration · frontend-handoff · init · deep-grounding · deep-discovery · deep-review
-agents/           impact-mapper · grounded-researcher · adversarial-verifier · conformance-reviewer
+agents/           impact-mapper · blind-spot-mapper · grounded-researcher · adversarial-verifier · conformance-reviewer
 hooks/            hooks.json · session-start.sh · pre-compact.sh · format-on-edit.sh · done-gate.sh · test-gate.sh · trim-output.sh · pre-tool-guard.sh · statusline.sh
-guidelines/       ai-sdd-process · grounding-protocol · laravel-standards · tdd-protocol · working-memory
+guidelines/       ai-sdd-process · grounding-protocol · blind-spot-protocol · laravel-standards · tdd-protocol · working-memory
 templates/        project/ · specs/ · frontend/
 ```

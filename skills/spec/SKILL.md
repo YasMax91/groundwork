@@ -28,7 +28,11 @@ a useful spec beats a perfect document.
    `docs/adr/NNNN-<slug>.md` from `${CLAUDE_SKILL_DIR}/../../templates/adr.md` (≥2 options + chosen +
    why); keep feature-local trade-offs here in the spec.
 6. **List risks, assumptions, and the verification plan** (which tests — written test-first — and
-   which gates). See the TDD protocol (`${CLAUDE_SKILL_DIR}/../../guidelines/tdd-protocol.md`).
+   which gates). See the TDD protocol (`${CLAUDE_SKILL_DIR}/../../guidelines/tdd-protocol.md`). Also
+   fill the spec's **"Blind spots considered"** section — the dimensions the request did not name but
+   the domain demands (per `${CLAUDE_SKILL_DIR}/../../guidelines/blind-spot-protocol.md`), each closed
+   in this spec or deliberately deferred with the reason; pull from the Discovery blind-spot pass /
+   `blind-spot-mapper` output. Material only; "none" is valid.
 7. **Hand off with a Russian summary (выжимка).** After the spec file is saved, post a short Russian
    digest to chat so the user grasps the essentials without reading the full English document — cover
    что строим (goal), что входит в MVP и что отложено, ключевые технические решения и компромиссы,

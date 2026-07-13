@@ -2,8 +2,8 @@
 
 Generic spec-driven workflow for any RaDevs Laravel project. Domain facts live in the
 project's `AGENTS.md`; this file is the process. Read together with
-[grounding-protocol.md](grounding-protocol.md), [laravel-standards.md](laravel-standards.md), and
-[tdd-protocol.md](tdd-protocol.md).
+[grounding-protocol.md](grounding-protocol.md), [blind-spot-protocol.md](blind-spot-protocol.md),
+[laravel-standards.md](laravel-standards.md), and [tdd-protocol.md](tdd-protocol.md).
 
 ## Operating modes
 
@@ -12,7 +12,9 @@ scope the edit tightly, never the investigation.
 
 - **Discovery** — inspect files, search code, read docs/CRD, summarize current behavior. Map the
   connections outward (callers, consumers, events, jobs, policies, FK/cascades, covering tests), not
-  just the directly-involved files. Draft assumptions. No edits.
+  just the directly-involved files. Draft assumptions. Surface **blind spots** — the dimensions the
+  request omits (unintended consequences, missing requirements, domain/product angles the user is not
+  the expert in), per [blind-spot-protocol.md](blind-spot-protocol.md). No edits.
 - **Spec** — create/update a spec under `docs/specs/`. No production code.
 - **Plan** — propose steps, list changed files, tests, verification, deployment impact. No edits
   until approved.
@@ -43,11 +45,12 @@ fit, so only Discovery and Verification fan out.
 - **L0 Tiny** — no subagents. Inline.
 - **L1 Small** — self-trace (a few targeted greps). No agent.
 - **L2 Normal** — 1 `impact-mapper` (cache-aware). Add `grounded-researcher` only if an external API
-  is touched.
-- **L3 High-risk** — `impact-mapper` + `grounded-researcher` (if integration) for discovery;
-  `conformance-reviewer` + `adversarial-verifier` for verification. May escalate to `deep-discovery` /
-  `deep-grounding` / `deep-review`.
-- **L4 Critical** — as L3, plus an adversarial panel (≥2 skeptics) on the riskiest claims.
+  is touched; `blind-spot-mapper` optional when the task has real product/domain surface.
+- **L3 High-risk** — `impact-mapper` + `blind-spot-mapper` + `grounded-researcher` (if integration) for
+  discovery; `conformance-reviewer` + `adversarial-verifier` for verification. May escalate to
+  `deep-discovery` / `deep-grounding` / `deep-review`.
+- **L4 Critical** — as L3 (blind-spot-mapper required), plus an adversarial panel (≥2 skeptics) on the
+  riskiest claims and blind spots.
 
 **Implementation is single-threaded.** Work one TDD slice at a time — no parallel coding agents. The
 fan-out above is for Discovery and Verification only.
@@ -60,7 +63,9 @@ fan-out above is for Discovery and Verification only.
    `database-schema`, `search-docs`) over recalling from memory.
 4. Map the connections (blast radius) outward — callers/consumers, events/listeners, observers, jobs,
    scheduled commands, policies, FK/cascades, API consumers of the response shape, and covering tests.
-   For L2+ spawn the `impact-mapper` agent; for L0/L1 a quick self-trace is enough.
+   For L2+ spawn the `impact-mapper` agent; for L0/L1 a quick self-trace is enough. Then surface
+   **blind spots** — the dimensions the request omits (per [blind-spot-protocol.md](blind-spot-protocol.md));
+   for L3/L4 spawn `blind-spot-mapper` in a fresh context alongside `impact-mapper`.
 5. Consult the CRD for business intent when the task touches domain/API/schema/permissions/
    financial behavior/notifications/reports/integrations/deployment.
 6. Do not write code in the first response.
@@ -71,8 +76,9 @@ fan-out above is for Discovery and Verification only.
 
 First-response structure: current understanding · classification · files/docs to inspect ·
 connections / blast radius · business/CRD areas affected · draft spec · acceptance criteria ·
-clarifications (ambiguities/conflicts/gaps to resolve before planning) · plan · risks/assumptions ·
-stop point.
+clarifications (ambiguities/conflicts/gaps to resolve before planning) · blind spots (dimensions you
+did not ask about — unintended consequences, missing requirements, domain/product angles; per the
+blind-spot protocol) · plan · risks/assumptions · stop point.
 
 ## Definition of Ready
 
@@ -80,7 +86,7 @@ Goal clear · current behavior inspected · affected files identified · connect
 events, jobs, policies, FK/cascades, consumers of the response shape, covering tests) · acceptance
 criteria written · validation/authorization/API/DB/queue impact known · tests listed (the red list —
 fail-first tests covering the criteria, for L2+/bug fixes) · deployment
-risks identified · assumptions documented.
+risks identified · blind spots surfaced (resolved or explicitly accepted) · assumptions documented.
 
 ## Human approval gates (stop and ask)
 
@@ -117,4 +123,5 @@ or noted out of scope)? · API contracts preserved? · controllers thin? ·
 logic in services? · validation in FormRequest? · authorization present where needed? · multi-step
 writes transactional? · resources preserve shape? · N+1 handled? · migrations production-safe? ·
 tests written test-first (red→green) for covered work? · each acceptance-criterion ID mapped to a
-passing test? · gates run or skip-reason stated? · risks/assumptions documented?
+passing test? · gates run or skip-reason stated? · blind spots surfaced (or none)? ·
+risks/assumptions documented?

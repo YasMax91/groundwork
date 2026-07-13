@@ -38,4 +38,12 @@ Stable IDs; append, never renumber. AC1 is the executable proof.
 Faked integration, written before the code; each names its AC ID(s): dispatch · error paths · retries
 · side effects — covers: AC1, AC2, AC3. The executable proof (AC1) is the first red test.
 
+## Blind spots considered
+
+Dimensions the request did not name but the integration demands — webhook ordering/retries/idempotency,
+partial failure, external-vs-local state drift, secret rotation (per the blind-spot protocol). Material
+only; "none" is valid.
+
+- <what was missed> → <consequence if ignored> → <closed here / deferred because …>
+
 ## Risks

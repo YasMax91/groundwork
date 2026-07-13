@@ -34,4 +34,12 @@ Stable IDs; append, never renumber.
 Feature-first, written before the code; each names its AC ID(s): request validation (valid + invalid)
 and response shape — covers: AC1, AC2, AC3.
 
+## Blind spots considered
+
+Dimensions the request did not name but the contract demands — client migration, versioning,
+backward-compat, downstream consumers of the response shape (per the blind-spot protocol). Material
+only; "none" is valid.
+
+- <what was missed> → <consequence if ignored> → <closed here / deferred because …>
+
 ## Risks

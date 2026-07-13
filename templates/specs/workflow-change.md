@@ -34,6 +34,14 @@ Stable IDs; append, never renumber.
 Unit-first for the transition map (allowed · blocked); feature for endpoint-level side effects.
 Written before the code; each names its AC ID(s) — covers: AC1, AC2, AC3.
 
+## Blind spots considered
+
+Dimensions the request did not name but the state model demands — concurrent transitions, side-effect
+idempotency, partial-failure recovery, entities already in-flight (per the blind-spot protocol).
+Material only; "none" is valid.
+
+- <what was missed> → <consequence if ignored> → <closed here / deferred because …>
+
 ## Risks
 
 Must not bypass existing workflow/state guards.

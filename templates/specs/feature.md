@@ -45,4 +45,12 @@ Each test names the AC ID(s) it proves; written fail-first before the code. Matc
 - feature (contract / validation / authz / response shape) — covers: AC1, AC2, AC3
 - unit (services / calculations / state transitions) — covers: <AC ids>
 
+## Blind spots considered
+
+Dimensions the request did not name but the domain demands — each closed here or deliberately deferred
+(blind-spot taxonomy: data/state · scale · security/privacy · compatibility · operability ·
+domain/product · integrations). Material only; "none" is valid.
+
+- <what was missed> → <consequence if ignored> → <closed here / deferred because …>
+
 ## Risks / assumptions / deployment notes
