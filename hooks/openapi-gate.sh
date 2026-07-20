@@ -1,0 +1,138 @@
+#!/usr/bin/env bash
+# RaDevs plugin :: Stop hook — the OpenAPI contract gate.
+# The published spec must never lag the code: if this task changed the API contract surface
+# (routes, controllers, FormRequests, Resources) and nothing in the diff touched the OpenAPI
+# spec, "done" is blocked. When annotations DID change, the spec is regenerated so broken
+# schemas fail here instead of in the frontend.
+#
+# Fail-safe by design — it must never block on an environment problem:
+#   * acts only in a RaDevs project (.groundwork.json) that actually has OpenAPI tooling;
+#   * opt-out via gates.openapi_on_stop=false;
+#   * ALLOW (exit 0) on any missing field, parse error, or uncertainty;
+#   * escape hatch: declare "OpenAPI: n/a — <reason>" in the task checkpoint when the change
+#     provably does not touch the contract (a pure internal refactor);
+#   * BLOCK via exit 2 + a stderr reason (fed back to the model so it self-corrects).
+set -uo pipefail
+
+[ -f .groundwork.json ] || exit 0
+[ "$(jq -r '.gates.openapi_on_stop' .groundwork.json 2>/dev/null)" = "false" ] && exit 0
+
+# --- does this project document an API at all? explicit config wins, else auto-detect ---
+enabled="$(jq -r '.openapi.enabled // empty' .groundwork.json 2>/dev/null || true)"
+if [ "$enabled" = "false" ]; then
+  exit 0
+elif [ "$enabled" != "true" ]; then
+  # Auto-detect the toolchain; silent no-op when the project has none.
+  grep -qE 'darkaonline/l5-swagger|zircote/swagger-php' composer.json 2>/dev/null || exit 0
+fi
+
+git rev-parse --is-inside-work-tree >/dev/null 2>&1 || exit 0
+
+# --- changed paths in the working tree (staged, unstaged, untracked) ---
+# `-uall` is required: without it a brand-new directory is reported as the directory itself
+# ("?? app/Http/Resources/"), which would hide every file in it from the surface check.
+# Then strip the 2-char status + space, and take the target of a rename.
+changed="$(git status --porcelain -uall 2>/dev/null \
+  | sed -e 's/^...//' -e 's/.* -> //' -e 's/^"//' -e 's/"$//' || true)"
+[ -n "$changed" ] || exit 0
+
+# --- did the change touch the API contract surface? ---
+surface="$(jq -r '.openapi.surface[]?' .groundwork.json 2>/dev/null || true)"
+[ -n "$surface" ] || surface='routes/
+app/Http/Controllers/
+app/Http/Requests/
+app/Http/Resources/'
+
+touched=""
+while IFS= read -r f; do
+  [ -n "$f" ] || continue
+  case "$f" in *.php) ;; *) continue ;; esac
+  while IFS= read -r dir; do
+    [ -n "$dir" ] || continue
+    case "$f" in "$dir"*|*/"$dir"*) touched="${touched}${f}"$'\n'; break ;; esac
+  done <<< "$surface"
+done <<< "$changed"
+[ -n "$touched" ] || exit 0
+
+# --- was the spec touched in the same change? ---
+# Annotations may live outside the surface files (dedicated schema classes), and some projects
+# keep a static document — so look across the whole diff, not just the touched endpoints.
+spec_touched=0
+
+# (a) tracked files: an added/removed line carrying an OA annotation
+if git diff HEAD 2>/dev/null | grep -qE '^[+-].*OA\\'; then
+  spec_touched=1
+fi
+
+# (b) untracked files that already carry annotations (a brand-new documented controller/schema)
+if [ "$spec_touched" -eq 0 ]; then
+  while IFS= read -r f; do
+    [ -n "$f" ] || continue
+    [ -f "$f" ] || continue
+    if grep -qE 'OA\\' "$f" 2>/dev/null; then spec_touched=1; break; fi
+  done <<< "$changed"
+fi
+
+# (c) a static spec document changed (projects that hand-maintain the YAML/JSON)
+if [ "$spec_touched" -eq 0 ]; then
+  if printf '%s\n' "$changed" | grep -qiE '(openapi|swagger|api-docs).*\.(ya?ml|json)$'; then
+    spec_touched=1
+  fi
+fi
+
+# --- escape hatch: the task declared the contract untouched ---
+if [ "$spec_touched" -eq 0 ] && [ -f .claude/groundwork/task-state.md ]; then
+  if grep -qiE '^[[:space:]]*-?[[:space:]]*OpenAPI:[[:space:]]*n/?a' .claude/groundwork/task-state.md 2>/dev/null; then
+    exit 0
+  fi
+fi
+
+if [ "$spec_touched" -eq 0 ]; then
+  {
+    echo "groundwork openapi-gate: the API contract surface changed but the OpenAPI spec did not — not done yet."
+    echo "Changed contract files:"
+    printf '%s' "$touched" | sed 's/^/  /'
+    echo "Update the annotations for every touched endpoint — each response code the endpoint can return"
+    echo "(incl. 401/403/404/422), the request body from the FormRequest rules, and the response schema from"
+    echo "the JsonResource. See guidelines/openapi-protocol.md."
+    echo "If this change provably does not touch the contract (pure internal refactor), record"
+    echo "'- OpenAPI: n/a — <reason>' in .claude/groundwork/task-state.md. (disable with gates.openapi_on_stop=false)"
+  } >&2
+  exit 2
+fi
+
+# --- the spec was touched: prove it still generates cleanly ---
+gen="$(jq -r '.commands.openapi_generate // empty' .groundwork.json 2>/dev/null || true)"
+[ -n "$gen" ] || gen='./vendor/bin/sail artisan l5-swagger:generate'
+
+# Environment problems must not block: skip when the runner is unavailable.
+case "$gen" in
+  *vendor/bin/sail*) [ -x ./vendor/bin/sail ] || exit 0 ;;
+esac
+command -v timeout >/dev/null 2>&1 && gen="timeout 120 $gen"
+
+# shellcheck disable=SC2086
+out="$($gen 2>&1)"; status=$?
+if [ "$status" -ne 0 ]; then
+  # A missing artisan command / container down is an env issue, not a bad spec — do not block.
+  case "$out" in
+    *"is not defined"*|*"Command \""*"\" is not defined"*|*"Could not open input file"*|*"Cannot connect"*|*"No such container"*)
+      exit 0 ;;
+  esac
+  {
+    echo "groundwork openapi-gate: OpenAPI generation FAILED — the spec is broken, not done yet."
+    printf '%s\n' "$out" | tail -30
+  } >&2
+  exit 2
+fi
+
+# swagger-php reports schema problems as warnings on a zero exit — treat them as failures.
+if printf '%s' "$out" | grep -qiE '(warning|error|deprecated).*(@OA|OA\\|\$ref|operationid|schema)'; then
+  {
+    echo "groundwork openapi-gate: OpenAPI generated with warnings — unresolved refs / duplicate operationIds / malformed schemas."
+    printf '%s\n' "$out" | grep -iE 'warning|error' | tail -20
+  } >&2
+  exit 2
+fi
+
+exit 0

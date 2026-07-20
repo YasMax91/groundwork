@@ -15,6 +15,12 @@ Run the gates and the self-review before declaring the work done. Use the projec
   `./vendor/bin/sail artisan test --filter=...`, then `./vendor/bin/sail composer test`. They must be
   **green** — the Stop gate also runs the suite on changed PHP (`gates.test_on_stop`). Confirm the
   tests for the changed behavior were written **test-first** (red→green).
+- OpenAPI: if the change touched an endpoint, regenerate the spec
+  (`./vendor/bin/sail artisan l5-swagger:generate`) — it must finish with **no errors and no
+  warnings**, and every touched endpoint must be documented to the standard in
+  `${CLAUDE_SKILL_DIR}/../../guidelines/openapi-protocol.md`. The `openapi` Stop gate enforces this;
+  if the change provably does not touch the contract, record `- OpenAPI: n/a — <reason>` in the
+  checkpoint rather than working around the gate.
 
 Report results honestly. If a gate could not run (Sail/services unavailable), say so explicitly.
 
@@ -23,8 +29,10 @@ Report results honestly. If a gate could not run (Sail/services unavailable), sa
 followed the spec? · only related files changed? · API contracts preserved? · controllers thin? ·
 logic in services? · validation in FormRequest? · authorization present? · multi-step writes
 transactional? · resources preserve shape? · N+1 handled? · migrations production-safe? · tests
-written test-first (red→green)? · each acceptance-criterion ID mapped to a passing test? · OpenAPI
-updated when contracts changed? · gates run or skip-reason stated?
+written test-first (red→green)? · each acceptance-criterion ID mapped to a passing test? · **every
+touched endpoint documented in OpenAPI to the protocol** (all reachable status codes, request body
+from the FormRequest, response schema from the JsonResource, examples/enums) and generation clean? ·
+gates run or skip-reason stated?
 
 ## Conformance review (L2+)
 

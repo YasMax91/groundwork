@@ -104,8 +104,11 @@ considered options + the chosen one + why. Feature-local trade-offs stay in the 
 implementation matches the approved spec · public API preserved or intentionally changed ·
 validation via FormRequest · authorization handled · business logic in services · resources preserve
 response shape · multi-step writes transactional · focused tests written test-first (red→green) and
-passing · every acceptance-criterion ID mapped to a passing test (no AC unmapped) · OpenAPI updated when
-contracts change · format + static analysis run (or skip reason stated) · migration/deployment impact
+passing · every acceptance-criterion ID mapped to a passing test (no AC unmapped) · **OpenAPI current and
+complete for every touched endpoint** — annotations updated in the same change, every reachable status
+code documented, request body from the FormRequest, response schema from the JsonResource, generation
+clean (see [openapi-protocol.md](openapi-protocol.md); the `openapi` Stop gate enforces it) ·
+format + static analysis run (or skip reason stated) · migration/deployment impact
 documented · frontend handoff docs in `ai/frontend` created/updated when the change touches the
 frontend-facing surface (run the `frontend-handoff` skill after the gates are green) · final report
 covers changed behavior, files, verification, risks, skipped work.

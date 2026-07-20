@@ -27,7 +27,13 @@ Only proceed if the spec/plan was **explicitly approved in this conversation**. 
 - Confirm version-specific Laravel details with Boost `search-docs`; inspect schema with
   `database-schema` rather than guessing column names.
 - Preserve public API shapes, route names, validation semantics, and permissions unless the spec
-  explicitly changes them. Update OpenAPI when a contract changes.
+  explicitly changes them.
+- **Update the OpenAPI annotations in the same slice that changes the endpoint** — not at the end, not
+  "later". A touched endpoint documents every reachable response code (success + 401/403/404/409/422),
+  its request body derived from the FormRequest rules, and its response schema derived from the
+  JsonResource, with examples and enums from the real PHP enums. The `openapi` Stop gate blocks "done"
+  when the contract surface changed and the spec did not. See
+  `${CLAUDE_SKILL_DIR}/../../guidelines/openapi-protocol.md`.
 - Drive the work with **focused tests written first** — behavior, validation, authorization, response
   shape, workflow transitions, money, migrations, and any fixed bug (failing regression test before
   the fix).

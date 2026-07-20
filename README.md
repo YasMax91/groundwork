@@ -22,6 +22,13 @@ repositories.
   writes documentation for the frontend developer under `ai/frontend/` (a living reference doc per
   area + a dated handoff delta) — what to build, when, how, why, where, and the API contract, in
   Russian, no frontend code — then asks whether to commit (single line, no AI attribution).
+- **OpenAPI as contract** — `openapi-protocol` + a blocking `openapi` Stop gate: an endpoint change
+  that ships without its annotations is not "done". Every operation is complete to the last detail —
+  every reachable status code (success + 401/403/404/409/422), the request body derived from the
+  FormRequest rules, the response schema derived from the JsonResource, enums from the real PHP enums —
+  and generation must be clean. The gate is fail-safe (silent without OpenAPI tooling) with a visible
+  escape hatch (`OpenAPI: n/a — <reason>` in the checkpoint). The `openapi-audit` skill repairs
+  pre-existing spec debt across a whole project.
 - **TDD** — `tdd-protocol`: test-first (red→green→refactor) for L2+ features and bug fixes; the test
   suite is a Stop gate. The layered split matches the standards — feature tests for the contract,
   unit tests for services/calculations/state transitions. Acceptance criteria are EARS statements with
@@ -85,7 +92,7 @@ agents in `/agents`, and confirm the hooks fire on edits.
 
 Declares the runner and the **database engine** (`database.default` — `mysql`/`pgsql`, the target for
 code and tests; never SQLite), and overrides the gate commands (`format`, `analyse`, `test`) and
-toggles (`format_on_edit`, `analyse_on_stop`, `test_on_stop`, plus the `PreToolUse` enforcement
+toggles (`format_on_edit`, `analyse_on_stop`, `test_on_stop`, `openapi_on_stop`, plus the `PreToolUse` enforcement
 toggles `enforce_runner` and `lock_shipped_migrations` — default **on** — and `lock_edits_in_discovery`
 — default **off**). A `memory` block toggles the working-memory layer (`session_context`,
 `checkpoint`, `impact_cache` — all default on). Defaults to Sail + MySQL.
@@ -93,6 +100,13 @@ toggles `enforce_runner` and `lock_shipped_migrations` — default **on** — an
 The plan-approval gate is the `start-task` → approval → `implement-approved` split; enable
 `lock_edits_in_discovery` (or Claude Code's native `defaultMode: "plan"`) for a hard
 read-only-while-planning gate.
+
+`gates.openapi_on_stop` (default **on**) blocks "done" when the API contract surface changed but the
+OpenAPI spec did not, then regenerates the document and blocks again if generation errors or warns.
+It no-ops silently unless the project has `darkaonline/l5-swagger` or `zircote/swagger-php`; override
+the generate command with `commands.openapi_generate`, the watched paths with `openapi.surface[]`
+(defaults to `routes/`, `app/Http/Controllers/`, `app/Http/Requests/`, `app/Http/Resources/`), and
+force it on for a project with a hand-maintained document via `openapi.enabled: true`.
 
 `gates.trim_tool_output` (default **off**) enables a fail-safe `PostToolUse` trimmer that collapses
 passing-test / clean-analysis spam from noisy commands to save context. It never trims when any
@@ -104,9 +118,9 @@ once with `claude --debug` in your project before enabling.
 
 ```
 .claude-plugin/   plugin.json · marketplace.json
-skills/           start-task · spec · implement-approved · risk-review · final-check · ground-integration · frontend-handoff · init · deep-grounding · deep-discovery · deep-review
+skills/           start-task · spec · implement-approved · risk-review · final-check · ground-integration · frontend-handoff · openapi-audit · init · deep-grounding · deep-discovery · deep-review
 agents/           impact-mapper · blind-spot-mapper · grounded-researcher · adversarial-verifier · conformance-reviewer
-hooks/            hooks.json · session-start.sh · pre-compact.sh · format-on-edit.sh · done-gate.sh · test-gate.sh · trim-output.sh · pre-tool-guard.sh · statusline.sh
-guidelines/       ai-sdd-process · grounding-protocol · blind-spot-protocol · laravel-standards · tdd-protocol · working-memory
+hooks/            hooks.json · session-start.sh · pre-compact.sh · format-on-edit.sh · done-gate.sh · test-gate.sh · openapi-gate.sh · trim-output.sh · pre-tool-guard.sh · statusline.sh
+guidelines/       ai-sdd-process · grounding-protocol · blind-spot-protocol · openapi-protocol · laravel-standards · tdd-protocol · working-memory
 templates/        project/ · specs/ · frontend/
 ```

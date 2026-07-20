@@ -27,6 +27,7 @@ Keep it **terse** — it is re-injected every session, so every line costs. Temp
 - Level: L0..L4
 - Spec: docs/specs/<file>.md | (none yet)
 - Impact map: .claude/groundwork/impact/<slug>.md | (n/a)
+- OpenAPI: <endpoints this task documents> | n/a — <why the contract is untouched>
 - Updated: <YYYY-MM-DD>
 
 ## Plan (slices)
@@ -40,6 +41,12 @@ Keep it **terse** — it is re-injected every session, so every line costs. Temp
 ## Open unknowns / approvals needed
 - <blocking item, or "none">
 ```
+
+The `OpenAPI:` line is also the **`openapi` Stop gate's escape hatch**: when a task changes the
+contract surface (routes, controllers, FormRequests, Resources) the gate demands matching spec
+changes, and `n/a — <reason>` is the deliberate, visible way to declare a pure internal refactor.
+Never write `n/a` to silence the gate on a real contract change — see
+[openapi-protocol.md](openapi-protocol.md).
 
 Who writes it:
 

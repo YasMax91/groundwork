@@ -66,6 +66,11 @@
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/hooks/test-gate.sh",
             "statusMessage": "RaDevs: running tests…"
+          },
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/openapi-gate.sh",
+            "statusMessage": "RaDevs: checking OpenAPI…"
           }
         ]
       }

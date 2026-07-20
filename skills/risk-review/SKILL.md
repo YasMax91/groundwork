@@ -21,6 +21,10 @@ verifies every finding before reporting (only confirmed risks survive).
 - **API contract** — renamed/removed/retyped fields, changed enums, pagination shape, error format,
   route names, HTTP methods, or authorization behavior on existing endpoints. Additive is safer;
   breaking changes need explicit approval and OpenAPI updates.
+- **OpenAPI drift** — an endpoint changed without its annotations, a documented field that no longer
+  exists, a response code reachable in code but absent from the spec, a schema copy-pasted instead of
+  referenced. The published spec is what clients build against; drift is a contract bug, not a docs
+  nit. See `${CLAUDE_SKILL_DIR}/../../guidelines/openapi-protocol.md`.
 - **Permissions / RBAC** — every write endpoint has an authorization rule; no reliance on frontend
   visibility; allowed- and forbidden-user tests exist.
 - **Financial visibility** — hidden financial fields stay hidden in production-display/station

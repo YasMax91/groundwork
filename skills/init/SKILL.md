@@ -56,4 +56,11 @@ Use Boost and the codebase as the source of truth, and label every section:
    set `.groundwork.json` `ui.statusline` to `true`. Ask the user to confirm it renders once with
    `claude --debug`. The in-action hook messages and the session banner (`ui.status_messages`, default
    on) need no wiring.
-7. Present everything for review, highlighting only the `[assumed]` and `[needs you]` items.
+7. **Wire the OpenAPI gate.** Detect the toolchain (`darkaonline/l5-swagger` or `zircote/swagger-php`
+   in `composer.json`); the `openapi` Stop gate auto-enables from that and needs no configuration.
+   Set `commands.openapi_generate` if the project generates the document differently, and
+   `openapi.surface[]` if its API code lives outside the default paths. If the project documents an
+   API by hand (no generator), set `openapi.enabled: true` to force the gate on. Then sanity-check
+   coverage — compare `route:list` against the generated document; if endpoints are undocumented,
+   report the count and offer the `openapi-audit` skill rather than fixing it inside `init`.
+8. Present everything for review, highlighting only the `[assumed]` and `[needs you]` items.

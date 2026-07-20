@@ -27,13 +27,19 @@ a useful spec beats a perfect document.
    dependency, new architectural layer, workflow-state model), also write an ADR to
    `docs/adr/NNNN-<slug>.md` from `${CLAUDE_SKILL_DIR}/../../templates/adr.md` (≥2 options + chosen +
    why); keep feature-local trade-offs here in the spec.
-6. **List risks, assumptions, and the verification plan** (which tests — written test-first — and
+6. **Specify the OpenAPI delta when the task touches an endpoint** — for a new or changed route, the
+   spec states which operations gain or change, and what each one documents: request body (from the
+   FormRequest rules), response schema (from the JsonResource), and every reachable status code
+   (success + 401/403/404/409/422). Treat it as deliverable scope, not a footnote — the `openapi`
+   Stop gate blocks "done" without it. See
+   `${CLAUDE_SKILL_DIR}/../../guidelines/openapi-protocol.md`.
+7. **List risks, assumptions, and the verification plan** (which tests — written test-first — and
    which gates). See the TDD protocol (`${CLAUDE_SKILL_DIR}/../../guidelines/tdd-protocol.md`). Also
    fill the spec's **"Blind spots considered"** section — the dimensions the request did not name but
    the domain demands (per `${CLAUDE_SKILL_DIR}/../../guidelines/blind-spot-protocol.md`), each closed
    in this spec or deliberately deferred with the reason; pull from the Discovery blind-spot pass /
    `blind-spot-mapper` output. Material only; "none" is valid.
-7. **Hand off with a Russian summary (выжимка).** After the spec file is saved, post a short Russian
+8. **Hand off with a Russian summary (выжимка).** After the spec file is saved, post a short Russian
    digest to chat so the user grasps the essentials without reading the full English document — cover
    что строим (goal), что входит в MVP и что отложено, ключевые технические решения и компромиссы,
    главные риски/допущения, и как будем проверять (acceptance + тесты). Include the spec file path.

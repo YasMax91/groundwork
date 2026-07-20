@@ -18,6 +18,11 @@ changes) require explicit approval.
 
 ## OpenAPI updates
 
+Per operation: which parts change (summary/description, tags, security, parameters, request body from
+the FormRequest rules, response schema from the JsonResource) and **every status code the endpoint can
+return** (success + 401/403/404/409/422). Name the shared components (resource schema, validation-error
+envelope, pagination envelope) it references. See `guidelines/openapi-protocol.md`.
+
 ## Acceptance criteria (EARS — each maps to a red test)
 
 Stable IDs; append, never renumber.
