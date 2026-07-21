@@ -19,7 +19,7 @@ This is distinct from every existing mechanism — keep them in their lanes, cit
 | Mechanism | Answers | blind-spot is different because |
 |---|---|---|
 | `impact-mapper` | "what will my change break?" (code couplings) | it predicts *missing dimensions*, not existing couplings |
-| clarify pass | "what did you mean?" (ambiguity in what was said) | it predicts what was **not** said at all |
+| clarify pass | "what did you mean, and which do you choose?" | it predicts what was **not** said at all |
 | `risk-review` | "is there a *known* risk in what was done?" (checklist) | it is open-ended and runs at **entry**, on the intent |
 | `adversarial-verifier` | "is the it-works claim true?" | it questions the *request*, not the claim |
 
@@ -43,7 +43,12 @@ Walk these categories against the task; a project may extend them in its `AGENTS
 
 Each item: **what's missed · why it matters (plain language) · consequence if ignored · recommendation
 or options · priority (high/med/low) · `verified`/`assumed`**. Surface them as a **blind spots** block,
-separate from `clarifications` (clarify resolves ambiguity in what was *said*; this predicts the omitted).
+separate from `clarifications` (clarify settles what the user must *decide*; this predicts what they
+never raised).
+
+**An item that needs a product call does not stay a bullet.** Hand it to the interview as a frontier
+question carrying your recommendation, per [clarify-protocol.md](clarify-protocol.md) — prediction
+surfaces the dimension, the interview settles it.
 
 ## Calibration — material only, or say "none" (the make-or-break rule)
 
@@ -61,11 +66,10 @@ An over-firing blind-spot pass is noise and erodes trust. So:
 
 ## How to run it
 
-- **L2**: author the **blind spots** block yourself in the `start-task` first response, walking the
-  taxonomy.
-- **L3/L4**: additionally spawn the **`blind-spot-mapper`** agent (fresh context — it sees the task +
-  plan, not your reasoning, so it is not infected by the framing that produced the blind spot). It
-  returns a ranked list in the output format above.
+The level sets the depth (see Calibration). Where `blind-spot-mapper` runs, it runs in a **fresh
+context** — it sees the task and the plan, not your reasoning, so the framing that produced the blind
+spot cannot reproduce it — and returns a ranked list in the output format above.
+
 - The `spec` skill records the resolved blind spots in the spec's "Blind spots considered" section;
   `implement-approved` escalates any new one found mid-build; `final-check` re-passes for blind spots the
   finished implementation itself created.

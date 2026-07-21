@@ -26,6 +26,9 @@ Use Boost and the codebase as the source of truth, and label every section:
   runs tests on SQLite (`:memory:`) while the app targets MySQL/Postgres, flag it — tests must run on
   the real engine. `[from code]`
 - **Domain entities** — Boost `database-schema` + Eloquent models. `[from code]`
+- **Domain language** — the word each concept goes by across models, routes, and the CRD. Where the
+  codebase and the business use different words for one thing, pick the one to keep and list the rest
+  as synonyms to avoid. `[from code · confirm]`
 - **Repo layout** — the real directory tree. `[from code]`
 - **Permissions & financial visibility** — routes + middleware + `spatie/permission` + fields like
   `hide_financial`. `[draft · verify]`

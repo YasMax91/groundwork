@@ -1,8 +1,8 @@
 # groundwork
 
-RaDevs' Claude Code plugin for Laravel backends. One central, versioned source for how we work, so
-projects stay thin and consistent instead of copy-pasting `AGENTS.md` / `CLAUDE.md` / skills between
-repositories.
+Claude Code plugin for Laravel backends — created and maintained by **Max Yastremskyi** (YasMax91).
+One central, versioned source for how the RaDevs team works, so projects stay thin and consistent
+instead of copy-pasting `AGENTS.md` / `CLAUDE.md` / skills between repositories.
 
 ## What's inside
 
@@ -10,14 +10,25 @@ repositories.
   `final-check`, `init`. Discovery fans out via the `impact-mapper` agent (scaled by task level
   L0–L4) — the full blast radius before planning, so changes stay scoped without missing a consumer.
   Two review gates: `adversarial-verifier` (is the "it works" claim true?) and `conformance-reviewer`
-  (does the diff satisfy the spec's acceptance criteria?). A clarify pass precedes the plan; a converge
-  re-check and ADR capture (`docs/adr/`) close out cross-cutting L3/L4 work.
+  (does the diff satisfy the spec's acceptance criteria?). A converge re-check and ADR capture
+  (`docs/adr/`) close out cross-cutting L3/L4 work.
+- **Interview loop** — `clarify-protocol` + `AskUserQuestion` rounds before the plan: facts are the
+  agent's to find, decisions are yours to make. Each question leads with the agent's recommendation, so
+  you can click through and still land somewhere defensible; scaled by level (L0/L1 barely ask, L3/L4 up
+  to three rounds), and every answer is recorded so a compaction never re-asks it. The `grill` skill
+  runs the same interview standalone — to stress-test a plan, a decision, or an idea that never becomes
+  code.
 - **Blind-spot surfacing** — the agent proactively raises what you did not think to ask: unintended
   consequences, missing requirements, and domain/product angles you are not the expert in — each with
   its consequence and a recommended default, in plain language. A `blind spots` block in the first
   response (distinct from clarify), the `blind-spot-mapper` agent in a fresh context for L3/L4, and
   touchpoints across spec, implementation, review, and frontend handoff. Calibrated against noise —
-  material items only, "none" is honest. See `guidelines/blind-spot-protocol.md`.
+  material items only, "none" is honest. See `guidelines/blind-spot-protocol.md`. A blind spot that
+  needs a product call is not left as a bullet — it becomes a question in the interview above.
+- **Living domain contract** — the project's `AGENTS.md` (domain entities, invariants, permissions,
+  integrations, and a domain-language glossary) is no longer written once by `init` and left to rot:
+  `final-check` updates it in the same change whenever the work adds, renames, or removes one of those,
+  so every later task reads a contract that still matches the code.
 - **Frontend handoff** — after the final implementation and green gates, the `frontend-handoff` skill
   writes documentation for the frontend developer under `ai/frontend/` (a living reference doc per
   area + a dated handoff delta) — what to build, when, how, why, where, and the API contract, in
@@ -118,9 +129,10 @@ once with `claude --debug` in your project before enabling.
 
 ```
 .claude-plugin/   plugin.json · marketplace.json
-skills/           start-task · spec · implement-approved · risk-review · final-check · ground-integration · frontend-handoff · openapi-audit · init · deep-grounding · deep-discovery · deep-review
+skills/           start-task · spec · implement-approved · risk-review · final-check · ground-integration · frontend-handoff · openapi-audit · grill · init · deep-grounding · deep-discovery · deep-review
 agents/           impact-mapper · blind-spot-mapper · grounded-researcher · adversarial-verifier · conformance-reviewer
 hooks/            hooks.json · session-start.sh · pre-compact.sh · format-on-edit.sh · done-gate.sh · test-gate.sh · openapi-gate.sh · trim-output.sh · pre-tool-guard.sh · statusline.sh
-guidelines/       ai-sdd-process · grounding-protocol · blind-spot-protocol · openapi-protocol · laravel-standards · tdd-protocol · working-memory
+guidelines/       ai-sdd-process · grounding-protocol · blind-spot-protocol · clarify-protocol · openapi-protocol · laravel-standards · tdd-protocol · working-memory
+docs/             skill-hygiene (author-facing) · specs/
 templates/        project/ · specs/ · frontend/
 ```

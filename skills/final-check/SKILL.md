@@ -67,6 +67,12 @@ state that is now async, a new failure path, a consumer the change now affects, 
 backfill. Surface any material one (per `${CLAUDE_SKILL_DIR}/../../guidelines/blind-spot-protocol.md`)
 as a handoff note or a new slice; "none" is a valid result.
 
+**Domain-drift check.** When the finished change added, renamed, or removed a domain entity, an
+invariant, a permission rule, an external integration, or a term, update the matching section of the
+project's `AGENTS.md` in this same change. That file is the contract every later task reads first, and
+`init` is its only other writer — left alone, it goes stale the day after onboarding. A refactor or a
+bug fix that introduced no new vocabulary changes nothing here.
+
 ## Close the checkpoint
 
 When the handoff is clean and the gates are green, mark the task done in

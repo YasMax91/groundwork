@@ -62,16 +62,12 @@ per resource, referenced everywhere.
 1. Regenerate the spec — `./vendor/bin/sail artisan l5-swagger:generate` (or the project's
    `commands.openapi_generate`). It must finish **without errors or warnings**; swagger-php reports
    unresolved refs, duplicate `operationId`s, and malformed schemas here.
-2. Diff-check: every route touched by the change has its operation updated in the same commit.
+2. Diff-check: every route touched by the change has its operation updated in the same commit, and a
+   field dropped from the code is dropped from the schema with it.
 3. For a new endpoint, confirm it appears in the generated document — a route with no annotation
    generates nothing and silently ships undocumented.
 
-## What counts as a violation
-
-Shipping a changed or new endpoint whose spec is missing, stale, or partial: no operation at all ·
-a response documented only as `200` when `422`/`403`/`404` are reachable · a request body described
-as a bare `object` · an enum typed as `string` · a resource field added in code but absent from the
-schema · a removed field still documented · generation that errors or warns.
+## Scope — this task, not the whole project
 
 Auditing and repairing a project's whole spec — including pre-existing gaps that predate the current
 task — is the `openapi-audit` skill's job; do not silently expand the current task into a

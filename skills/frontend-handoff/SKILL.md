@@ -28,7 +28,7 @@ to build the UI against this backend and the design.
 Only when the change touches the **frontend-facing surface**: endpoints, request/validation rules,
 response shape, authorization/visibility, workflow states the UI reflects, or new user-facing
 behavior. For a purely internal change with **no** frontend impact, say so explicitly and skip the
-docs — then go straight to the commit step. Do not fabricate a handoff for an invisible change.
+docs — then go straight to the commit step.
 
 ## Two document types (both live under `ai/frontend/`, the dir from `.groundwork.json` `docs.frontend`)
 
@@ -41,13 +41,9 @@ docs — then go straight to the commit step. Do not fabricate a handoff for an 
    hand over. Template: `${CLAUDE_SKILL_DIR}/../../templates/frontend/handoff.md`. **Always create one**
    for a frontend-facing change, covering **new · changed · removed (breaking)** functionality.
 
-So: new feature → create reference doc **and** a handoff doc. A change → update the affected reference
-docs **and** create a handoff doc.
-
 ## Steps
 
-1. Confirm the implementation is complete and `final-check` passed (gates green). Document the
-   **final** contract, not an intermediate one.
+1. Document the **final** contract, not an intermediate one.
 2. Identify the frontend-facing surface that changed. If none, state "нет влияния на фронтенд" and go
    to the commit step.
 3. New vs change: create or update the living reference doc(s) in `ai/frontend/` from the feature
@@ -58,9 +54,8 @@ docs **and** create a handoff doc.
    must account for or the UI breaks — async states (a request that returns before the work is done),
    empty/error/loading states, ordering/idempotency of calls, visibility rules. Flag them proactively
    (per the blind-spot protocol); do not just document the happy-path contract.
-5. Keep it derived from real code; label assumptions. No frontend code.
-6. Post a one-line pointer in chat (Russian) telling the user which docs were created/updated.
-7. Run the commit step.
+5. Post a one-line pointer in chat (Russian) telling the user which docs were created/updated.
+6. Run the commit step.
 
 ## Commit step
 

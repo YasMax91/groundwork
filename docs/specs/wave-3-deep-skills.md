@@ -32,7 +32,7 @@ single-agent flow.
 
 ## Why workflows (grounding)
 
-Anthropic's multi-agent research system: a lead agent delegates to specialized subagents in parallel;
+The multi-agent orchestrator-worker pattern: a lead agent delegates to specialized subagents in parallel;
 best for breadth-first independent work; ~15× the tokens of a single chat, so gate it behind value.
 The `Workflow` tool gives this deterministically (pipeline/parallel/loop), with `agentType` to spawn
 the plugin's own agents and `schema` for validated structured returns. Opt-in: invoking one of these
@@ -137,8 +137,8 @@ test** (AC7). Live full runs against real APIs are validated in a real project (
   inline role prompts (general agent carrying the agent's instructions).
 - **Opt-in semantics** — invoking the skill is the documented opt-in; the SKILL.md states this so the
   model proceeds without a second prompt.
-- **Assumption** — L3/L4 tasks are rare enough that ~15× cost on them is justified (Anthropic: only
-  worth it when task value is high).
+- **Assumption** — L3/L4 tasks are rare enough that ~15× cost on them is justified (only worth it when
+  task value is high).
 
 ## Rollout
 

@@ -34,6 +34,9 @@ Keep it **terse** — it is re-injected every session, so every line costs. Temp
 - [ ] <slice> — red test: <path> — status: red|green
 - [x] <done slice>
 
+## Decisions
+- <decision> — <option the user chose> — <YYYY-MM-DD>
+
 ## Verified vs assumed
 - verified: <fact + evidence>
 - assumed: <fact>
@@ -51,7 +54,9 @@ Never write `n/a` to silence the gate on a real contract change — see
 Who writes it:
 
 - **start-task** — create/overwrite it once the plan is drafted (mode, level, spec path, slice list
-  as the red list, assumptions, open approvals).
+  as the red list, assumptions, open approvals), and record every interview answer under
+  `## Decisions`. Read that section before asking anything — a decision the user already made is never
+  re-asked, whatever the transcript lost (see [clarify-protocol.md](clarify-protocol.md)).
 - **implement-approved** — update it as each slice goes red→green; flip `[ ]`→`[x]` and `red`→`green`.
 - **final-check** — on a clean handoff, mark the task done (or delete the file) so the next session
   starts fresh.

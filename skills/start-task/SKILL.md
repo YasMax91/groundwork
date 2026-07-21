@@ -44,28 +44,26 @@ Stay in **Discovery mode**: inspect and plan only, do not edit files until the p
    you did not ask about — consequences / missing requirements / domain-product angles, per the
    blind-spot protocol; material only, or "none") · test plan (red list —
    fail-first tests for L2+/bug fixes) · implementation plan · risks & assumptions · stop point.
-8. **Write the task checkpoint** to `.claude/groundwork/task-state.md` — mode, level, spec path, the
-   slice/red list, assumptions, open approvals — so the work survives a restart or compaction (the
-   `SessionStart` hook re-injects it automatically, no re-reading). This bookkeeping file under
-   `.claude/groundwork/` is workflow memory, not a code edit, so it is allowed in Discovery. Format:
-   `${CLAUDE_SKILL_DIR}/../../guidelines/working-memory.md`.
-9. **Stop and wait for explicit approval** before implementing.
+8. **Interview for the decisions that are the user's.** Run the clarify rounds per
+   `${CLAUDE_SKILL_DIR}/../../guidelines/clarify-protocol.md`: ask the frontier in one
+   `AskUserQuestion` call (≤4 questions, each led by your recommendation and its consequence), let each
+   answer push the frontier outward, and stop when it is empty. Scaled by level — **L0/L1** at most one
+   question, **L2** one round, **L3/L4** up to **3** rounds with anything unresolved recorded as an
+   explicit assumption. A blind spot that needs a product call enters here as a question, not as a
+   prose bullet. Look up every fact yourself; never spend a question on one.
+9. **Write the task checkpoint** to `.claude/groundwork/task-state.md` — mode, level, spec path, the
+   slice/red list, the decisions just settled, assumptions, open approvals — so the work survives a
+   restart or compaction (the `SessionStart` hook re-injects it automatically, no re-reading). This
+   bookkeeping file under `.claude/groundwork/` is workflow memory, not a code edit, so it is allowed in
+   Discovery. Format: `${CLAUDE_SKILL_DIR}/../../guidelines/working-memory.md`.
+10. **Stop and wait for explicit approval** before implementing.
 
 ## Rules
 
-- **Map before you plan.** Discovery is wide, the change is narrow — scope the edit tightly, never
-  the investigation. An unmapped consumer is an unlisted risk.
-- **Clarify before you plan.** Surface ambiguities, conflicting constraints, and gaps as explicit
-  questions; resolve the blocking ones before producing the plan — under-specification is cheapest to
-  fix here.
-- **Surface blind spots — don't wait to be asked.** Predict the dimensions the request omits — the
-  unintended consequence, the missing requirement, the domain/product angle the user is not expert in —
-  and give each its consequence and a recommended default, in plain language. Material and non-obvious
-  only; never re-raise what the impact map / clarify / risk-review already own; "none" is honest. This
-  is distinct from clarify (which resolves ambiguity in what was *said*). See
-  `${CLAUDE_SKILL_DIR}/../../guidelines/blind-spot-protocol.md`.
+- **Clarify before you plan.** Facts are yours to find, decisions are the user's to make — see
+  `${CLAUDE_SKILL_DIR}/../../guidelines/clarify-protocol.md`.
 - Do not invent business rules — derive them from CRD, code, or an explicit user decision.
 - Label every claim as `verified` (with evidence) or `assumed`. Never use unqualified "done".
-- **Plan tests first.** For L2+ and bug fixes, turn the acceptance criteria into a red list — the
-  fail-first tests written before code. See the TDD protocol (`${CLAUDE_SKILL_DIR}/../../guidelines/tdd-protocol.md`).
+- **Plan tests first.** Turn the acceptance criteria into the red list before any code — see
+  `${CLAUDE_SKILL_DIR}/../../guidelines/tdd-protocol.md`.
 - For a normal feature or risky change, write a spec with the `spec` skill before implementing.

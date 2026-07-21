@@ -14,7 +14,9 @@ scope the edit tightly, never the investigation.
   connections outward (callers, consumers, events, jobs, policies, FK/cascades, covering tests), not
   just the directly-involved files. Draft assumptions. Surface **blind spots** — the dimensions the
   request omits (unintended consequences, missing requirements, domain/product angles the user is not
-  the expert in), per [blind-spot-protocol.md](blind-spot-protocol.md). No edits.
+  the expert in), per [blind-spot-protocol.md](blind-spot-protocol.md). Then **interview** the user for
+  the decisions only they can make — facts are yours to find — per
+  [clarify-protocol.md](clarify-protocol.md). No edits.
 - **Spec** — create/update a spec under `docs/specs/`. No production code.
 - **Plan** — propose steps, list changed files, tests, verification, deployment impact. No edits
   until approved.
@@ -57,28 +59,11 @@ fan-out above is for Discovery and Verification only.
 
 ## Startup sequence (non-trivial tasks)
 
-1. Read the project `AGENTS.md`.
-2. Classify the task.
-3. Inspect the directly-involved code first — prefer Boost MCP tools (`application-info`,
-   `database-schema`, `search-docs`) over recalling from memory.
-4. Map the connections (blast radius) outward — callers/consumers, events/listeners, observers, jobs,
-   scheduled commands, policies, FK/cascades, API consumers of the response shape, and covering tests.
-   For L2+ spawn the `impact-mapper` agent; for L0/L1 a quick self-trace is enough. Then surface
-   **blind spots** — the dimensions the request omits (per [blind-spot-protocol.md](blind-spot-protocol.md));
-   for L3/L4 spawn `blind-spot-mapper` in a fresh context alongside `impact-mapper`.
-5. Consult the CRD for business intent when the task touches domain/API/schema/permissions/
-   financial behavior/notifications/reports/integrations/deployment.
-6. Do not write code in the first response.
-7. Draft a short, implementation-oriented spec.
-8. Produce an implementation plan.
-9. List assumptions, conflicts, risks, verification steps.
-10. Stop and wait for explicit approval.
-
-First-response structure: current understanding · classification · files/docs to inspect ·
-connections / blast radius · business/CRD areas affected · draft spec · acceptance criteria ·
-clarifications (ambiguities/conflicts/gaps to resolve before planning) · blind spots (dimensions you
-did not ask about — unintended consequences, missing requirements, domain/product angles; per the
-blind-spot protocol) · plan · risks/assumptions · stop point.
+The ordered steps and the first-response structure belong to the **`start-task`** skill
+([../skills/start-task/SKILL.md](../skills/start-task/SKILL.md)), which owns them — follow it there
+rather than a second copy that drifts. Three rules bind every path through it: the first response
+carries no code, no file is edited before the plan is approved, and a decision the user could have made
+is never assumed instead.
 
 ## Definition of Ready
 
@@ -86,7 +71,8 @@ Goal clear · current behavior inspected · affected files identified · connect
 events, jobs, policies, FK/cascades, consumers of the response shape, covering tests) · acceptance
 criteria written · validation/authorization/API/DB/queue impact known · tests listed (the red list —
 fail-first tests covering the criteria, for L2+/bug fixes) · deployment
-risks identified · blind spots surfaced (resolved or explicitly accepted) · assumptions documented.
+risks identified · blind spots surfaced (resolved or explicitly accepted) · every blocking decision
+answered by the user rather than assumed · assumptions documented.
 
 ## Human approval gates (stop and ask)
 
@@ -109,7 +95,8 @@ complete for every touched endpoint** — annotations updated in the same change
 code documented, request body from the FormRequest, response schema from the JsonResource, generation
 clean (see [openapi-protocol.md](openapi-protocol.md); the `openapi` Stop gate enforces it) ·
 format + static analysis run (or skip reason stated) · migration/deployment impact
-documented · frontend handoff docs in `ai/frontend` created/updated when the change touches the
+documented · **domain contract current** — the project's `AGENTS.md` reflects any entity, invariant,
+permission rule, integration, or term the change introduced · frontend handoff docs in `ai/frontend` created/updated when the change touches the
 frontend-facing surface (run the `frontend-handoff` skill after the gates are green) · final report
 covers changed behavior, files, verification, risks, skipped work.
 

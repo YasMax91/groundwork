@@ -28,6 +28,10 @@
 
 <core tables/models and how they relate>
 
+## Domain language                      <!-- from code + CRD · confirm -->
+
+<the one word to use for each domain concept, and the synonyms to avoid, so code, CRD, API, and agent name the same thing the same way — project-specific terms only, never general programming vocabulary>
+
 ## Repo layout                          <!-- from directory tree -->
 
 <where controllers / requests / resources / services / filters / models / migrations / tests live>

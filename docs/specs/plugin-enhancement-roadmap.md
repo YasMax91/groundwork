@@ -1,9 +1,11 @@
 # RaDevs Laravel-back plugin — enhancement roadmap
 
-Status: **complete** (2026-07-13) — Wave 1 (E4/E7/E6) v0.5.0 · Wave 0 spike · Wave 2 (E1) v0.6.0
+Status: **complete** (2026-07-21) — Wave 1 (E4/E7/E6) v0.5.0 · Wave 0 spike · Wave 2 (E1) v0.6.0
 (E2 dropped) · Wave 3 (E3) v0.7.0 · Wave 4 (E5/E8/E9) v0.8.0 · Wave 5 (status/UI, post-roadmap UX
-request) v0.9.0 · Wave 6 (blind-spot surfacing, post-roadmap UX request) v0.10.0. All shipped &
-conformance-verified · Owner: RaDevs
+request) v0.9.0 · Wave 6 (blind-spot surfacing, post-roadmap UX request) v0.10.0 · Wave 6.5 (OpenAPI
+contract gate, post-roadmap) v0.11.0 · Wave 7 (interview loop + living domain contract + skill
+hygiene, post-roadmap) v0.12.0. All shipped & conformance-verified · Author: Max Yastremskyi (YasMax91)
+· Owner: RaDevs
 
 A prioritized, grounded backlog of improvements to the `groundwork` plugin. The current
 plugin (v0.4.0) already implements most of the 2025–2026 frontier — just-in-time context via
@@ -135,12 +137,12 @@ short session. Everything in Wave 2/3 below is contingent on it.
 - **Why:** the current single-agent fan-out is the orchestrator-worker pattern done by hand; a Workflow
   makes it deterministic, parallel, and loop-until-dry. Best leverage for breadth-first work.
 - **Capability:** `Workflow` tool. Runtime-present; **confirm in Wave 0** it is available to the end
-  user and that invoking the skill is a valid opt-in. Anthropic multi-agent research post for the
-  pattern (`verified`).
+  user and that invoking the skill is a valid opt-in. The tool provides the deterministic
+  orchestrator-worker pattern (`verified`).
 - **Files:** new `skills/deep-discovery/SKILL.md`, `skills/deep-grounding/SKILL.md`,
   `skills/deep-review/SKILL.md` (each may bundle a workflow script template); `README.md`; cross-links
   from `start-task` / `ground-integration` / `risk-review` ("for L3/L4, escalate to the deep variant").
-- **Risk (Med):** multi-agent uses ~15× the tokens of a single thread (Anthropic). Mitigation: gate
+- **Risk (Med):** multi-agent uses ~15× the tokens of a single thread. Mitigation: gate
   strictly behind explicit skill invocation + L3/L4 only + reuse the impact-cache staleness check; the
   skills must `log()` what they fan out so cost is visible.
 - **Acceptance criteria:**
@@ -160,8 +162,8 @@ short session. Everything in Wave 2/3 below is contingent on it.
   red-list references the IDs; the Definition of Done checks every ID has a green test.
 - **Why:** turns free-form criteria into machine-checkable, traceable statements — the single biggest
   correctness payoff; tightens the existing TDD red→green and DoD.
-- **Capability:** none (pure methodology). Sources: Kiro specs (EARS), Sean Grove "The New Code"
-  (clause-IDs as tests). `verified`.
+- **Capability:** none (pure methodology). Uses EARS requirements syntax with clause-IDs linked to
+  tests. `verified`.
 - **Files:** edit all `templates/specs/*.md` (criteria section → EARS + IDs + `→ test:` link);
   `skills/spec/SKILL.md`; `guidelines/tdd-protocol.md` (red-list cites IDs); `guidelines/ai-sdd-process.md`
   (DoD: every AC ID has a passing test).
@@ -178,8 +180,8 @@ short session. Everything in Wave 2/3 below is contingent on it.
   after implementation that re-audits the codebase against the spec and appends any leftover work as
   tasks.
 - **Why:** catches under-specification at the cheapest point (pre-plan) and prevents silent
-  spec-drift at the end. From spec-kit's clarify/converge phases.
-- **Capability:** none (methodology). Source: GitHub spec-kit. `verified`.
+  spec-drift at the end — a clarify pass before the plan and a converge pass at the end.
+- **Capability:** none (methodology). `verified`.
 - **Files:** edit `skills/start-task/SKILL.md` (insert clarify before the plan); new
   `skills/converge/SKILL.md` *or* fold into `final-check`; `guidelines/ai-sdd-process.md` (modes).
 - **Risk (Low).**
@@ -218,8 +220,7 @@ short session. Everything in Wave 2/3 below is contingent on it.
   L3/L4 = mapper + researcher + verifier / the deep skills), plus a rule that **implementation (TDD
   slices) stays single-threaded** — only discovery/verification fan out.
 - **Why:** prevents over-spawning and wasted multi-agent token cost; coding is a poor multi-agent fit.
-- **Capability:** none (rule). Source: Anthropic multi-agent post + Building effective agents.
-  `verified`.
+- **Capability:** none (rule). `verified`.
 - **Files:** edit `guidelines/ai-sdd-process.md` (classification → fan-out table); `skills/start-task`,
   `skills/implement-approved`; note in the agent files.
 - **Risk (Low).**
@@ -233,8 +234,8 @@ short session. Everything in Wave 2/3 below is contingent on it.
   workflow-state logic), capture a 5-line ADR: 2–3 options with trade-offs + the chosen one + why.
 - **Why:** forces alternative exploration before lock-in and leaves durable decision memory for future
   sessions.
-- **Capability:** none (artifact). Source: design-alternatives `verified` (Building effective agents);
-  **ADR-helps-AI is `assumed`** (practitioner-sourced, no Anthropic-primary endorsement found).
+- **Capability:** none (artifact). Design-alternatives capture `verified`; **ADR-helps-AI is `assumed`**
+  (practitioner-sourced, no primary endorsement found).
 - **Files:** new `templates/adr.md`; fold capture into `skills/spec/SKILL.md` *or* a tiny ADR step;
   `guidelines/ai-sdd-process.md` (the existing approval-gate list gains "write the ADR").
   **Resolved:** hybrid — feature-local trade-offs stay in the spec's tradeoffs section; `docs/adr/` is
@@ -281,6 +282,14 @@ Order by de-risking + value, not by tier number:
   (2026-07-13)** → [wave-6-blind-spot-surfacing.md](wave-6-blind-spot-surfacing.md). Proactive
   blind-spot protocol + `blind-spot-mapper` agent (fresh context) + pipeline touchpoints across spec /
   implementation / review / frontend handoff; conformance CONFORMS (W6-AC1–AC11), calibrated against noise.
+- **Wave 6.5 — OpenAPI contract gate (post-roadmap).** ✅ **shipped in v0.11.0** — `openapi-protocol`
+  + blocking `openapi` Stop gate + `openapi-audit` skill: an endpoint change that ships without its
+  annotations is not "done".
+- **Wave 7 — Interview loop + living domain contract + skill hygiene (post-roadmap, user UX request).**
+  ✅ **shipped in v0.12.0 (2026-07-21)** → [wave-7-clarify-loop.md](wave-7-clarify-loop.md). `clarify-protocol`
+  + `AskUserQuestion` interview rounds in `start-task` (facts are the agent's, decisions are the user's) +
+  the `grill` skill + a living domain contract kept current by `final-check` + an author-facing skill-hygiene
+  pass.
 
 Each wave is shippable on its own (commit + version bump + `/plugin reinstall` per the rollout
 convention). Suggested: Wave 1 → `v0.5.0`, Wave 2 → `v0.6.0`, Wave 3 → `v0.7.0`, Wave 4 → `v0.8.0`.
@@ -315,11 +324,7 @@ convention). Suggested: Wave 1 → `v0.5.0`, Wave 2 → `v0.6.0`, Wave 3 → `v0
 
 ## Source appendix (confidence)
 
-- Anthropic — *Effective context engineering for AI agents* · *Building effective agents* · *How we
-  built our multi-agent research system* · *Equipping agents with Agent Skills* · *Writing effective
-  tools for AI agents* (`verified`).
-- Claude Code docs — best-practices · hooks · skills · sub-agents · plugins-reference (`verified`).
-- GitHub spec-kit (`verified`); Amazon Kiro feature specs / EARS (`verified`); Sean Grove "The New
-  Code" (`verified` via transcript; primary is the recorded talk).
-- ADR canonical (adr.github.io) + practitioner usage with AI assistants (`assumed` — no Anthropic-
-  primary endorsement of ADR-for-AI was found).
+- Claude Code official docs — best-practices · hooks · skills · sub-agents · plugins-reference
+  (`verified`; the platform this plugin extends).
+- Industry SDD standards — EARS requirements syntax, ADR decision records (`verified` as standards;
+  ADR-for-AI usage `assumed`).
