@@ -65,12 +65,13 @@ done <<< "$changed"
 # that an L0 task never creates. But "looks like a comment" is a dangerous test in PHP, so this is
 # deliberately narrow — three ways it could be fooled, each closed:
 #   * `#[Attribute]` opens with '#' and is CODE (routing/middleware/policy) -> never comment-only;
-#   * `/* c */ realCode();` opens with '/*' and carries code -> a block opener only counts when the
-#     line holds nothing else;
+#   * anything after a closing `*/` is code, however the line starts -> covers both
+#     `/* a */ realCode(); /* b */` and a `*/ realCode();` block closer;
 #   * an `OA\` token anywhere means annotations moved -> not comment-only.
-# It also does NOT exit: it only waives the "annotations must change" demand, so the
-# broken-generation half below still runs. Anything uncertain (no diff, untracked file) falls
-# through to the normal path — a false block is recoverable, a false pass is not.
+# It waives only the "annotations must change" demand. It exits early *because* nothing was
+# documented and nothing needs regenerating; whenever the spec WAS touched, control reaches the
+# generation check below as usual. Anything uncertain (no diff, untracked file) falls through to
+# the normal path — a false block is recoverable, a false pass is not.
 comment_only=0
 files_arr=()
 while IFS= read -r f; do [ -n "$f" ] && files_arr+=("$f"); done <<< "$touched"
@@ -83,7 +84,12 @@ done
 if [ "$untracked_touched" -eq 0 ] && [ "${#files_arr[@]}" -gt 0 ]; then
   changed_lines="$(git diff HEAD -- "${files_arr[@]}" 2>/dev/null \
     | grep -E '^[+-]' | grep -vE '^(\+\+\+|---)' || true)"
-  if [ -n "$changed_lines" ] && ! printf '%s\n' "$changed_lines" | grep -q 'OA\\'; then
+  # A line carrying anything after a closing `*/` is code, however it starts. This one check closes
+  # both `/* a */ realCode(); /* b */` (a greedy one-line block) and a `*/ realCode();` block closer.
+  code_after_close=0
+  printf '%s\n' "$changed_lines" | sed -E 's/^[+-]//' | grep -qE '\*/[[:space:]]*[^[:space:]]' && code_after_close=1
+
+  if [ -n "$changed_lines" ] && [ "$code_after_close" -eq 0 ] && ! printf '%s\n' "$changed_lines" | grep -q 'OA\\'; then
     # Strip the +/- marker, then hunt for any line that is NOT purely a comment or blank.
     #   allowed: blank · `// …` · `# …` (but not `#[`) · `* …` · `*/` · `/* … */` complete on one
     #            line with nothing after it · `/**` or `/*` alone opening a block

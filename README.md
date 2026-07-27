@@ -97,7 +97,7 @@ instead of copy-pasting `AGENTS.md` / `CLAUDE.md` / skills between repositories.
   (use the runner) and edits to shipped migrations — opt-out per project. Every gate honors the declared
   `runner`: a `runner: host` project runs host commands and is never denied them, and a command that
   cannot run at all (missing binary, undefined script) is reported as an environment problem rather than a
-  red. All hooks are covered by tests — `bash hooks/tests/all.sh` (102 cases, 7 suites).
+  red. All hooks are covered by tests — `bash hooks/tests/all.sh` (117 cases, 7 suites).
 - **Parallel-session safety** — two sessions in one checkout share the test database, and the falsely-red
   gates that follow (`1412 Table definition has changed` → `1146 doesn't exist`) cost real debugging time.
   The test gate takes an exclusive lock around the suite so parallel runs queue; if it cannot be had in

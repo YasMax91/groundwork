@@ -12,7 +12,27 @@
   bypass reproduced as a failing test first. Honest note: two of this wave's own tests were initially
   **false-green** — they rewrote whole files, so the diff contained a removed code line and never
   exercised the append-only case the audit used.
-- Target version: v0.17.0
+- Target version: v0.17.0 (patched to **v0.17.1** after a third audit — see below)
+
+### Third audit (2026-07-27) — two more false-greens, both fixed
+
+The re-audit of the fixed wave found the cache gone and the three comment-only bypasses closed, but
+surfaced two further defects of the **same class the whole programme exists to remove**:
+
+- **The environment allow-list judged by substring.** Wave 11 added "an unreachable command is not a red"
+  to `test-gate`/`done-gate` — matched against the *whole* output. A genuinely failing suite whose output
+  merely contained `No such file or directory` or `command not found` (routine in Laravel: Storage,
+  `file_get_contents`, Process, artisan-command tests) was reported as an environment skip. Now: exit 127
+  is conclusive, otherwise an environment phrase counts only when no marker of an actual run
+  (`Tests:`, `PHPUnit`, `[ERROR]`, …) is present.
+- **Two more comment-only bypasses**, both valid executable PHP registering an undocumented endpoint:
+  a greedy one-line block (`/* a */ Route::get(…); /* b */`) and a block closer carrying code
+  (`*/ Route::post(…);`). Closed by one rule: anything after a closing `*/` is code, however the line starts.
+
+Also fixed: a silent skip when the runner is unavailable now says so (otherwise "green" meant "nothing
+ran"), `cd sub && php artisan …` no longer slips past the runner guard, and a stale test count in the
+README. **Known and accepted, not fixed:** the Stop gates read the *working tree*, so a change committed
+while red is not re-checked on later turns.
 
 ## Goal
 

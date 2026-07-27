@@ -211,6 +211,16 @@ d="$ROOT/ac22"; fixture "$d" true
 printf '/**\n * Handles orders.\n */\n' >> "$d/app/Http/Controllers/FooController.php"
 expect "AC22 docblock allowed"       0 "$d"
 
+# B2: trailing /* … */ made the greedy one-line-comment pattern swallow real code
+d="$ROOT/ac23"; fixture "$d" true
+printf "/* legacy */ Route::get('/reports', [R::class,'i']); /* new */\n" >> "$d/app/Http/Controllers/FooController.php"
+expect "AC23 greedy block bypass"    2 "$d"
+
+# B4: a closing */ line that carries code after it
+d="$ROOT/ac24"; fixture "$d" true
+printf '/**\n * Reports.\n */ Route::post(%s, [R::class, %s]);\n' "'/reports'" "'store'" >> "$d/app/Http/Controllers/FooController.php"
+expect "AC24 closer-with-code bypass" 2 "$d"
+
 echo
 echo "  passed: $pass, failed: $fail"
 [ "$fail" -eq 0 ]

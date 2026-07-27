@@ -58,14 +58,22 @@ case "$tool" in
       *vendor/bin/sail*) exit 0 ;;
     esac
 
-    # First real verb, after any leading VAR=val environment assignments.
-    verb="$(printf '%s' "$cmd" \
-      | sed -E 's/^[[:space:]]*([A-Za-z_][A-Za-z0-9_]*=[^[:space:]]*[[:space:]]+)*//' \
-      | awk '{print $1}')"
-    case "$verb" in
-      php|composer|artisan|./artisan|phpunit|pest)
-        deny "run Laravel/PHP through the runner, not the host — e.g. './vendor/bin/sail artisan …' or './vendor/bin/sail composer …'. (disable with gates.enforce_runner=false)" ;;
-    esac
+    # Check EVERY segment, not just the first: `cd sub && php artisan …` would otherwise be read
+    # as the verb `cd` and sail straight past the guard.
+    # A `while` in a pipeline runs in a subshell and would lose the flag, so iterate in-process.
+    host_verb=0
+    old_ifs="$IFS"; IFS='
+'
+    for seg in $(printf '%s' "$cmd" | tr ';|&' '\n'); do
+      verb="$(printf '%s' "$seg" \
+        | sed -E 's/^[[:space:]]*([A-Za-z_][A-Za-z0-9_]*=[^[:space:]]*[[:space:]]+)*//' \
+        | awk '{print $1}')"
+      case "$verb" in
+        php|composer|artisan|./artisan|phpunit|pest) host_verb=1 ;;
+      esac
+    done
+    IFS="$old_ifs"
+    [ "$host_verb" -eq 1 ] && deny "run Laravel/PHP through the runner, not the host — e.g. './vendor/bin/sail artisan …' or './vendor/bin/sail composer …'. (disable with gates.enforce_runner=false)"
     exit 0
     ;;
 

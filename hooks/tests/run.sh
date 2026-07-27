@@ -88,6 +88,9 @@ expect "W11 host php allowed"     0 "$d" '{"tool_name":"Bash","tool_input":{"com
 expect "W11 host composer allowed" 0 "$d" '{"tool_name":"Bash","tool_input":{"command":"composer install"}}'
 d="$ROOT/w11b"; mkdir -p "$d"; sdd "$d" true true false; fake_sail "$d"   # runner:sail still denies
 expect "W11 sail still denies"    2 "$d" '{"tool_name":"Bash","tool_input":{"command":"php artisan migrate"}}'
+# a host verb hidden behind `cd …&&` must not slip past
+expect "W12 chained host cmd denied" 2 "$d" '{"tool_name":"Bash","tool_input":{"command":"cd api && php artisan migrate"}}'
+expect "W12 chained sail allowed"  0 "$d" '{"tool_name":"Bash","tool_input":{"command":"cd api && ./vendor/bin/sail artisan test"}}'
 
 # --- W11-AC4/AC5: the discovery edit-lock keys on a CANONICAL mode only ---
 d="$ROOT/w11c"; mkdir -p "$d/app" "$d/.claude/groundwork"; sdd "$d" true true true

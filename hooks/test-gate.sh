@@ -32,7 +32,7 @@ changed="$(git status --porcelain -uall 2>/dev/null | grep -E '\.php"?$' || true
 if [ "$overridden" = "1" ]; then
   case "$cmd" in *vendor/bin/sail*) [ -x ./vendor/bin/sail ] || exit 0 ;; esac
 else
-  gw_runner_ready || exit 0
+  gw_runner_ready || { echo "groundwork test-gate: runner unavailable — gate NOT run (nothing was verified)." >&2; exit 0; }
 fi
 
 # Warn (do not block) when the suite resolves to SQLite while the project targets a real engine.
@@ -111,13 +111,18 @@ fi
 # shellcheck disable=SC2086
 out="$($cmd 2>&1)"; status=$?
 if [ "$status" -ne 0 ]; then
-  # A missing binary / undefined command / container down is an environment problem, not a red
-  # suite — this gate must never block on one (the same allow-list openapi-gate uses).
-  case "$out" in
-    *"is not defined"*|*"Could not open input file"*|*"command not found"*|*"No such file or directory"*|*"Cannot connect"*|*"No such container"*)
-      echo "groundwork test-gate: the test command could not run (environment) — suite NOT run, not a failure." >&2
-      exit 0 ;;
-  esac
+  # An environment problem is a command that never RAN. Deciding that by substring is unsafe:
+  # "No such file or directory" and "command not found" occur inside perfectly real Laravel failures
+  # (Storage, file_get_contents, Process, artisan-command tests), and matching them turned a red suite
+  # into a pass. So: exit 127 is conclusive; otherwise the output must carry an environment phrase AND
+  # no sign that the tool actually ran and reported results.
+  ran_marker='Tests:|PHPUnit|Failures:|assertions|OK \(|FAIL |PASS |\[ERROR\]|\[OK\]|Line +[0-9]|errors?$|No errors'
+  env_phrase='is not defined|Could not open input file|command not found|No such container|Cannot connect|Is the docker daemon running|permission denied while trying to connect'
+  if [ "$status" -eq 127 ] || { printf '%s' "$out" | grep -qE "$env_phrase" \
+       && ! printf '%s' "$out" | grep -qE "$ran_marker"; }; then
+    echo "groundwork test-gate: the test command could not run (environment) — suite NOT run, not a failure." >&2
+    exit 0
+  fi
   {
     echo "groundwork test-gate: tests FAILED on changed PHP — not done yet (red). Make them green before finishing."
     printf '%s\n' "$out" | tail -40

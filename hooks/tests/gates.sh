@@ -61,6 +61,41 @@ d="$ROOT/d8"; repo "$d" '{ "runner": "host", "commands": { "analyse": "./nope.sh
 printf '<?php\n' > "$d/x.php"
 expect "missing script allows"    0 "$d" "done-gate.sh"
 
+# --- H1: a RED suite whose output merely CONTAINS an env phrase must still block.
+# "No such file or directory" / "command not found" appear routinely inside real Laravel failures
+# (Storage, file_get_contents, Process, artisan-command tests) — matching them by substring turned a
+# red suite into "environment, not a failure". Only a command that never ran may be waived.
+d="$ROOT/h1"; repo "$d" '{ "runner": "host", "commands": { "test": "./red.sh" } }'
+cat > "$d/red.sh" <<'SH'
+#!/bin/sh
+echo "ErrorException: file_get_contents(/tmp/x): Failed to open stream: No such file or directory"
+echo "Tests:  1 failed, 4 passed"
+exit 1
+SH
+chmod +x "$d/red.sh"; printf '<?php\n' > "$d/x.php"
+expect "red suite w/ env phrase"   2 "$d" "test-gate.sh"
+
+d="$ROOT/h1b"; repo "$d" '{ "runner": "host", "commands": { "analyse": "./red.sh" } }'
+cat > "$d/red.sh" <<'SH'
+#!/bin/sh
+echo " [ERROR] Call to an undefined method App\Foo::bar()"
+echo "sh: npm: command not found"
+exit 1
+SH
+chmod +x "$d/red.sh"; printf '<?php\n' > "$d/x.php"
+expect "red analyse w/ env phrase" 2 "$d" "done-gate.sh"
+
+# a command that genuinely could not run is still waived
+d="$ROOT/h1c"; repo "$d" '{ "runner": "host", "commands": { "test": "./nope.sh" } }'
+printf '<?php\n' > "$d/x.php"
+expect "unrunnable command allowed" 0 "$d" "test-gate.sh"
+
+# H2: skipping because the runner is unavailable must SAY so, not go silent
+d="$ROOT/h2"; repo "$d" '{ "runner": "sail" }'; printf '<?php\n' > "$d/x.php"
+msg="$( cd "$d" && bash "$HOOKS/test-gate.sh" 2>&1 >/dev/null )"
+if [ -n "$msg" ]; then pass=$((pass+1)); printf '  ok   %-32s [says why]\n' "silent skip is reported"
+else fail=$((fail+1)); printf '  FAIL %-32s skipped with no message\n' "silent skip is reported"; fi
+
 echo
 echo "format-on-edit:"
 
