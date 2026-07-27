@@ -12,6 +12,18 @@ instead of copy-pasting `AGENTS.md` / `CLAUDE.md` / skills between repositories.
   Two review gates: `adversarial-verifier` (is the "it works" claim true?) and `conformance-reviewer`
   (does the diff satisfy the spec's acceptance criteria?). A converge re-check and ADR capture
   (`docs/adr/`) close out cross-cutting L3/L4 work.
+- **Approaches before questions** — the first response shows the agent's 2–3 candidate ways to solve the
+  task, recommended one first, with the reason and what it forecloses, *before* the interview — so you
+  choose between shapes of a solution instead of ratifying one. When a single path is plainly right it
+  says so in one line rather than inventing alternatives; at L3/L4 the same options feed the ADR. And when
+  the intent is too unformed to plan at all — a problem rather than a change, no statable definition of
+  "done", or an interview whose questions keep regenerating — it offers the `grill` skill instead of
+  planning on top of a guess.
+- **Blast radius that follows the task** — a new sub-request mid-session is treated as a scope change: its
+  seeds are compared against the cached impact map, and a miss re-maps over the union of old and new seeds
+  (a targeted self-trace at L0/L1). The cheap comparison runs at every level, because three small
+  additions can jointly touch a class nobody mapped — the case where a map built at task start quietly
+  stops covering the work.
 - **Interview loop** — `clarify-protocol` + `AskUserQuestion` rounds before the plan: facts are the
   agent's to find, decisions are yours to make. Each question leads with the agent's recommendation, so
   you can click through and still land somewhere defensible; scaled by level (L0/L1 barely ask, L3/L4 up

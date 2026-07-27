@@ -23,7 +23,9 @@ Stay in **Discovery mode**: inspect and plan only, do not edit files until the p
    - **L2+** (normal feature and up): base the plan on the **`impact-mapper`** connection map, but
      **reuse the cache first** — check `.claude/groundwork/impact/<slug>.md` and re-spawn the agent only
      if the seeds changed since it was written; otherwise overwrite the cache with the fresh map.
-     This avoids re-running the most expensive fan-out on iterative work. Rules:
+     This avoids re-running the most expensive fan-out on iterative work. Reuse requires **all three**
+     staleness conditions — including that the cached `SEEDS` still cover the seeds of the work at hand,
+     which is what a new sub-request breaks. Rules:
      `${CLAUDE_SKILL_DIR}/../../guidelines/working-memory.md`.
    - **L0/L1**: a quick outward trace yourself (a few targeted greps) is enough — no agent needed.
    - **Fan-out scales with level** — see "Fan-out by level" in
@@ -42,11 +44,34 @@ Stay in **Discovery mode**: inspect and plan only, do not edit files until the p
    section; identifiers come after the meaning, never instead of it (the layered rule in
    `${CLAUDE_SKILL_DIR}/../../guidelines/clarify-protocol.md`). Then:
    current understanding · classification · files/docs to inspect · connections / blast radius ·
-   business/CRD areas affected · draft spec · acceptance criteria · clarifications (ambiguities,
+   business/CRD areas affected · draft spec · acceptance criteria · **approaches** (2–3 candidate ways to
+   solve the task, the recommended one first with its reason and what it forecloses — see step 7a) ·
+   clarifications (ambiguities,
    conflicts, gaps surfaced as explicit questions to resolve before planning) · blind spots (dimensions
    you did not ask about — consequences / missing requirements / domain-product angles, per the
    blind-spot protocol; material only, or "none") · test plan (red list —
    fail-first tests for L2+/bug fixes) · implementation plan · risks & assumptions · stop point.
+7a. **Take a position before you ask — the approaches block.** Present your **2–3 candidate approaches**
+   to the task, recommended one first, each with its reason and what choosing it forecloses. This is plan
+   altitude — *how we solve this* — not the per-question options of the interview, and it comes **before**
+   the questions so the user picks between shapes of a solution instead of ratifying the one you already
+   chose. Plain language (the layered rule in
+   `${CLAUDE_SKILL_DIR}/../../guidelines/clarify-protocol.md`).
+   - **When one path is plainly right, say exactly that in one line** — "one sensible approach, here it
+     is, because X". A fabricated alternative is noise, not diligence.
+   - **L0/L1** skip · **L2** one line per approach · **L3/L4** the block, and it **feeds the ADR** when
+     the decision is cross-cutting and durable (the `spec` skill's ≥2 options are these same two,
+     considered before the plan rather than reconstructed after it).
+
+7b. **When the intent is too unformed for a plan, offer `grill`.** Do not plan on top of a guess — offer
+   it as one option in the interview round below (with your recommendation stated), and never start it
+   unasked. The signals — any one is enough:
+   - the request names a **problem, not a change** ("orders get lost", "clients complain about payments");
+   - **two or more incompatible readings** survive this discovery pass;
+   - it is an **architecture or product call** (what should exist), not a code change (how to build it);
+   - **nobody can state what "done" looks like** yet — no acceptance shape can be written;
+   - it is **L3/L4** and the goal itself, not just the mechanism, is still open.
+
 8. **Interview for the decisions that are the user's.** Run the clarify rounds per
    `${CLAUDE_SKILL_DIR}/../../guidelines/clarify-protocol.md`: ask the frontier in one
    `AskUserQuestion` call (≤4 questions, each led by your recommendation and its consequence, each in

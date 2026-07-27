@@ -5,7 +5,8 @@ Status: original roadmap **complete** (2026-07-21) — Wave 1 (E4/E7/E6) v0.5.0 
 request) v0.9.0 · Wave 6 (blind-spot surfacing, post-roadmap UX request) v0.10.0 · Wave 6.5 (OpenAPI
 contract gate, post-roadmap) v0.11.0 · Wave 7 (interview loop + living domain contract + skill
 hygiene, post-roadmap) v0.12.0. **Feedback programme (Waves 8–11) in progress** — Wave 8 shipped
-v0.13.0, Wave 9 shipped v0.14.0. Author: Max Yastremskyi (YasMax91) · Owner: RaDevs
+v0.13.0, Wave 9 shipped v0.14.0, Wave 10 shipped v0.15.0. Author: Max Yastremskyi (YasMax91) ·
+Owner: RaDevs
 
 A prioritized, grounded backlog of improvements to the `groundwork` plugin. The current
 plugin (v0.4.0) already implements most of the 2025–2026 frontier — just-in-time context via
@@ -323,12 +324,18 @@ Sequenced by pain, not by tier. Four packages:
   AI-hours to write the functionality** — ranges per block + total + the reviewer's time on its own line,
   never man-days; and client/BA texts shipping as an English canonical file plus a Russian mirror
   regenerated from it, unasked (settled 2026-07-27 as plugin core, English is what the client receives).
-- **Wave 10 — process depth.** `grill` is never offered (`disable-model-invocation: true`, called by no
-  skill) → discovery for L3/L4 or a blurred intent proposes it itself; the impact map is built once at
-  the start and **never refreshed when the task grows new sub-requests mid-session** (where the real
-  misses happened) → re-map per sub-request, and consider L1; recommendation-first is already strong in
-  `clarify-protocol.md:40-42` (the user's "never proposes options" is only partly right) → add a visible
-  "approaches + recommendation" step **before** the questions, at plan altitude.
+- **Wave 10 — process depth.** ✅ **shipped in v0.15.0** →
+  [wave-10-process-depth.md](wave-10-process-depth.md). Three mechanisms the plugin already owned, fixed
+  at *when* they fire. `grill` stays user-invoked (zero context) but `start-task` becomes its index —
+  offered, never auto-started, on checkable signals (a problem rather than a change, incompatible
+  readings, an architecture call, no statable "done", L3/L4 with an open goal), plus a new exit from the
+  interview: hitting the L3/L4 round cap while the frontier still refills means the *intent* is
+  unsettled. The impact cache gains a **third** staleness condition — the cached `SEEDS` must still cover
+  the seeds at hand — closing the hole where two `git diff` checks prove the mapped seeds did not change
+  but never that they are still the right ones; a mid-session sub-request is a scope change that
+  re-maps over the union of seeds (self-trace at L0/L1), level-independently, and lands in the checkpoint.
+  And a visible **approaches** block precedes the interview — 2–3 candidate shapes, recommended first,
+  with the single-sensible-path escape so it cannot become ceremony, feeding the ADR at L3/L4.
 - **Wave 11 — plugin infrastructure & bugs.** Parallel sessions share one worktree and one test DB →
   falsely-red gates, clobbered fixtures, a hostile stale `task-state.md`, false openapi-gate hits on
   another session's uncommitted code (a mechanism is needed — a test-DB lock between the Stop gate and any

@@ -62,6 +62,10 @@ engineering prose.
 - **Each question carries your recommendation first**, labelled as such, with the consequence of
   choosing it. You did the discovery; the user should be able to click through your recommendations and
   get a defensible result. A question without a recommendation hands your job back to them.
+- **Two altitudes, and they do not absorb each other.** The **approaches block** (`start-task` step 7a)
+  proposes 2–3 candidate ways to solve the *task* and comes before the interview; a question's options
+  settle *one decision* inside the chosen shape. Both lead with your recommendation; neither replaces the
+  other.
 - 2–4 options per question, each a concrete outcome ("queue it, deliver by e-mail") rather than a
   restated question. Keep the header under 12 characters — it renders as a chip.
 - **Every question, label, and description obeys the plain-language rule above** — the owner should never
@@ -78,6 +82,11 @@ The loop ends when the frontier is empty: every blocking decision answered by th
 recorded as an explicit assumption in the first response and in the spec. "No further questions" is a
 claim about the decision tree, not about patience — an unasked decision that shapes the build is a
 defect whether or not anyone was tired of questions.
+
+**When the cap is reached and the frontier is still refilling, the thinking is not ready.** Offer the
+`grill` skill instead of banking the remainder as assumptions — a frontier that keeps regenerating at the
+L3/L4 cap says the intent, not the detail, is unsettled, and an unbounded interview is the tool for that.
+Offer it; never start it unasked.
 
 ## Calibration — proportional to level
 

@@ -74,10 +74,16 @@ has changed. Each cache file begins with a header:
 In **start-task** (L2+), before spawning `impact-mapper`:
 
 1. Pick a `<slug>` from the primary seed (e.g. the main model/service/table).
-2. If `.claude/groundwork/impact/<slug>.md` exists, **reuse it instead of re-spawning** iff the seeds
-   are unchanged since it was written — both must hold:
+2. If `.claude/groundwork/impact/<slug>.md` exists, **reuse it instead of re-spawning** iff **all three**
+   hold:
    - `git diff --quiet <BASE_COMMIT> -- <SEEDS>` (no committed change to the seeds since the cache)
    - `git diff --quiet -- <SEEDS>` (seeds clean in the working tree)
+   - the cached `SEEDS` still **cover the seeds of the work at hand** — every file, model, table, or
+     symbol this work touches is already in the header.
+
+   The third condition closes a hole the first two cannot see: they prove the mapped seeds did not
+   *change*, never that they are still the *right* ones. A new sub-request introduces seeds absent from
+   `SEEDS:`, so both `git diff` checks pass while the map covers none of the new work.
 3. Otherwise spawn `impact-mapper`, **overwrite** the cache with its map, and refresh the header
    (`BASE_COMMIT` = current `git rev-parse HEAD`, `SEEDS` = the seeds you mapped).
 

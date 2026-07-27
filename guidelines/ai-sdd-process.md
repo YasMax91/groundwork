@@ -21,8 +21,10 @@ scope the edit tightly, never the investigation.
 - **Plan** — propose steps, list changed files, tests, verification, deployment impact. No edits
   until approved.
 - **Implementation** — test-first (red→green→refactor): write the failing test, implement to green,
-  refactor under the gates. Edit per the approved spec; keep scope tight. See
-  [tdd-protocol.md](tdd-protocol.md).
+  refactor under the gates. Edit per the approved spec; keep scope tight. A **new sub-request re-enters
+  discovery for its own blast radius** before it is built — compare its seeds against the cached map and
+  re-map when they fall outside it, whatever the level (accumulated small additions count). See
+  [tdd-protocol.md](tdd-protocol.md) and [working-memory.md](working-memory.md).
 - **Review** — review the diff for violations, missing tests, risks, and **exercise the change live**
   against the running app (HTTP run / browser drive per `final-check`) — green gates prove the code, not
   the running app. No silent changes. Two distinct gates: the **adversarial-verifier** challenges "it
@@ -79,7 +81,9 @@ is never assumed instead.
 ## Definition of Ready
 
 Goal clear · current behavior inspected · affected files identified · connections mapped (callers,
-events, jobs, policies, FK/cascades, consumers of the response shape, covering tests) · acceptance
+events, jobs, policies, FK/cascades, consumers of the response shape, covering tests) — and the map
+covers the seeds of the work actually at hand, not an earlier scope · candidate approaches presented with
+a recommendation (or the single sensible path stated as such) · acceptance
 criteria written · validation/authorization/API/DB/queue impact known · tests listed (the red list —
 fail-first tests covering the criteria, for L2+/bug fixes) · deployment
 risks identified · blind spots surfaced (resolved or explicitly accepted) · every blocking decision

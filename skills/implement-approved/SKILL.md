@@ -41,6 +41,22 @@ Only proceed if the spec/plan was **explicitly approved in this conversation**. 
   in `.claude/groundwork/task-state.md` (see `${CLAUDE_SKILL_DIR}/../../guidelines/working-memory.md`).
   It is what survives a restart or compaction, so the next session resumes mid-task instead of
   re-deriving the plan.
+- **A new sub-request is a scope change — re-check the blast radius before building it.** When the user
+  adds work inside the active task ("и ещё поправь X", "while you're there…"), name the sub-request's
+  seeds (files, models, tables, symbols) and compare them with the `SEEDS:` header of the cached impact
+  map:
+  - **already covered** → the map holds, proceed;
+  - **new seeds outside the map** → the map does not cover this work. **L0/L1:** a targeted self-trace
+    over the new seeds. **L2+:** re-spawn `impact-mapper` over the **union** of old and new seeds,
+    overwrite the cache, refresh `SEEDS:` and `BASE_COMMIT`.
+  - **no cached map at all** (an L0/L1 task never wrote one) → nothing to compare against, so trace the
+    new seeds yourself; if the sub-request pushes the work to L2+, build the map now.
+
+  The comparison, not the level, decides — **accumulation counts**: three small sub-requests can jointly
+  touch a class nobody mapped. The check is cheap (a list comparison), so a borderline case is treated as
+  a scope change. **Record the sub-request joining the scope in the checkpoint**, with whether the map was
+  re-mapped or self-traced; a checkpoint that omits a scope change is an overstatement of what was
+  covered. Rules: `${CLAUDE_SKILL_DIR}/../../guidelines/working-memory.md`.
 - **Escalate a blind spot found mid-build.** If a slice reveals a dimension the plan missed with
   material consequences (a race, a cascade, a broken consumer, a domain rule), **stop and surface it** —
   do not silently work around it. A silent workaround buries the decision the user should make. See
