@@ -92,6 +92,22 @@ expect "W11 sail still denies"    2 "$d" '{"tool_name":"Bash","tool_input":{"com
 expect "W12 chained host cmd denied" 2 "$d" '{"tool_name":"Bash","tool_input":{"command":"cd api && php artisan migrate"}}'
 expect "W12 chained sail allowed"  0 "$d" '{"tool_name":"Bash","tool_input":{"command":"cd api && ./vendor/bin/sail artisan test"}}'
 
+# --- the plugin's own working memory is auto-approved (no permission prompt) ---
+d="$ROOT/wm"; mkdir -p "$d/.claude/groundwork"; sdd "$d" true true false; fake_sail "$d"
+out="$( cd "$d" && printf '%s' "{\"tool_name\":\"Write\",\"tool_input\":{\"file_path\":\"$d/.claude/groundwork/task-state.md\"}}" | bash "$GUARD" 2>/dev/null )"
+if printf '%s' "$out" | jq -e '.hookSpecificOutput.permissionDecision == "allow"' >/dev/null 2>&1; then
+  pass=$((pass+1)); printf '  ok   %-22s (allow emitted)\n' "checkpoint auto-approved"
+else
+  fail=$((fail+1)); printf '  FAIL %-22s got: %s\n' "checkpoint auto-approved" "$out"
+fi
+# and it must NOT hand out a blanket allow for app code
+out="$( cd "$d" && printf '%s' "{\"tool_name\":\"Write\",\"tool_input\":{\"file_path\":\"$d/app/Service.php\"}}" | bash "$GUARD" 2>/dev/null )"
+if printf '%s' "$out" | grep -q 'permissionDecision'; then
+  fail=$((fail+1)); printf '  FAIL %-22s app code auto-approved too\n' "allow stays narrow"
+else
+  pass=$((pass+1)); printf '  ok   %-22s (app code untouched)\n' "allow stays narrow"
+fi
+
 # --- W11-AC4/AC5: the discovery edit-lock keys on a CANONICAL mode only ---
 d="$ROOT/w11c"; mkdir -p "$d/app" "$d/.claude/groundwork"; sdd "$d" true true true
 printf '# Task: x\n- Mode: **Discovery**\n' > "$d/.claude/groundwork/task-state.md"

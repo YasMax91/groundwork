@@ -81,6 +81,17 @@ case "$tool" in
     path="$(printf '%s' "$input" | jq -r '.tool_input.file_path // .tool_input.path // empty' 2>/dev/null || true)"
     [ -n "$path" ] || exit 0
 
+    # The plugin's own working memory needs no human approval — the agent writes the checkpoint on
+    # every task, and a permission prompt for a file this plugin created itself is pure friction.
+    # A settings.json rule cannot cover it: `Write(path)` rules are accepted but never matched, and a
+    # first-time checkpoint is created by Write, not Edit. So authorise it here, narrowly.
+    # (`deny`/`ask` rules still win over a hook's allow, so this cannot widen anything the user locked.)
+    case "$path" in
+      */.claude/groundwork/*|.claude/groundwork/*)
+        printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow","permissionDecisionReason":"groundwork workflow memory (checkpoint / impact cache) — written by the plugin itself"}}\n'
+        exit 0 ;;
+    esac
+
     # (b) Shipped-migration lock: deny edits to a git-tracked migration.
     if [ "$(jq -r '.gates.lock_shipped_migrations' .groundwork.json 2>/dev/null)" != "false" ]; then
       case "$path" in

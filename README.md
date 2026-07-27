@@ -99,7 +99,7 @@ instead of copy-pasting `AGENTS.md` / `CLAUDE.md` / skills between repositories.
   (use the runner) and edits to shipped migrations — opt-out per project. Every gate honors the declared
   `runner`: a `runner: host` project runs host commands and is never denied them, and a command that
   cannot run at all (missing binary, undefined script) is reported as an environment problem rather than a
-  red. All hooks are covered by tests — `bash hooks/tests/all.sh` (125 cases, 7 suites).
+  red. All hooks are covered by tests — `bash hooks/tests/all.sh` (127 cases, 7 suites).
 - **A gate that did not run says so** — the hooks' skip paths (runner unavailable, test DB busy, generator
   unreachable) exit with a *visible* non-blocking notice instead of a silent success, because a message on
   a zero exit goes to the debug log and reaches nobody. And committing no longer disarms them: the gates
@@ -111,6 +111,10 @@ instead of copy-pasting `AGENTS.md` / `CLAUDE.md` / skills between repositories.
   `gates.test_lock_wait_seconds` (default 45) it **skips and says so** rather than reporting a red that
   belongs to nobody. Opt out with `gates.test_db_lock: false`. The complementary practice the plugin
   cannot enforce — one git worktree per parallel session — is documented in `working-memory`.
+- **No prompt for its own bookkeeping** — the checkpoint and the impact cache under  are
+  auto-approved by the plugin's  hook, narrowly and only for that path. A settings rule cannot
+  do this:  rules are accepted but never matched, and a first-time checkpoint is created by
+  Write. Your own / rules still win over it.
 - **Working memory** — `working-memory` guideline + a `SessionStart` hook that cheaply re-injects
   project state (runner, DB engine, branch, uncommitted files, active spec, the task checkpoint) so
   the agent does not re-read the same files, and a `PreCompact` hook that marks the checkpoint as the
