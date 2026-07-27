@@ -42,6 +42,19 @@ d="$ROOT/ac3"; mkdir -p "$d"; printf '{ "database": { "default": "mysql" } }\n' 
 contains "AC3 no taskstate" "$d" "RaDevs"
 contains "AC3 mysql"        "$d" "mysql"
 
+# W11-AC4/AC5: only a canonical Mode renders; Markdown emphasis is stripped, garbage is not shown
+d="$ROOT/w11a"; mkdir -p "$d/.claude/groundwork"
+printf '{ "ui": { "statusline": true } }\n' > "$d/.groundwork.json"
+printf '# Task: x\n- Mode: **Review**\n' > "$d/.claude/groundwork/task-state.md"
+contains "W11 emphasised mode" "$d" "Review"
+printf '# Task: x\n- Mode: **COMMITTED**\n' > "$d/.claude/groundwork/task-state.md"
+out="$(run "$d")"
+if printf '%s' "$out" | grep -q "COMMITTED"; then
+  fail=$((fail+1)); printf '  FAIL %-24s garbage mode leaked: "%s"\n' "W11 garbage not shown" "$out"
+else
+  pass=$((pass+1)); printf '  ok   %-24s [%s]\n' "W11 garbage not shown" "$out"
+fi
+
 echo "-----"
 echo "passed: $pass   failed: $fail"
 [ "$fail" -eq 0 ]

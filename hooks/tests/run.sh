@@ -76,6 +76,26 @@ d="$ROOT/ac7"; mkdir -p "$d"; sdd "$d" true true false; fake_sail "$d"
 expect "AC7 malformed json"       0 "$d" '{not valid json'
 expect "AC7 empty stdin"          0 "$d" ''
 
+# --- W11-AC1: a project that declares runner:host may run host commands ---
+sdd_host() { # write a .groundwork.json with runner:host and the gate toggles on
+  cat > "$1/.groundwork.json" <<'JSON'
+{ "runner": "host", "database": { "default": "mysql" },
+  "gates": { "enforce_runner": true, "lock_shipped_migrations": true, "lock_edits_in_discovery": false } }
+JSON
+}
+d="$ROOT/w11a"; mkdir -p "$d"; sdd_host "$d"; fake_sail "$d"   # sail present but runner is host
+expect "W11 host php allowed"     0 "$d" '{"tool_name":"Bash","tool_input":{"command":"php artisan migrate"}}'
+expect "W11 host composer allowed" 0 "$d" '{"tool_name":"Bash","tool_input":{"command":"composer install"}}'
+d="$ROOT/w11b"; mkdir -p "$d"; sdd "$d" true true false; fake_sail "$d"   # runner:sail still denies
+expect "W11 sail still denies"    2 "$d" '{"tool_name":"Bash","tool_input":{"command":"php artisan migrate"}}'
+
+# --- W11-AC4/AC5: the discovery edit-lock keys on a CANONICAL mode only ---
+d="$ROOT/w11c"; mkdir -p "$d/app" "$d/.claude/groundwork"; sdd "$d" true true true
+printf '# Task: x\n- Mode: **Discovery**\n' > "$d/.claude/groundwork/task-state.md"
+expect "W11 emphasised mode locks" 2 "$d" "{\"tool_name\":\"Edit\",\"tool_input\":{\"file_path\":\"$d/app/Service.php\"}}"
+printf '# Task: x\n- Mode: **COMMITTED**\n' > "$d/.claude/groundwork/task-state.md"
+expect "W11 garbage mode opens"    0 "$d" "{\"tool_name\":\"Edit\",\"tool_input\":{\"file_path\":\"$d/app/Service.php\"}}"
+
 echo "-----"
 echo "passed: $pass   failed: $fail"
 [ "$fail" -eq 0 ]

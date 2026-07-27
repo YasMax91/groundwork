@@ -3,13 +3,7 @@
   "database": {
     "default": "mysql"
   },
-  "commands": {
-    "format": "./vendor/bin/sail pint",
-    "format_test": "./vendor/bin/sail composer format:test",
-    "analyse": "./vendor/bin/sail composer analyse",
-    "test": "./vendor/bin/sail artisan test",
-    "openapi_generate": "./vendor/bin/sail artisan l5-swagger:generate"
-  },
+  "commands": {},
   "gates": {
     "format_on_edit": true,
     "analyse_on_stop": true,
@@ -18,7 +12,9 @@
     "trim_tool_output": false,
     "enforce_runner": true,
     "lock_shipped_migrations": true,
-    "lock_edits_in_discovery": false
+    "lock_edits_in_discovery": false,
+    "test_db_lock": true,
+    "test_lock_wait_seconds": 45
   },
   "memory": {
     "session_context": true,

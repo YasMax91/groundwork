@@ -14,6 +14,12 @@
 #   * BLOCK via exit 2 + a stderr reason (fed back to the model so it self-corrects).
 set -uo pipefail
 
+# Shared resolvers (runner-aware commands); fail-safe fallback to the Sail default.
+# shellcheck source=/dev/null
+{ LIB="$(cd "$(dirname "$0")" 2>/dev/null && pwd)/lib.sh"; [ -r "$LIB" ] && . "$LIB"; } 2>/dev/null || true
+command -v gw_cmd          >/dev/null 2>&1 || gw_cmd() { printf './vendor/bin/sail %s %s' "$1" "${2:-}"; }
+command -v gw_runner_ready >/dev/null 2>&1 || gw_runner_ready() { [ -x ./vendor/bin/sail ]; }
+
 [ -f .groundwork.json ] || exit 0
 [ "$(jq -r '.gates.openapi_on_stop' .groundwork.json 2>/dev/null)" = "false" ] && exit 0
 
@@ -103,12 +109,18 @@ fi
 
 # --- the spec was touched: prove it still generates cleanly ---
 gen="$(jq -r '.commands.openapi_generate // empty' .groundwork.json 2>/dev/null || true)"
-[ -n "$gen" ] || gen='./vendor/bin/sail artisan l5-swagger:generate'
+gen_overridden=1
+# Runner-aware default: on a `runner: host` project this resolves to a reachable host command,
+# so the "does the spec still generate cleanly?" half actually runs instead of silently skipping.
+[ -n "$gen" ] || { gen="$(gw_cmd artisan l5-swagger:generate)"; gen_overridden=0; }
 
 # Environment problems must not block: skip when the runner is unavailable.
-case "$gen" in
-  *vendor/bin/sail*) [ -x ./vendor/bin/sail ] || exit 0 ;;
-esac
+# An explicit `commands.openapi_generate` override wins: only its own Sail dependency is checked.
+if [ "$gen_overridden" = "1" ]; then
+  case "$gen" in *vendor/bin/sail*) [ -x ./vendor/bin/sail ] || exit 0 ;; esac
+else
+  gw_runner_ready || exit 0
+fi
 command -v timeout >/dev/null 2>&1 && gen="timeout 120 $gen"
 
 # shellcheck disable=SC2086

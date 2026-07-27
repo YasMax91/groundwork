@@ -123,6 +123,33 @@ printf '#!/bin/sh\necho "Regenerating docs"\nexit 0\n' > "$d/vendor/bin/sail"
 chmod +x "$d/vendor/bin/sail"
 expect "AC12 clean generation"      0 "$d"
 
+# --- W11-AC3: on a runner:host project the generation step must actually RUN, not skip.
+# Before Wave 11 the command defaulted to Sail, was unreachable, and this half silently no-opped.
+d="$ROOT/ac13"; fixture "$d" true; touch_with_annotation "$d"
+cat > "$d/.groundwork.json" <<'JSON'
+{ "runner": "host", "gates": { "openapi_on_stop": true },
+  "commands": { "openapi_generate": "./gen.sh" } }
+JSON
+printf '#!/bin/sh\necho "Error: @OA\\\\Schema() unresolved $ref"\nexit 1\n' > "$d/gen.sh"; chmod +x "$d/gen.sh"
+expect "AC13 host generation runs"  2 "$d"
+
+d="$ROOT/ac14"; fixture "$d" true; touch_with_annotation "$d"
+cat > "$d/.groundwork.json" <<'JSON'
+{ "runner": "host", "gates": { "openapi_on_stop": true },
+  "commands": { "openapi_generate": "./gen.sh" } }
+JSON
+printf '#!/bin/sh\necho "Regenerating docs"\nexit 0\n' > "$d/gen.sh"; chmod +x "$d/gen.sh"
+expect "AC14 host clean generation" 0 "$d"
+
+# --- an explicit override wins over the runner's availability (runner:sail, no Sail binary) ---
+d="$ROOT/ac15"; fixture "$d" true; touch_with_annotation "$d"
+cat > "$d/.groundwork.json" <<'JSON'
+{ "runner": "sail", "gates": { "openapi_on_stop": true },
+  "commands": { "openapi_generate": "./gen.sh" } }
+JSON
+printf '#!/bin/sh\necho "Error: @OA\\\\Schema() unresolved $ref"\nexit 1\n' > "$d/gen.sh"; chmod +x "$d/gen.sh"
+expect "AC15 override under sail"   2 "$d"
+
 echo
 echo "  passed: $pass, failed: $fail"
 [ "$fail" -eq 0 ]

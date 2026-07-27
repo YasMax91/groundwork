@@ -45,6 +45,12 @@ Keep it **terse** — it is re-injected every session, so every line costs. Temp
 - <blocking item, or "none">
 ```
 
+**Write what is true, not what the slice was aiming at.** The `SessionStart` hook re-injects this file
+verbatim, so an overstatement is not a note — it is the next session's premise. "Asserted on
+`POST /orders`; `PATCH /orders/{id}` not covered" beats "asserted on both endpoints"; a slice is `green`
+only when its test passes **now**; `verified` requires the evidence to exist, everything else is `assumed`.
+A checkpoint that rounds coverage up is how work gets declared done twice and finished once.
+
 The `OpenAPI:` line is also the **`openapi` Stop gate's escape hatch**: when a task changes the
 contract surface (routes, controllers, FormRequests, Resources) the gate demands matching spec
 changes, and `n/a — <reason>` is the deliberate, visible way to declare a pure internal refactor.
@@ -89,3 +95,21 @@ In **start-task** (L2+), before spawning `impact-mapper`:
 
 Run the staleness check through the project runner only if it touches the framework; plain `git`
 commands run on the host. When in doubt about coverage, refresh rather than trust a stale map.
+
+## Parallel sessions — one worktree is one workspace
+
+Two sessions in the same checkout share more than files: they share the **test database**, the working
+tree, and this checkpoint. The symptoms are recognisable and waste real time — a suite that fails with
+`1412 Table definition has changed` then `1146 doesn't exist` (another session ran `migrate:fresh`
+mid-run), fixtures overwritten under a running test, an `openapi` gate firing on a **different** session's
+uncommitted controller, and a `task-state.md` describing someone else's task.
+
+What the plugin does: the test gate takes an exclusive lock (`.claude/groundwork/locks/test-db`) around the
+suite, so parallel runs queue instead of corrupting each other. If the lock cannot be had within
+`gates.test_lock_wait_seconds` (default 300), the gate **skips and says so** rather than reporting a red
+that belongs to no one. Opt out with `gates.test_db_lock: false`.
+
+What it cannot do, so it is a practice rather than a rule: **give each parallel session its own git
+worktree** (`git worktree add ../<repo>-<task> -b <branch>`). A plugin cannot create or police worktrees,
+and the lock only protects the suite — the shared working tree and the shared checkpoint still belong to
+whoever writes last.

@@ -5,6 +5,14 @@
 # Silent on non-RaDevs projects and on any error — it must never break a session.
 set -uo pipefail
 
+# Shared resolvers (canonical Mode); fail-safe fallback to the raw first word.
+# shellcheck source=/dev/null
+{ LIB="$(cd "$(dirname "$0")" 2>/dev/null && pwd)/lib.sh"; [ -r "$LIB" ] && . "$LIB"; } 2>/dev/null || true
+command -v gw_mode >/dev/null 2>&1 || gw_mode() {
+  grep -iE '^[[:space:]]*-?[[:space:]]*Mode:' "${1:-.claude/groundwork/task-state.md}" 2>/dev/null \
+    | head -1 | sed -E 's/^[^:]*:[[:space:]]*//' | awk -F'|' '{print $1}' | awk '{print $1}'
+}
+
 # Only act in a RaDevs-initialized project.
 [ -f .groundwork.json ] || exit 0
 # Respect the opt-out toggle.
@@ -49,7 +57,9 @@ banner=""
 if [ "$(jq -r '.ui.status_messages' .groundwork.json 2>/dev/null)" != "false" ]; then
   mode_line=""
   if [ -f "$state" ]; then
-    m="$(grep -iE '^[[:space:]]*-?[[:space:]]*Mode:'  "$state" 2>/dev/null | head -1 | sed -E 's/^[^:]*:[[:space:]]*//' | awk -F'|' '{print $1}' | awk '{print $1}')"
+    # Canonical modes only — a non-canonical value yields nothing, so the banner and the
+    # session title fall back to the branch rather than echoing raw Markdown.
+    m="$(gw_mode "$state")"
     l="$(grep -iE '^[[:space:]]*-?[[:space:]]*Level:' "$state" 2>/dev/null | head -1 | sed -E 's/^[^:]*:[[:space:]]*//' | awk '{print $1}')"
     [ -n "$m" ] && { title="RaDevs: ${m}${l:+ $l}"; mode_line=" · ${m}${l:+ $l}"; }
   fi

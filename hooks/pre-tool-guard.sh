@@ -13,6 +13,17 @@
 #     is fed back to the model so it self-corrects).
 set -uo pipefail
 
+# Shared resolvers (runner + canonical mode). Fail-safe: if the library is missing or
+# unreadable, the fallbacks below keep the hook behaving exactly as it did without it.
+# shellcheck source=/dev/null
+{ LIB="$(cd "$(dirname "$0")" 2>/dev/null && pwd)/lib.sh"; [ -r "$LIB" ] && . "$LIB"; } 2>/dev/null || true
+command -v gw_runner       >/dev/null 2>&1 || gw_runner() { printf 'sail'; }
+command -v gw_runner_ready >/dev/null 2>&1 || gw_runner_ready() { [ -x ./vendor/bin/sail ]; }
+command -v gw_mode         >/dev/null 2>&1 || gw_mode() {
+  grep -iE '^[[:space:]]*-?[[:space:]]*Mode:' "${1:-.claude/groundwork/task-state.md}" 2>/dev/null \
+    | head -1 | sed -E 's/^[^:]*:[[:space:]]*//' | awk -F'|' '{print $1}' | awk '{print $1}'
+}
+
 # Only enforce in a RaDevs-initialized project; never touch a non-RaDevs repo.
 [ -f .groundwork.json ] || exit 0
 
@@ -30,12 +41,17 @@ case "$tool" in
   Bash)
     # (a) Runner enforcement.
     [ "$(jq -r '.gates.enforce_runner' .groundwork.json 2>/dev/null)" = "false" ] && exit 0
+
+    # A project that declares `runner: host` runs Laravel/PHP on the host by design —
+    # there is nothing to enforce, so this branch is a no-op there.
+    [ "$(gw_runner)" = "host" ] && exit 0
+
     cmd="$(printf '%s' "$input" | jq -r '.tool_input.command // empty' 2>/dev/null || true)"
     [ -n "$cmd" ] || exit 0
 
     # Bootstrap fail-open: if the runner isn't installed yet (fresh clone before
     # `composer install`), do not block host composer/php.
-    [ -x ./vendor/bin/sail ] || exit 0
+    gw_runner_ready || exit 0
 
     # Already routed through the runner? allow.
     case "$cmd" in
@@ -73,8 +89,9 @@ case "$tool" in
     if [ "$(jq -r '.gates.lock_edits_in_discovery' .groundwork.json 2>/dev/null)" = "true" ]; then
       state=".claude/groundwork/task-state.md"
       if [ -f "$state" ]; then
-        mode="$(grep -iE '^[[:space:]]*-?[[:space:]]*Mode:' "$state" 2>/dev/null \
-          | head -1 | sed -E 's/^[^:]*:[[:space:]]*//' | awk -F'|' '{print $1}' | awk '{print $1}')"
+        # Canonical modes only — a non-canonical value yields nothing, so the lock fails open
+        # rather than matching garbage in a hand-edited checkpoint.
+        mode="$(gw_mode "$state")"
         case "$mode" in
           Discovery|Plan)
             # Planning artifacts are always allowed; only app code is locked.

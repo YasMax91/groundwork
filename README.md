@@ -93,7 +93,16 @@ instead of copy-pasting `AGENTS.md` / `CLAUDE.md` / skills between repositories.
   `Workflow` tool is unavailable.
 - **Standards + gates** — `laravel-standards` + hooks: Pint on edit, static analysis and the test
   suite as done-gates, and a `PreToolUse` enforcement guard that denies host Laravel/PHP commands
-  (use the runner) and edits to shipped migrations — opt-out per project.
+  (use the runner) and edits to shipped migrations — opt-out per project. Every gate honors the declared
+  `runner`: a `runner: host` project runs host commands and is never denied them, and a command that
+  cannot run at all (missing binary, undefined script) is reported as an environment problem rather than a
+  red. All hooks are covered by tests — `bash hooks/tests/all.sh` (102 cases, 7 suites).
+- **Parallel-session safety** — two sessions in one checkout share the test database, and the falsely-red
+  gates that follow (`1412 Table definition has changed` → `1146 doesn't exist`) cost real debugging time.
+  The test gate takes an exclusive lock around the suite so parallel runs queue; if it cannot be had in
+  `gates.test_lock_wait_seconds` (default 300) it **skips and says so** rather than reporting a red that
+  belongs to nobody. Opt out with `gates.test_db_lock: false`. The complementary practice the plugin
+  cannot enforce — one git worktree per parallel session — is documented in `working-memory`.
 - **Working memory** — `working-memory` guideline + a `SessionStart` hook that cheaply re-injects
   project state (runner, DB engine, branch, uncommitted files, active spec, the task checkpoint) so
   the agent does not re-read the same files, and a `PreCompact` hook that marks the checkpoint as the
@@ -143,10 +152,15 @@ agents in `/agents`, and confirm the hooks fire on edits.
 ## Per-project configuration — `.groundwork.json`
 
 Declares the runner and the **database engine** (`database.default` — `mysql`/`pgsql`, the target for
-code and tests; never SQLite), and overrides the gate commands (`format`, `analyse`, `test`) and
+code and tests; never SQLite). Gate commands are derived from `runner` and only need `commands.*` when a
+project genuinely runs them differently — the shipped template leaves `commands` empty for that reason,
+since a pinned command would override the runner. It can still override the gate commands (`format`,
+`analyse`, `test`) and
 toggles (`format_on_edit`, `analyse_on_stop`, `test_on_stop`, `openapi_on_stop`, plus the `PreToolUse` enforcement
 toggles `enforce_runner` and `lock_shipped_migrations` — default **on** — and `lock_edits_in_discovery`
-— default **off**). A `memory` block toggles the working-memory layer (`session_context`,
+— default **off**). `runner` is honored by every gate: set `"runner": "host"` and the gates drop the Sail
+prefix (`php artisan …`, `./vendor/bin/pint`) and stop denying host commands. `test_db_lock` (default
+**on**) and `test_lock_wait_seconds` (default 300) serialise the suite across parallel sessions. A `memory` block toggles the working-memory layer (`session_context`,
 `checkpoint`, `impact_cache` — all default on). Defaults to Sail + MySQL.
 
 The plan-approval gate is the `start-task` → approval → `implement-approved` split; enable
@@ -172,7 +186,7 @@ once with `claude --debug` in your project before enabling.
 .claude-plugin/   plugin.json · marketplace.json
 skills/           start-task · spec · implement-approved · risk-review · final-check · ground-integration · frontend-handoff · client-doc · openapi-audit · grill · init · deep-grounding · deep-discovery · deep-review
 agents/           impact-mapper · blind-spot-mapper · grounded-researcher · adversarial-verifier · conformance-reviewer
-hooks/            hooks.json · session-start.sh · pre-compact.sh · format-on-edit.sh · done-gate.sh · test-gate.sh · openapi-gate.sh · trim-output.sh · pre-tool-guard.sh · statusline.sh
+hooks/            hooks.json · lib.sh (shared resolvers) · session-start.sh · pre-compact.sh · format-on-edit.sh · done-gate.sh · test-gate.sh · openapi-gate.sh · trim-output.sh · pre-tool-guard.sh · statusline.sh · tests/all.sh
 guidelines/       ai-sdd-process · grounding-protocol · blind-spot-protocol · clarify-protocol · openapi-protocol · laravel-standards · tdd-protocol · working-memory
 docs/             skill-hygiene (author-facing) · specs/
 templates/        project/ · specs/ · frontend/ (feature · handoff — both pointing at the runnable request package) · client-doc.md · adr.md
