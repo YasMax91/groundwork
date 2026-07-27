@@ -120,6 +120,70 @@ instead of copy-pasting `AGENTS.md` / `CLAUDE.md` / skills between repositories.
   title. All fail-safe — unsupported display fields degrade to a no-op.
 - **Templates** — thin project `AGENTS.md` / `CLAUDE.md` / `.groundwork.json` and six spec templates.
 
+## How it works — the pipeline
+
+```mermaid
+flowchart TD
+    A[Your task] --> B{Classify L0 – L4}
+
+    B -->|L0 typo / comment| L0[Edit + automatic gates<br/>nothing else]
+    B -->|L1 small bug fix| L1[Failing test → fix<br/>live-exercise the one thing fixed]
+    B -->|L2 – L4| D1
+
+    subgraph DISC [Discovery — no edits]
+        D1[Read AGENTS.md · inspect via Boost] --> D2[Map connections outward<br/>impact-mapper, cache-aware]
+        D2 --> D3[Walk the 7 blind-spot categories]
+    end
+
+    D3 --> R1[First response opens in plain language<br/>then 14 sections]
+    R1 --> R2[2–3 candidate approaches<br/>recommended one first]
+    R2 --> R3{Intent too unformed?}
+    R3 -->|yes| G[Offer /grill · never start it]
+    R3 -->|no| R4[Interview: AskUserQuestion rounds<br/>≤4 questions, recommendation first]
+    G --> R4
+    R4 --> CP[Write the checkpoint]
+    CP --> APV{{Your approval — nothing is edited before it}}
+    APV --> SP[Spec: EARS criteria → failing tests]
+    SP --> IM[Implement red → green<br/>OpenAPI in the same slice<br/>sub-request re-maps the blast radius]
+
+    L0 --> FC
+    L1 --> FC
+    IM --> FC
+
+    subgraph FC [Final check]
+        F1[Gates: format · analyse · tests · OpenAPI] --> F2[LIVE run against the running app<br/>HTTP · browser · consumers]
+        F2 --> F3[Fresh-context review vs the spec]
+    end
+
+    F3 --> H[Frontend handoff + runnable request package]
+    H --> C{{Commit? — never without your yes}}
+```
+
+Levels scale *breadth*, never *proof*: at every level the agent states what stayed unverified and never
+reports green tests as "works live".
+
+**Discovery** reads the project's `AGENTS.md`, inspects through Boost rather than memory, and maps the
+connections grep alone misses — events, observers, jobs, policies, FK cascades, the `JsonResource` shape
+and its consumers. The blast-radius cache is reused only when three conditions hold, the third being that
+it still covers the seeds of the work at hand.
+
+**Before asking, the agent takes a position:** two or three candidate approaches with the recommended one
+first — and if the intent is too unformed to plan at all, it offers `grill` rather than planning on a
+guess. Questions then arrive as buttons, each led by a recommendation, in plain language.
+
+**Nothing is edited before your approval**, and the decisions you make are written to a checkpoint that
+survives a restart or a compaction.
+
+**"Done" requires the running app, not just green tests** — a real HTTP call for an endpoint, a real
+browser for admin/UI (asset actually loads · effective computed style · no persisted state masking it).
+On L2+ every consumer of a touched shape is verified and a reported defect gets its whole sibling class
+enumerated. When something could not be verified, that is stated rather than glossed over.
+
+**The gates are honest about themselves:** a skip (runner unavailable, test DB busy, generator
+unreachable) is a *visible* notice, not a silent success, and committing does not disarm them — they read
+the working tree plus unpushed commits.
+
+
 ## Grounding split
 
 - **Boost → the framework**: version-aware Laravel docs, DB schema, models, logs (a per-project
