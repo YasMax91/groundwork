@@ -42,6 +42,14 @@ scope the edit tightly, never the investigation.
   external integration behavior, queue/scheduler with business impact) — all of L3 + rollback
   notes + human approval always required.
 
+## Estimates
+
+Whenever the work is estimated — in a document or in chat — the unit is **real AI-hours to write the
+functionality**, never man-days or developer hours: a human reviews this code, he does not write it.
+Ranges per block, a total, and the reviewer's time on its own line. The format is owned by the
+**`client-doc`** skill ([../skills/client-doc/SKILL.md](../skills/client-doc/SKILL.md)) — follow it there
+rather than a second copy that drifts.
+
 ## Fan-out by level (effort scaling)
 
 Match agent fan-out to task level. Over-spawning wastes ~15× the tokens; coding is a poor multi-agent

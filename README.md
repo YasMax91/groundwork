@@ -18,6 +18,20 @@ instead of copy-pasting `AGENTS.md` / `CLAUDE.md` / skills between repositories.
   to three rounds), and every answer is recorded so a compaction never re-asks it. The `grill` skill
   runs the same interview standalone — to stress-test a plan, a decision, or an idea that never becomes
   code.
+- **Plain language first** — every text where *you* decide (the discovery report, each interview
+  question and option, the blind-spot block) opens with the lived consequence in everyday words and keeps
+  the code, field name, or status number after it: "клиент нажимает «Оплатить» и видит ошибку, деньги не
+  списываются (внутренний код 2406)". A layer, not a simplification — nothing technical is deleted, it
+  just stops being the opening. Defined once in `clarify-protocol`; engineering summaries stay
+  engineering prose.
+- **Client document** — the `client-doc` skill writes for a client who does not know what a test or an
+  endpoint is: the problem, what he will be able to do, what is in and out of scope, what is needed from
+  him. Deliberately without tests, acceptance criteria, endpoints, schema, or architecture — if those are
+  wanted, the artifact is a `spec`, and the skill says so instead of producing a hybrid. Estimates are
+  **real AI-hours to write the functionality** — never man-days, since a human reviews this code rather
+  than writing it — as ranges per block plus a total, with the reviewer's time on its own line. Ships as
+  an English canonical file (what you send) plus a full Russian mirror (what you read), regenerated from
+  the English so the two cannot drift.
 - **Blind-spot surfacing** — the agent proactively raises what you did not think to ask: unintended
   consequences, missing requirements, and domain/product angles you are not the expert in — each with
   its consequence and a recommended default, in plain language. A `blind spots` block in the first
@@ -144,10 +158,10 @@ once with `claude --debug` in your project before enabling.
 
 ```
 .claude-plugin/   plugin.json · marketplace.json
-skills/           start-task · spec · implement-approved · risk-review · final-check · ground-integration · frontend-handoff · openapi-audit · grill · init · deep-grounding · deep-discovery · deep-review
+skills/           start-task · spec · implement-approved · risk-review · final-check · ground-integration · frontend-handoff · client-doc · openapi-audit · grill · init · deep-grounding · deep-discovery · deep-review
 agents/           impact-mapper · blind-spot-mapper · grounded-researcher · adversarial-verifier · conformance-reviewer
 hooks/            hooks.json · session-start.sh · pre-compact.sh · format-on-edit.sh · done-gate.sh · test-gate.sh · openapi-gate.sh · trim-output.sh · pre-tool-guard.sh · statusline.sh
 guidelines/       ai-sdd-process · grounding-protocol · blind-spot-protocol · clarify-protocol · openapi-protocol · laravel-standards · tdd-protocol · working-memory
 docs/             skill-hygiene (author-facing) · specs/
-templates/        project/ · specs/ · frontend/ (feature · handoff — both pointing at the runnable request package)
+templates/        project/ · specs/ · frontend/ (feature · handoff — both pointing at the runnable request package) · client-doc.md · adr.md
 ```

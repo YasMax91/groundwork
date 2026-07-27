@@ -25,8 +25,8 @@ Walk the blind-spot taxonomy (`guidelines/blind-spot-protocol.md`) against the t
 scale & performance, security & privacy, compatibility, operability, domain & product, external
 integrations. Predict the **omitted** dimension, the unintended consequence, the domain/product angle
 the user is not expert in. Verify each candidate against the real code before raising it — an
-unqualified guess is noise. Explain in plain language: the user is not the expert, so a bare term
-without its consequence is useless.
+unqualified guess is noise. Explain each one under the plain-language rule in
+`guidelines/clarify-protocol.md` — the consequence in everyday words first, the term after it.
 
 ## Report only what matters (required calibration)
 

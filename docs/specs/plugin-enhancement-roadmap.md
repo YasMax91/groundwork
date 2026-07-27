@@ -5,7 +5,7 @@ Status: original roadmap **complete** (2026-07-21) — Wave 1 (E4/E7/E6) v0.5.0 
 request) v0.9.0 · Wave 6 (blind-spot surfacing, post-roadmap UX request) v0.10.0 · Wave 6.5 (OpenAPI
 contract gate, post-roadmap) v0.11.0 · Wave 7 (interview loop + living domain contract + skill
 hygiene, post-roadmap) v0.12.0. **Feedback programme (Waves 8–11) in progress** — Wave 8 shipped
-v0.13.0. Author: Max Yastremskyi (YasMax91) · Owner: RaDevs
+v0.13.0, Wave 9 shipped v0.14.0. Author: Max Yastremskyi (YasMax91) · Owner: RaDevs
 
 A prioritized, grounded backlog of improvements to the `groundwork` plugin. The current
 plugin (v0.4.0) already implements most of the 2025–2026 frontier — just-in-time context via
@@ -313,13 +313,16 @@ Sequenced by pain, not by tier. Four packages:
   persisted state), consumer coverage keyed to the impact map, end-to-end reachability of any declared
   contract value, class-audit instead of point-patch on a user bug report, a runnable Postman/curl package
   in the frontend handoff, and executable proof + surfaced citations broadened beyond external APIs.
-- **Wave 9 — audience & language.** Technical jargon aimed at a non-technical owner (~8 cases); a
-  technical spec delivered where a **client document** was needed (client-doc does not exist as an entity
-  in the plugin — `spec` is the bot-facing technical artifact and must not be bent into one); estimates in
-  **real AI-hours to write the functionality** (the human only reviews — no man-days; no such rule exists
-  today); client/BA drafts always accompanied by a Russian version without being asked (confirmed
-  2026-07-27 as plugin core, not a personal preference). Files: `clarify-protocol`, `start-task`, new
-  `skills/client-doc/` + template.
+- **Wave 9 — audience & language.** ✅ **shipped in v0.14.0** →
+  [wave-9-audience-and-language.md](wave-9-audience-and-language.md). Plain-language-first defined once in
+  `clarify-protocol` and bound to the discovery report, every interview question/option, and the
+  blind-spot block (a layer — the identifier follows the meaning, nothing technical is deleted); the new
+  `client-doc` skill + template as its own artifact (explicitly excluding tests / AC / EARS / endpoints /
+  schema / architecture — those mean the answer is `spec`), with client-text style rules (prose over
+  bullets, no em dash in SMS-bound text: `—` breaks GSM-7 and doubles cost); estimates fixed at **real
+  AI-hours to write the functionality** — ranges per block + total + the reviewer's time on its own line,
+  never man-days; and client/BA texts shipping as an English canonical file plus a Russian mirror
+  regenerated from it, unasked (settled 2026-07-27 as plugin core, English is what the client receives).
 - **Wave 10 — process depth.** `grill` is never offered (`disable-model-invocation: true`, called by no
   skill) → discovery for L3/L4 or a blurred intent proposes it itself; the impact map is built once at
   the start and **never refreshed when the task grows new sub-requests mid-session** (where the real

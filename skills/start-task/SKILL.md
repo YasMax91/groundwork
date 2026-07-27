@@ -37,7 +37,10 @@ Stay in **Discovery mode**: inspect and plan only, do not edit files until the p
 5. **Consult the CRD** for business intent when the task touches domain/API/schema/permissions/
    financial behavior/notifications/reports/integrations/deployment.
 6. **If the task touches an external API**, run the `ground-integration` skill before designing.
-7. **Produce the first response in this structure** (no code yet):
+7. **Produce the first response in this structure** (no code yet). **Open in plain language** — two or
+   three sentences on what this means for the client and for the business — *before* any technical
+   section; identifiers come after the meaning, never instead of it (the layered rule in
+   `${CLAUDE_SKILL_DIR}/../../guidelines/clarify-protocol.md`). Then:
    current understanding · classification · files/docs to inspect · connections / blast radius ·
    business/CRD areas affected · draft spec · acceptance criteria · clarifications (ambiguities,
    conflicts, gaps surfaced as explicit questions to resolve before planning) · blind spots (dimensions
@@ -46,7 +49,8 @@ Stay in **Discovery mode**: inspect and plan only, do not edit files until the p
    fail-first tests for L2+/bug fixes) · implementation plan · risks & assumptions · stop point.
 8. **Interview for the decisions that are the user's.** Run the clarify rounds per
    `${CLAUDE_SKILL_DIR}/../../guidelines/clarify-protocol.md`: ask the frontier in one
-   `AskUserQuestion` call (≤4 questions, each led by your recommendation and its consequence), let each
+   `AskUserQuestion` call (≤4 questions, each led by your recommendation and its consequence, each in
+  plain language — no term the owner must translate first), let each
    answer push the frontier outward, and stop when it is empty. Scaled by level — **L0/L1** at most one
    question, **L2** one round, **L3/L4** up to **3** rounds with anything unresolved recorded as an
    explicit assumption. A blind spot that needs a product call enters here as a question, not as a

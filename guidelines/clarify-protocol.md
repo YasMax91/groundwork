@@ -33,6 +33,28 @@ with the code or the CRD · a **blind spot that needs a product call** (per the 
 surfaced as a decision, not a prose bullet) · a fork in the implementation where the options differ in
 consequence rather than in taste.
 
+## Plain language first — the layered rule
+
+The reader is the product's **owner, not its engineer**. A question he cannot parse is not a question, and
+a report he has to decode is your work handed back to him. So every text where the user *decides* leads
+with the lived consequence in everyday words and carries the technical identifier **after** it.
+
+- **Lead with what a person experiences or loses.** "Клиент нажимает «Оплатить», видит ошибку, деньги не
+  списываются (внутренний код 2406, лимит второго уровня)" — not the code first with the meaning left
+  implied.
+- **Never delete the technical layer.** Codes, field names, and status numbers are how the work gets
+  done; they move after the meaning, in parentheses or on the next line. This is a layer, not a
+  simplification.
+- **The test before sending:** could someone who has never opened this codebase tell what he is deciding
+  and what it costs him? If not, rewrite. An option distinguishable only by a code, a field name, or an
+  internal term fails it.
+- **Where it binds:** the `AskUserQuestion` question text, option labels, and option descriptions · the
+  first-response discovery report · the blind-spot block
+  ([blind-spot-protocol.md](blind-spot-protocol.md)) · a client document, wholly (the `client-doc` skill).
+
+Scoped to decision surfaces: a `final-check` handoff summary, an OpenAPI note, or a spec stays in
+engineering prose.
+
 ## Mechanics — one `AskUserQuestion` call per round
 
 - **One round = one `AskUserQuestion` call**, at most 4 questions (the tool's limit). Prose questions
@@ -42,6 +64,8 @@ consequence rather than in taste.
   get a defensible result. A question without a recommendation hands your job back to them.
 - 2–4 options per question, each a concrete outcome ("queue it, deliver by e-mail") rather than a
   restated question. Keep the header under 12 characters — it renders as a chip.
+- **Every question, label, and description obeys the plain-language rule above** — the owner should never
+  have to translate a term before he can choose.
 - **Subagents never ask.** A subagent cannot prompt the user; when one surfaces a decision, carry it
   into your next round yourself.
 - **Check `## Decisions` in `.claude/groundwork/task-state.md` first**, then write every answer back to it
@@ -69,6 +93,8 @@ reading options and clicks the first one. So the loop scales with what an assume
 ## Anti-patterns
 
 - **Asking a fact** — "which DB engine does this project use?" is in `.groundwork.json`. Look it up.
+- **A jargon-first question** — "применить `hide_financial` к L2-ролям?" makes the owner translate before
+  he can answer. Lead with what changes for a person, keep the term in parentheses.
 - **A question without a recommendation** — you have the impact map and the code; take a position.
 - **Dependent questions in one round** — "sync or queued?" and "how is the file delivered?" in the same
   round, when the second only exists if the first came back "queued".
