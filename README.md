@@ -29,10 +29,23 @@ instead of copy-pasting `AGENTS.md` / `CLAUDE.md` / skills between repositories.
   integrations, and a domain-language glossary) is no longer written once by `init` and left to rot:
   `final-check` updates it in the same change whenever the work adds, renames, or removes one of those,
   so every later task reads a contract that still matches the code.
+- **Live verification** — green gates are necessary, **not sufficient**: before "done", `final-check`
+  exercises the change against the **running** app — a real HTTP run for an endpoint (the wire, the
+  middleware, the real DB — not just the test kernel), and a real browser drive for admin/UI/CSS
+  (the asset actually loads · the edited style is the *effective* computed one · no persisted
+  `localStorage` state masking it). Coverage follows the impact map — every consumer of a touched shape
+  (List *and* Show, export, API resource, notifications) with denormalized values checked on real data —
+  and a defect **you** report is audited as a whole class, never point-patched. Fail-safe: when the app
+  or the browser tool is unreachable it says exactly what stayed unverified, with repro steps; green
+  tests are never reported as "works live", and a visual check the agent can drive is never handed back
+  to you.
 - **Frontend handoff** — after the final implementation and green gates, the `frontend-handoff` skill
   writes documentation for the frontend developer under `ai/frontend/` (a living reference doc per
   area + a dated handoff delta) — what to build, when, how, why, where, and the API contract, in
-  Russian, no frontend code — then asks whether to commit (single line, no AI attribution).
+  Russian, no frontend code — plus a **runnable request package** (a Postman collection or a `.http`/curl
+  file) with the auth header, bodies derived from the `FormRequest` rules, and real example responses
+  captured in the live run, so the frontend runs the contract instead of retyping it. Then asks whether
+  to commit (single line, no AI attribution).
 - **OpenAPI as contract** — `openapi-protocol` + a blocking `openapi` Stop gate: an endpoint change
   that ships without its annotations is not "done". Every operation is complete to the last detail —
   every reachable status code (success + 401/403/404/409/422), the request body derived from the
@@ -45,7 +58,9 @@ instead of copy-pasting `AGENTS.md` / `CLAUDE.md` / skills between repositories.
   unit tests for services/calculations/state transitions. Acceptance criteria are EARS statements with
   stable IDs, each linked to its fail-first test.
 - **Grounding** — `grounding-protocol` + the `ground-integration` skill + the `grounded-researcher`
-  and `adversarial-verifier` agents. Read reality, never guess.
+  and `adversarial-verifier` agents. Read reality, never guess: executable proof covers internal feature
+  endpoints as well as external sandboxes, and a claim resting on official docs or an internal project
+  doc (`AGENTS.md` / CRD) is cited — source + quote — **in the answer itself**, or marked `UNKNOWN`.
 - **Deep skills (L3/L4, opt-in)** — `deep-grounding` · `deep-discovery` · `deep-review`: Workflow-driven
   multi-agent escalations of grounding / discovery / review, each finding adversarially verified.
   ~15× tokens, gated to explicit invocation; graceful fallback to the single-agent skill when the
@@ -134,5 +149,5 @@ agents/           impact-mapper · blind-spot-mapper · grounded-researcher · a
 hooks/            hooks.json · session-start.sh · pre-compact.sh · format-on-edit.sh · done-gate.sh · test-gate.sh · openapi-gate.sh · trim-output.sh · pre-tool-guard.sh · statusline.sh
 guidelines/       ai-sdd-process · grounding-protocol · blind-spot-protocol · clarify-protocol · openapi-protocol · laravel-standards · tdd-protocol · working-memory
 docs/             skill-hygiene (author-facing) · specs/
-templates/        project/ · specs/ · frontend/
+templates/        project/ · specs/ · frontend/ (feature · handoff — both pointing at the runnable request package)
 ```

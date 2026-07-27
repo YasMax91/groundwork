@@ -1,11 +1,11 @@
 # RaDevs Laravel-back plugin — enhancement roadmap
 
-Status: **complete** (2026-07-21) — Wave 1 (E4/E7/E6) v0.5.0 · Wave 0 spike · Wave 2 (E1) v0.6.0
+Status: original roadmap **complete** (2026-07-21) — Wave 1 (E4/E7/E6) v0.5.0 · Wave 0 spike · Wave 2 (E1) v0.6.0
 (E2 dropped) · Wave 3 (E3) v0.7.0 · Wave 4 (E5/E8/E9) v0.8.0 · Wave 5 (status/UI, post-roadmap UX
 request) v0.9.0 · Wave 6 (blind-spot surfacing, post-roadmap UX request) v0.10.0 · Wave 6.5 (OpenAPI
 contract gate, post-roadmap) v0.11.0 · Wave 7 (interview loop + living domain contract + skill
-hygiene, post-roadmap) v0.12.0. All shipped & conformance-verified · Author: Max Yastremskyi (YasMax91)
-· Owner: RaDevs
+hygiene, post-roadmap) v0.12.0. **Feedback programme (Waves 8–11) in progress** — Wave 8 shipped
+v0.13.0. Author: Max Yastremskyi (YasMax91) · Owner: RaDevs
 
 A prioritized, grounded backlog of improvements to the `groundwork` plugin. The current
 plugin (v0.4.0) already implements most of the 2025–2026 frontier — just-in-time context via
@@ -293,6 +293,55 @@ Order by de-risking + value, not by tier number:
 
 Each wave is shippable on its own (commit + version bump + `/plugin reinstall` per the rollout
 convention). Suggested: Wave 1 → `v0.5.0`, Wave 2 → `v0.6.0`, Wave 3 → `v0.7.0`, Wave 4 → `v0.8.0`.
+
+---
+
+## Feedback programme (Waves 8–11) — mined from the v0.12.0 usage window
+
+Source: every session in the v0.12.0 window (2026-07-21 → 2026-07-27; 36 sessions across 4 projects),
+read end-to-end and ranked by frequency. Caveat recorded at the time: `AskUserQuestion` answers are not
+retained in session history, so the collected volume is a **lower bound** on the real friction. All
+friction concentrated in long multi-task sessions (450–1350 messages); short single-task sessions and
+`init` runs produced none.
+
+Sequenced by pain, not by tier. Four packages:
+
+- **Wave 8 — live-verification discipline.** ✅ **shipped in v0.13.0** →
+  [wave-8-live-verification.md](wave-8-live-verification.md). The dominant complaint (~16 cases): "said
+  done/verified, but it doesn't work live". Green gates stay necessary and stop being sufficient — a real
+  HTTP run for endpoints, a real browser drive for admin/UI/CSS (asset loads · effective computed style ·
+  persisted state), consumer coverage keyed to the impact map, end-to-end reachability of any declared
+  contract value, class-audit instead of point-patch on a user bug report, a runnable Postman/curl package
+  in the frontend handoff, and executable proof + surfaced citations broadened beyond external APIs.
+- **Wave 9 — audience & language.** Technical jargon aimed at a non-technical owner (~8 cases); a
+  technical spec delivered where a **client document** was needed (client-doc does not exist as an entity
+  in the plugin — `spec` is the bot-facing technical artifact and must not be bent into one); estimates in
+  **real AI-hours to write the functionality** (the human only reviews — no man-days; no such rule exists
+  today); client/BA drafts always accompanied by a Russian version without being asked (confirmed
+  2026-07-27 as plugin core, not a personal preference). Files: `clarify-protocol`, `start-task`, new
+  `skills/client-doc/` + template.
+- **Wave 10 — process depth.** `grill` is never offered (`disable-model-invocation: true`, called by no
+  skill) → discovery for L3/L4 or a blurred intent proposes it itself; the impact map is built once at
+  the start and **never refreshed when the task grows new sub-requests mid-session** (where the real
+  misses happened) → re-map per sub-request, and consider L1; recommendation-first is already strong in
+  `clarify-protocol.md:40-42` (the user's "never proposes options" is only partly right) → add a visible
+  "approaches + recommendation" step **before** the questions, at plan altitude.
+- **Wave 11 — plugin infrastructure & bugs.** Parallel sessions share one worktree and one test DB →
+  falsely-red gates, clobbered fixtures, a hostile stale `task-state.md`, false openapi-gate hits on
+  another session's uncommitted code (a mechanism is needed — a test-DB lock between the Stop gate and any
+  background run — since a plugin cannot force a per-session git worktree; that stays a documented
+  practice); `pre-tool-guard.sh` never reads `.runner`, so `runner: host` is not honored (same root as the
+  openapi gate's generate step silently no-opping without Sail); the `Mode:` parser accepts
+  non-canonical text (`**COMMITTED**`) instead of validating against
+  {Discovery,Spec,Plan,Implementation,Review}; `task-state.md` overstates coverage ("asserted on both
+  endpoints" with one covered). **Not reproduced:** the statusline pinned to 0.9.0 — no version string
+  exists in `hooks/`; treat as already fixed unless it resurfaces. Hook changes ship with
+  `hooks/tests/run.sh` updated first (test-first).
+
+Deliberately **not** touched by this programme (verified working across the window — do not regress):
+the plan-approval gate (never violated), test-first red→green, grounding by live probe (it caught a
+non-existent `/payment/links` endpoint by probing before any code), and the agent's own self-catch of
+unsound hypotheses before they reached implementation.
 
 ---
 

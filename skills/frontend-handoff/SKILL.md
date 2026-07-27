@@ -30,7 +30,7 @@ response shape, authorization/visibility, workflow states the UI reflects, or ne
 behavior. For a purely internal change with **no** frontend impact, say so explicitly and skip the
 docs — then go straight to the commit step.
 
-## Two document types (both live under `ai/frontend/`, the dir from `.groundwork.json` `docs.frontend`)
+## Document types (all live under `ai/frontend/`, the dir from `.groundwork.json` `docs.frontend`)
 
 1. **Living reference doc** — `ai/frontend/<area>.md`, the current truth for a feature/area
    (the "первоначальный документ"). Template: `${CLAUDE_SKILL_DIR}/../../templates/frontend/feature.md`.
@@ -40,6 +40,13 @@ docs — then go straight to the commit step.
 2. **Handoff instruction doc** — `ai/frontend/handoff/<YYYY-MM-DD>-<slug>.md`, the delta you physically
    hand over. Template: `${CLAUDE_SKILL_DIR}/../../templates/frontend/handoff.md`. **Always create one**
    for a frontend-facing change, covering **new · changed · removed (breaking)** functionality.
+3. **Runnable request package** — `ai/frontend/<area>.postman_collection.json` **or**
+   `ai/frontend/<area>.http` (pick one per project and stay consistent), so the frontend **runs** the
+   contract instead of retyping it. One request per touched endpoint — method, URL, headers (incl. the
+   auth header), and a request body derived from the `FormRequest` rules — each annotated with a
+   **captured example success + error response** from `final-check`'s live run, so the examples are real,
+   not invented. The reference and handoff docs point to it; the package never restates the prose
+   contract, it executes it.
 
 ## Steps
 
@@ -54,8 +61,12 @@ docs — then go straight to the commit step.
    must account for or the UI breaks — async states (a request that returns before the work is done),
    empty/error/loading states, ordering/idempotency of calls, visibility rules. Flag them proactively
    (per the blind-spot protocol); do not just document the happy-path contract.
-5. Post a one-line pointer in chat (Russian) telling the user which docs were created/updated.
-6. Run the commit step.
+5. Create or update the **runnable request package** for the touched endpoints (doc type 3) with the
+   examples captured in the live run. **Reachability rule:** document a field or value only if real
+   data can produce it end-to-end — a shape the backend cannot actually populate is not a contract; if
+   the live run could not produce it, it is not documented as available.
+6. Post a one-line pointer in chat (Russian) telling the user which docs were created/updated.
+7. Run the commit step.
 
 ## Commit step
 

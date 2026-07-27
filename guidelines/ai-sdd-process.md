@@ -23,9 +23,12 @@ scope the edit tightly, never the investigation.
 - **Implementation** — test-first (red→green→refactor): write the failing test, implement to green,
   refactor under the gates. Edit per the approved spec; keep scope tight. See
   [tdd-protocol.md](tdd-protocol.md).
-- **Review** — review the diff for violations, missing tests, risks. No silent changes. Two distinct
-  gates: the **adversarial-verifier** challenges "it works" claims (is the claim true?); the
-  **conformance-reviewer** judges the diff against the spec's acceptance-criterion IDs (does it match?).
+- **Review** — review the diff for violations, missing tests, risks, and **exercise the change live**
+  against the running app (HTTP run / browser drive per `final-check`) — green gates prove the code, not
+  the running app. No silent changes. Two distinct gates: the **adversarial-verifier** challenges "it
+  works" claims (is the claim true?); the **conformance-reviewer** judges the diff against the spec's
+  acceptance-criterion IDs (does it match?). A defect the **user** reports is a signal about a whole
+  class — audit every sibling site and fix the class, never point-patch the one instance.
 
 ## Task classification (classify before working)
 
@@ -94,7 +97,13 @@ passing · every acceptance-criterion ID mapped to a passing test (no AC unmappe
 complete for every touched endpoint** — annotations updated in the same change, every reachable status
 code documented, request body from the FormRequest, response schema from the JsonResource, generation
 clean (see [openapi-protocol.md](openapi-protocol.md); the `openapi` Stop gate enforces it) ·
-format + static analysis run (or skip reason stated) · migration/deployment impact
+format + static analysis run (or skip reason stated) · **exercised live against the running app** for
+the touched surface — a real HTTP run for an endpoint, a real browser drive for admin/UI/CSS (asset
+loads · effective computed style · no persisted state masking it), or an explicit statement of what
+stayed unverified with repro steps; green tests are never reported as "works live" · **every consumer of
+a touched shape verified** (List *and* Show, export, API resource, notifications — per the impact map)
+with denormalized/derived values present on real data, or the consumer noted out of scope ·
+migration/deployment impact
 documented · **domain contract current** — the project's `AGENTS.md` reflects any entity, invariant,
 permission rule, integration, or term the change introduced · frontend handoff docs in `ai/frontend` created/updated when the change touches the
 frontend-facing surface (run the `frontend-handoff` skill after the gates are green) · final report
@@ -113,5 +122,7 @@ or noted out of scope)? · API contracts preserved? · controllers thin? ·
 logic in services? · validation in FormRequest? · authorization present where needed? · multi-step
 writes transactional? · resources preserve shape? · N+1 handled? · migrations production-safe? ·
 tests written test-first (red→green) for covered work? · each acceptance-criterion ID mapped to a
-passing test? · gates run or skip-reason stated? · blind spots surfaced (or none)? ·
-risks/assumptions documented?
+passing test? · gates run or skip-reason stated? · exercised live against the running app (or stated
+what stayed unverified + repro)? · every consumer of a touched shape verified, denormalized values
+present on real data? · a user-reported defect audited as a class, not point-patched? · blind spots
+surfaced (or none)? · risks/assumptions documented?
