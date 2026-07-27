@@ -60,6 +60,40 @@ while IFS= read -r f; do
 done <<< "$changed"
 [ -n "$touched" ] || exit 0
 
+# --- comment-only changes cannot alter the contract ---
+# An L0 typo fix inside a controller comment must not demand an annotation update plus a checkpoint
+# that an L0 task never creates. But "looks like a comment" is a dangerous test in PHP, so this is
+# deliberately narrow — three ways it could be fooled, each closed:
+#   * `#[Attribute]` opens with '#' and is CODE (routing/middleware/policy) -> never comment-only;
+#   * `/* c */ realCode();` opens with '/*' and carries code -> a block opener only counts when the
+#     line holds nothing else;
+#   * an `OA\` token anywhere means annotations moved -> not comment-only.
+# It also does NOT exit: it only waives the "annotations must change" demand, so the
+# broken-generation half below still runs. Anything uncertain (no diff, untracked file) falls
+# through to the normal path — a false block is recoverable, a false pass is not.
+comment_only=0
+files_arr=()
+while IFS= read -r f; do [ -n "$f" ] && files_arr+=("$f"); done <<< "$touched"
+
+untracked_touched=0
+for f in "${files_arr[@]}"; do
+  git ls-files --error-unmatch -- "$f" >/dev/null 2>&1 || untracked_touched=1
+done
+
+if [ "$untracked_touched" -eq 0 ] && [ "${#files_arr[@]}" -gt 0 ]; then
+  changed_lines="$(git diff HEAD -- "${files_arr[@]}" 2>/dev/null \
+    | grep -E '^[+-]' | grep -vE '^(\+\+\+|---)' || true)"
+  if [ -n "$changed_lines" ] && ! printf '%s\n' "$changed_lines" | grep -q 'OA\\'; then
+    # Strip the +/- marker, then hunt for any line that is NOT purely a comment or blank.
+    #   allowed: blank · `// …` · `# …` (but not `#[`) · `* …` · `*/` · `/* … */` complete on one
+    #            line with nothing after it · `/**` or `/*` alone opening a block
+    code_line="$(printf '%s\n' "$changed_lines" | sed -E 's/^[+-]//' | grep -vE \
+      '^[[:space:]]*$|^[[:space:]]*//|^[[:space:]]*#([^[]|$)|^[[:space:]]*\*|^[[:space:]]*/\*+[[:space:]]*$|^[[:space:]]*/\*.*\*/[[:space:]]*$' \
+      || true)"
+    [ -z "$code_line" ] && comment_only=1
+  fi
+fi
+
 # --- was the spec touched in the same change? ---
 # Annotations may live outside the surface files (dedicated schema classes), and some projects
 # keep a static document — so look across the whole diff, not just the touched endpoints.
@@ -91,6 +125,11 @@ if [ "$spec_touched" -eq 0 ] && [ -f .claude/groundwork/task-state.md ]; then
   if grep -qiE '^[[:space:]]*-?[[:space:]]*OpenAPI:[[:space:]]*n/?a' .claude/groundwork/task-state.md 2>/dev/null; then
     exit 0
   fi
+fi
+
+if [ "$spec_touched" -eq 0 ] && [ "$comment_only" -eq 1 ]; then
+  # Comments only: nothing to document, but the generation check below still applies.
+  exit 0
 fi
 
 if [ "$spec_touched" -eq 0 ]; then

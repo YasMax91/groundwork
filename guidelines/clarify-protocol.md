@@ -30,7 +30,7 @@ the frontier outward.
 
 Questions reach the frontier from four places: ambiguity in what was said · a requirement that conflicts
 with the code or the CRD · a **blind spot that needs a product call** (per the blind-spot protocol —
-surfaced as a decision, not a prose bullet) · a fork in the implementation where the options differ in
+surfaced as a decision when this level admits the question; otherwise recorded as a stated assumption) · a fork in the implementation where the options differ in
 consequence rather than in taste.
 
 ## Plain language first — the layered rule

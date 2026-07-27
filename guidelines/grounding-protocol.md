@@ -24,9 +24,10 @@ real run apply to internal work too (see rules 3 and 6).
    evidence (quote/endpoint) → fallback if not*. Resolve every `UNKNOWN` with the user before coding.
 3. **Executable proof — external *and* internal.** Nothing is "done" until a real call exercises the
    path against the running app. For an **external integration**: a real sandbox/API call. For an
-   **internal feature endpoint**: a real HTTP run against the served app (or a real client in
-   `./vendor/bin/sail artisan tinker`) with realistic input — a green feature test alone is the test
-   kernel, not the running app. If you cannot call it, you cannot claim it works; say what stayed
+   **internal feature endpoint**: a real HTTP run against the served app (or a real client via
+   `./vendor/bin/sail artisan tinker --execute="…"` — a bare `tinker` waits for a TTY and hangs in a
+   non-interactive shell) with realistic input — a green feature test alone is the test kernel, not the
+   running app. If you cannot call it, you cannot claim it works; say what stayed
    unverified. (`final-check` drives this — see its Live verification section.)
 4. **Confidence labeling.** Separate `verified` (with evidence) from `assumed`. Default to
    "assumed / uncertain" when unsure.
@@ -43,7 +44,8 @@ real run apply to internal work too (see rules 3 and 6).
 
 Use the `ground-integration` skill to drive the capability matrix. Spawn the **grounded-researcher**
 agent for the documentation sweep (it must cite sources) and the **adversarial-verifier** agent to
-challenge any "it works" claim before completion.
+challenge any "it works" claim about an external capability before completion — per the fan-out table in
+[ai-sdd-process.md](ai-sdd-process.md), which owns the per-level calibration for both review agents.
 
 ## Reference case
 

@@ -48,6 +48,12 @@ docs — then go straight to the commit step.
    not invented. The reference and handoff docs point to it; the package never restates the prose
    contract, it executes it.
 
+   **When the live run did not happen** — the app or the browser was unreachable, an outcome `final-check`
+   explicitly permits — still produce the package and the docs, and mark every example
+   **`UNVERIFIED — выведено из FormRequest/JsonResource, не наблюдалось`**. The reachability rule in step 5
+   then degrades from a prohibition into a flagged assumption. Saying nothing about it is the only
+   forbidden option: an unmarked invented example is precisely the failure this package exists to prevent.
+
 ## Steps
 
 1. Document the **final** contract, not an intermediate one.

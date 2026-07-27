@@ -150,6 +150,67 @@ JSON
 printf '#!/bin/sh\necho "Error: @OA\\\\Schema() unresolved $ref"\nexit 1\n' > "$d/gen.sh"; chmod +x "$d/gen.sh"
 expect "AC15 override under sail"   2 "$d"
 
+# --- W12-AC11: a comment-only edit cannot change the contract -> must not block (L0 typo fix) ---
+d="$ROOT/ac16"; fixture "$d" true
+cat > "$d/app/Http/Controllers/FooController.php" <<'PHP'
+<?php
+// fixed a typo in this comment
+class FooController {}
+PHP
+expect "AC16 comment-only allowed"  0 "$d"
+
+# but a real code change in the same file still blocks
+d="$ROOT/ac17"; fixture "$d" true
+cat > "$d/app/Http/Controllers/FooController.php" <<'PHP'
+<?php
+// a comment too
+class FooController { public function show() {} }
+PHP
+expect "AC17 code change blocks"    2 "$d"
+
+# and an annotation inside a comment block is NOT "comment-only"
+d="$ROOT/ac18"; fixture "$d" true
+cat > "$d/app/Http/Controllers/FooController.php" <<'PHP'
+<?php
+/**
+ * @OA\Get(path="/api/foo")
+ */
+class FooController {}
+PHP
+expect "AC18 annotation counts"     0 "$d"
+
+# --- comment-only detection must not be fooled (found by adversarial audit of Wave 12) ---
+
+# N1: a PHP 8 attribute starts with '#' but is CODE — a route/middleware/policy change
+# APPEND ONLY — no code line is removed, so the diff is purely additions (the audit's exact case)
+d="$ROOT/ac19"; fixture "$d" true
+printf "#[Delete('/api/foo/{id}')]\n" >> "$d/app/Http/Controllers/FooController.php"
+expect "AC19 php8 attribute blocks"  2 "$d"
+
+# N2: a line that OPENS with /* but carries real code after it
+d="$ROOT/ac20"; fixture "$d" true
+printf '/* new endpoint */ public function destroy($id) {}\n' >> "$d/app/Http/Controllers/FooController.php"
+expect "AC20 code after /* blocks"   2 "$d"
+
+# N3: a comment-only edit must not switch OFF the broken-generation half of the gate
+d="$ROOT/ac21"; fixture "$d" true
+printf '// just a comment touch\n' >> "$d/app/Http/Controllers/FooController.php"
+mkdir -p "$d/app/Schemas"
+cat > "$d/app/Schemas/FooSchema.php" <<'PHP'
+<?php
+#[OA\Schema(schema: 'Foo')]
+class FooSchema {}
+PHP
+mkdir -p "$d/vendor/bin"
+printf '#!/bin/sh\necho "Error: @OA\\\\Schema() unresolved $ref"\nexit 1\n' > "$d/vendor/bin/sail"
+chmod +x "$d/vendor/bin/sail"
+expect "AC21 broken spec still caught" 2 "$d"
+
+# a genuine multi-line doc comment is still comment-only
+d="$ROOT/ac22"; fixture "$d" true
+printf '/**\n * Handles orders.\n */\n' >> "$d/app/Http/Controllers/FooController.php"
+expect "AC22 docblock allowed"       0 "$d"
+
 echo
 echo "  passed: $pass, failed: $fail"
 [ "$fail" -eq 0 ]

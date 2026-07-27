@@ -23,14 +23,17 @@ scope the edit tightly, never the investigation.
 - **Implementation** — test-first (red→green→refactor): write the failing test, implement to green,
   refactor under the gates. Edit per the approved spec; keep scope tight. A **new sub-request re-enters
   discovery for its own blast radius** before it is built — compare its seeds against the cached map and
-  re-map when they fall outside it, whatever the level (accumulated small additions count). See
+  re-map when they fall outside it — the cheap seed comparison runs at every level, while re-spawning the
+  expensive mapper is reserved for new model/table/service seeds (accumulated small additions count). See
   [tdd-protocol.md](tdd-protocol.md) and [working-memory.md](working-memory.md).
 - **Review** — review the diff for violations, missing tests, risks, and **exercise the change live**
-  against the running app (HTTP run / browser drive per `final-check`) — green gates prove the code, not
-  the running app. No silent changes. Two distinct gates: the **adversarial-verifier** challenges "it
-  works" claims (is the claim true?); the **conformance-reviewer** judges the diff against the spec's
-  acceptance-criterion IDs (does it match?). A defect the **user** reports is a signal about a whole
-  class — audit every sibling site and fix the class, never point-patch the one instance.
+  against the running app (HTTP run / browser drive per `final-check`, scaled by level) — green gates
+  prove the code, not the running app. No silent changes. Two review agents, spawned per the fan-out
+  table above: the **conformance-reviewer** judges the diff against the spec's acceptance-criterion IDs
+  (does it match?); the **adversarial-verifier** challenges "it works" claims (is the claim true?). A
+  defect the **user** reports is a signal about a whole class: **enumerate the sibling sites and report
+  them**, fix those inside the approved scope, and offer the rest as a named follow-up slice rather than
+  silently widening the change.
 
 ## Task classification (classify before working)
 
@@ -46,11 +49,11 @@ scope the edit tightly, never the investigation.
 
 ## Estimates
 
-Whenever the work is estimated — in a document or in chat — the unit is **real AI-hours to write the
-functionality**, never man-days or developer hours: a human reviews this code, he does not write it.
-Ranges per block, a total, and the reviewer's time on its own line. The format is owned by the
-**`client-doc`** skill ([../skills/client-doc/SKILL.md](../skills/client-doc/SKILL.md)) — follow it there
-rather than a second copy that drifts.
+The unit is always **real AI-hours to write the functionality**, never man-days or developer hours: a
+human reviews this code, he does not write it. The **full format** — ranges per block, a total, the
+reviewer's time on its own line — belongs to a document or an explicit "how long will this take?", and is
+owned by the **`client-doc`** skill ([../skills/client-doc/SKILL.md](../skills/client-doc/SKILL.md)).
+A passing remark about time in conversation just needs the right unit, not the whole table.
 
 ## Fan-out by level (effort scaling)
 
@@ -60,12 +63,19 @@ fit, so only Discovery and Verification fan out.
 - **L0 Tiny** — no subagents. Inline.
 - **L1 Small** — self-trace (a few targeted greps). No agent.
 - **L2 Normal** — 1 `impact-mapper` (cache-aware). Add `grounded-researcher` only if an external API
-  is touched; `blind-spot-mapper` optional when the task has real product/domain surface.
+  is touched; `blind-spot-mapper` optional when the task has real product/domain surface. For
+  verification: `conformance-reviewer` on the diff-vs-spec.
 - **L3 High-risk** — `impact-mapper` + `blind-spot-mapper` + `grounded-researcher` (if integration) for
   discovery; `conformance-reviewer` + `adversarial-verifier` for verification. May escalate to
   `deep-discovery` / `deep-grounding` / `deep-review`.
+
 - **L4 Critical** — as L3 (blind-spot-mapper required), plus an adversarial panel (≥2 skeptics) on the
   riskiest claims and blind spots.
+
+**This list is the single source of truth for review-agent fan-out** — `final-check`,
+[grounding-protocol.md](grounding-protocol.md), and Review mode point here rather than restating it. In
+short: **conformance-reviewer at L2+** (does the diff match the spec?), **adversarial-verifier at L3/L4
+and whenever a claim about an external capability is made** (is the claim true?).
 
 **Implementation is single-threaded.** Work one TDD slice at a time — no parallel coding agents. The
 fan-out above is for Discovery and Verification only.
@@ -75,8 +85,9 @@ fan-out above is for Discovery and Verification only.
 The ordered steps and the first-response structure belong to the **`start-task`** skill
 ([../skills/start-task/SKILL.md](../skills/start-task/SKILL.md)), which owns them — follow it there
 rather than a second copy that drifts. Three rules bind every path through it: the first response
-carries no code, no file is edited before the plan is approved, and a decision the user could have made
-is never assumed instead.
+carries no code, no **production** file is edited before the plan is approved — the workflow checkpoint
+under `.claude/groundwork/` and planning docs are the standing exception, which the `PreToolUse` guard
+already implements — and a decision the user could have made is never assumed instead.
 
 ## Definition of Ready
 
@@ -100,7 +111,22 @@ For a **cross-cutting, durable** decision among these (new dependency, new archi
 workflow-state model), capture an ADR in `docs/adr/NNNN-<slug>.md` (from `templates/adr.md`) — ≥2
 considered options + the chosen one + why. Feature-local trade-offs stay in the spec.
 
-## Definition of Done
+## Definition of Done — scaled by level
+
+**The list below is the L2+ Definition of Done.** Applying all of it to a typo is how a process stops
+being used. What scales down is *breadth*, never *proof*:
+
+- **L0 (typo, comment, docs)** — the gates that fire on their own. No live run, no consumer sweep, no
+  domain-drift check, no frontend handoff, no approach block, no interview.
+- **L1 (small bug fix)** — the gates · a fail-first regression test · a **live exercise of the one thing
+  fixed** (not a sweep of every consumer). Domain-drift, the runnable request package, and the frontend
+  handoff apply only if the change actually touched the frontend-facing contract.
+- **L2+** — everything below.
+
+Unconditional at **every** level, because they are what makes a report trustworthy rather than thorough:
+state what stayed unverified · never report green tests as "works live" · never claim unqualified "done".
+
+## Definition of Done (L2+)
 
 implementation matches the approved spec · public API preserved or intentionally changed ·
 validation via FormRequest · authorization handled · business logic in services · resources preserve
@@ -134,7 +160,8 @@ or noted out of scope)? · API contracts preserved? · controllers thin? ·
 logic in services? · validation in FormRequest? · authorization present where needed? · multi-step
 writes transactional? · resources preserve shape? · N+1 handled? · migrations production-safe? ·
 tests written test-first (red→green) for covered work? · each acceptance-criterion ID mapped to a
-passing test? · gates run or skip-reason stated? · exercised live against the running app (or stated
-what stayed unverified + repro)? · every consumer of a touched shape verified, denormalized values
-present on real data? · a user-reported defect audited as a class, not point-patched? · blind spots
-surfaced (or none)? · risks/assumptions documented?
+passing test? · gates run or skip-reason stated? · exercised live against the running app at the level's
+depth (or stated what stayed unverified + repro)? · **L2+:** every consumer of a touched shape verified,
+denormalized values present on real data? · a user-reported defect's sibling class enumerated, with each
+sibling fixed in scope or offered as a slice? · blind spots surfaced (or none)? · risks/assumptions
+documented?

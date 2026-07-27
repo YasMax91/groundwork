@@ -66,9 +66,11 @@ Two files, same content, produced in the **same pass, without being asked**:
 one direction of generation is what keeps the two from drifting. If the project's client reads another
 language, the project's `AGENTS.md` says so and this skill follows it.
 
-The same applies to any other client- or BA-facing text (a question list, a message to forward): produce
-both versions unasked. This extends the exception the `frontend-handoff` docs already hold — the reader is
-a human, so the language serves the reader rather than the English-artifact rule.
+The same applies to any other text **the user will send onward** — a question list for a BA, a message to
+forward: produce both versions unasked. It does not reach the working conversation itself: questions the
+agent asks *the user* are simply in the user's language. This extends the exception the `frontend-handoff`
+docs already hold — the reader is a human, so the language serves the reader rather than the
+English-artifact rule.
 
 ## Steps
 

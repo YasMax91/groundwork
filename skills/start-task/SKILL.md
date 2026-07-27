@@ -78,8 +78,9 @@ Stay in **Discovery mode**: inspect and plan only, do not edit files until the p
   plain language — no term the owner must translate first), let each
    answer push the frontier outward, and stop when it is empty. Scaled by level — **L0/L1** at most one
    question, **L2** one round, **L3/L4** up to **3** rounds with anything unresolved recorded as an
-   explicit assumption. A blind spot that needs a product call enters here as a question, not as a
-   prose bullet. Look up every fact yourself; never spend a question on one.
+   explicit assumption. A blind spot that needs a product call enters here as a question when the level's
+   calibration admits one; when it does not, it is recorded as an explicit assumption instead — never
+   silently dropped (see the blind-spot protocol). Look up every fact yourself; never spend a question on one.
 9. **Write the task checkpoint** to `.claude/groundwork/task-state.md` — mode, level, spec path, the
    slice/red list, the decisions just settled, assumptions, open approvals — so the work survives a
    restart or compaction (the `SessionStart` hook re-injects it automatically, no re-reading). This

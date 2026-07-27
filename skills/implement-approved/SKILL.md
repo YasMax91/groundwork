@@ -46,9 +46,13 @@ Only proceed if the spec/plan was **explicitly approved in this conversation**. 
   seeds (files, models, tables, symbols) and compare them with the `SEEDS:` header of the cached impact
   map:
   - **already covered** → the map holds, proceed;
-  - **new seeds outside the map** → the map does not cover this work. **L0/L1:** a targeted self-trace
-    over the new seeds. **L2+:** re-spawn `impact-mapper` over the **union** of old and new seeds,
-    overwrite the cache, refresh `SEEDS:` and `BASE_COMMIT`.
+  - **new seeds outside the map** → the map does not cover this work. Match the response to what the new
+    seeds *are*, because `impact-mapper` is the most expensive fan-out in the plugin:
+    - a **model, table, or service** among them (couplings fan out invisibly) → **L2+:** re-spawn
+      `impact-mapper` over the **union** of old and new seeds, overwrite the cache, refresh `SEEDS:` and
+      `BASE_COMMIT`. **L0/L1:** a targeted self-trace.
+    - only a **Resource, FormRequest, view, or string** → a targeted self-trace at any level; re-spawning
+      the mapper for a copy change is the ceremony this rule is meant to avoid.
   - **no cached map at all** (an L0/L1 task never wrote one) → nothing to compare against, so trace the
     new seeds yourself; if the sub-request pushes the work to L2+, build the map now.
 

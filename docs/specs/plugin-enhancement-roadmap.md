@@ -4,8 +4,8 @@ Status: original roadmap **complete** (2026-07-21) — Wave 1 (E4/E7/E6) v0.5.0 
 (E2 dropped) · Wave 3 (E3) v0.7.0 · Wave 4 (E5/E8/E9) v0.8.0 · Wave 5 (status/UI, post-roadmap UX
 request) v0.9.0 · Wave 6 (blind-spot surfacing, post-roadmap UX request) v0.10.0 · Wave 6.5 (OpenAPI
 contract gate, post-roadmap) v0.11.0 · Wave 7 (interview loop + living domain contract + skill
-hygiene, post-roadmap) v0.12.0. **Feedback programme (Waves 8–11) complete** — Wave 8 v0.13.0 ·
-Wave 9 v0.14.0 · Wave 10 v0.15.0 · Wave 11 v0.16.0, all conformance-verified.
+hygiene, post-roadmap) v0.12.0. **Feedback programme (Waves 8–12) complete** — Wave 8 v0.13.0 ·
+Wave 9 v0.14.0 · Wave 10 v0.15.0 · Wave 11 v0.16.0 · Wave 12 v0.17.0 (calibration), all conformance-verified.
 Author: Max Yastremskyi (YasMax91) · Owner: RaDevs
 
 A prioritized, grounded backlog of improvements to the `groundwork` plugin. The current
@@ -359,6 +359,25 @@ Sequenced by pain, not by tier. Four packages:
   other two), and the project template pinned every `commands.*` to Sail, which — once an explicit
   override correctly beat the runner — made `runner: host` inert for any project created from it. 102 hook
   tests across 7 suites, one entry point (`hooks/tests/all.sh`).
+
+- **Wave 12 — calibration & conflict resolution.** ✅ **shipped in v0.17.0** →
+  [wave-12-calibration.md](wave-12-calibration.md). Run **before the author started using v0.16.0**, on the
+  strength of an adversarial audit of the *combined* rule set, which returned REFUTED with 16 findings (4
+  high) — every one re-verified against the source before being accepted. The root cause was an
+  asymmetry: every rule that predated Wave 8 scaled across L0–L4, and **every rule Waves 8–11 added was
+  written without a level**, so changing one error message came to demand ~32 obligatory actions. Wave 12
+  adds no capability — it calibrates (per-level Definition of Done; L0 gets the automatic gates only, L1
+  gets gates + regression test + a live exercise of the one thing fixed) and removes the contradictions:
+  class-audit now *enumerates and reports* the sibling class instead of colliding with "keep scope tight"
+  and the approval gate; the checkpoint may no longer be deleted while it is still the OpenAPI gate's
+  escape hatch; `frontend-handoff` gained a stated degraded mode for when the live run legitimately did not
+  happen; `spec` offers `/grill` instead of ordering an impossible invocation; review-agent calibration
+  lives in one table; a blind spot the interview cannot admit becomes a recorded assumption rather than
+  being dropped; sub-request re-mapping re-spawns the expensive agent only for model/table/service seeds;
+  and the documented `test_lock_wait_seconds` default was corrected to match the code. Two hook additions,
+  both test-first: repeat Stop-gate runs are skipped while the changed PHP is byte-identical to the last
+  green one (`gates.reuse_green_run`), and a comment-only edit no longer trips the OpenAPI gate. 109 hook
+  tests.
 
 Deliberately **not** touched by this programme (verified working across the window — do not regress):
 the plan-approval gate (never violated), test-first red→green, grounding by live probe (it caught a

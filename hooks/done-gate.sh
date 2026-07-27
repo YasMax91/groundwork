@@ -51,4 +51,5 @@ if [ "$status" -ne 0 ]; then
   } >&2
   exit 2
 fi
+
 exit 0

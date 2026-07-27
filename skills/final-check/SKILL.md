@@ -31,9 +31,20 @@ does what the user will see. Before "done", exercise the changed behavior agains
 way a user hits it. Scope it to the surface that changed — an API route gets an HTTP run, an admin/UI/CSS
 change gets a browser run, a pure internal refactor gets neither.
 
+**Scaled by level** (the full Definition of Done is L2+; see
+`${CLAUDE_SKILL_DIR}/../../guidelines/ai-sdd-process.md`):
+
+- **L0** — no live run, no sweep, no class enumeration; the automatic gates are the whole check. The
+  honesty rules at the end of this section still bind: say what was not verified, and never call green
+  tests "works live".
+- **L1** — exercise **the one thing you fixed**, live. Skip the consumer sweep, the reachability audit,
+  and the class enumeration below unless the bug report itself points at a class.
+- **L2+** — the whole section.
+
 - **API / feature endpoint — a real HTTP run.** Call the endpoint on the running app (curl / an HTTP
-  client, or a real client inside `./vendor/bin/sail artisan tinker`) with realistic input, and capture
-  the **actual** status + body. A green feature test does **not** satisfy this — the point is the wire,
+  client, or non-interactively via
+  `./vendor/bin/sail artisan tinker --execute="…"` — a bare `tinker` waits for a TTY and will hang) with
+  realistic input, and capture the **actual** status + body. A green feature test does **not** satisfy this — the point is the wire,
   the middleware stack, the real DB, and the serialized response a client receives (the unqualified-column
   join that passes phpunit and 500s live is exactly what this catches). If the app is not served this
   session, fall back to the closest real exercise (`$this->getJson(...)` against the HTTP kernel) and say
@@ -54,11 +65,13 @@ change gets a browser run, a pure internal refactor gets neither.
   end-to-end — the field is in the shape **and** something can actually populate it. A shape the backend
   cannot fill is not a contract; catch it here, not when the frontend hits the wall (the payment-status-
   by-`uuid` case).
-- **Bug reports are class signals, not point defects.** When the user reports a UI / behavior defect,
-  audit the **whole class** of sibling sites — every model with that field, every column that truncates,
-  every screen using that partial, every dashboard link's clickability — and fix + verify the class in
-  one pass. One user-found defect means the class was never verified; a point patch just waits for the
-  next instance.
+- **Bug reports are class signals — surface the class, fix what is approved.** When the user reports a UI
+  / behavior defect, **enumerate every sibling site** (every model with that field, every column that
+  truncates, every screen using that partial, every dashboard link) and **report the list**. Fix the
+  reported instance plus the siblings that fall inside the approved scope; offer anything wider as a
+  **named follow-up slice with its own approval** — silently widening a change collides with "keep the
+  scope tight" and with the approval gate. One user-found defect means the class was never verified, so
+  the class must at minimum become *visible*; what stays unfixed is stated, never unmentioned.
 
 **Fail-safe, never silent.** If the running app or the browser tool cannot be reached, state exactly what
 stayed unverified and hand over precise reproduction steps — the same visible escape as
@@ -72,18 +85,19 @@ transactional? · resources preserve shape? · N+1 handled? · migrations produc
 written test-first (red→green)? · each acceptance-criterion ID mapped to a passing test? · **every
 touched endpoint documented in OpenAPI to the protocol** (all reachable status codes, request body
 from the FormRequest, response schema from the JsonResource, examples/enums) and generation clean? ·
-gates run or skip-reason stated? · **exercised live against the running app** for the touched surface
-(HTTP run / browser drive), or stated what stayed unverified + repro? · **every consumer of a touched
-shape verified** (List/Show/export/API/notifications), denormalized values present on real data? · a
-user-reported defect audited as a class, not point-patched?
+gates run or skip-reason stated? · **exercised live against the running app** at this level's depth
+(HTTP run / browser drive), or stated what stayed unverified + repro? · **L2+ only:** every consumer of
+a touched shape verified (List/Show/export/API/notifications), denormalized values present on real
+data? · **L2+ only:** a user-reported defect's sibling class enumerated and reported, each sibling fixed
+in scope or offered as a slice?
 
-## Conformance review (L2+)
+## Conformance review (L2+ — per the fan-out table in `../../guidelines/ai-sdd-process.md`)
 
 Before the handoff, spawn the **conformance-reviewer** agent on the working diff (`git diff`) against
-the spec's acceptance-criterion IDs. In a fresh context it judges each AC `met` / `partial` / `unmet`
+the spec's acceptance-criterion IDs. At **L3/L4**, also spawn the **adversarial-verifier** on the
+riskiest "it works" claim — the same table owns both calibrations. In a fresh context it judges each AC `met` / `partial` / `unmet`
 and reports only correctness/requirement gaps. Fix any unmet-AC gap, or fold it into the handoff as a
-stated gap. Skip for L0/L1. This is distinct from the adversarial-verifier (which challenges "it works"
-claims).
+stated gap. Skip for L0/L1.
 
 ## Handoff summary
 
@@ -121,11 +135,21 @@ bug fix that introduced no new vocabulary changes nothing here.
 ## Close the checkpoint
 
 When the handoff is clean and the gates are green, mark the task done in
-`.claude/groundwork/task-state.md` (or delete the file) so the next session starts fresh instead of
-resuming a finished task. If work remains, leave the checkpoint reflecting the true remaining state.
+`.claude/groundwork/task-state.md` so the next session starts fresh instead of resuming a finished task. If
+work remains, leave the checkpoint reflecting the true remaining state.
+
+**Do not delete the file while the working tree still holds an uncommitted contract-surface change.** The
+`openapi` Stop gate reads the `OpenAPI: n/a — <reason>` line *from this file*, against the **working
+tree**, before any commit exists — deleting it mid-turn destroys the exemption the task legitimately
+declared and blocks its own "done". Deletion is safe only once the change is committed, or when the task
+never touched routes / controllers / FormRequests / Resources.
 
 ## Next: frontend handoff
 
 If the gates are green and the change touched the frontend-facing surface, run the
-**`frontend-handoff`** skill next — document the final contract for the frontend developer in
-`ai/frontend/`, then offer to commit.
+**`frontend-handoff`** skill next — it ends by asking whether to commit. **If the change is purely
+internal**, there is no handoff to run, so **ask about committing here** rather than leaving the work
+uncommitted and the question unasked. Never commit without an explicit yes.
+
+The handoff skill documents the final contract for the frontend developer in `ai/frontend/`, then offers
+to commit.

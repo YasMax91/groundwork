@@ -61,10 +61,11 @@ instead of copy-pasting `AGENTS.md` / `CLAUDE.md` / skills between repositories.
   (the asset actually loads · the edited style is the *effective* computed one · no persisted
   `localStorage` state masking it). Coverage follows the impact map — every consumer of a touched shape
   (List *and* Show, export, API resource, notifications) with denormalized values checked on real data —
-  and a defect **you** report is audited as a whole class, never point-patched. Fail-safe: when the app
+  and a defect **you** report gets its whole sibling class enumerated and reported — fixed inside the approved scope, offered as a named slice beyond it. Fail-safe: when the app
   or the browser tool is unreachable it says exactly what stayed unverified, with repro steps; green
   tests are never reported as "works live", and a visual check the agent can drive is never handed back
   to you.
+- **Scaled to the task** — the full Definition of Done is the **L2+** one. An L0 typo gets the automatic gates and nothing else; an L1 bug fix gets the gates, a fail-first regression test, and a live exercise of the one thing fixed — not a sweep of every consumer. What scales down is breadth, never proof: "state what stayed unverified" and "never report green tests as works-live" hold at every level.
 - **Frontend handoff** — after the final implementation and green gates, the `frontend-handoff` skill
   writes documentation for the frontend developer under `ai/frontend/` (a living reference doc per
   area + a dated handoff delta) — what to build, when, how, why, where, and the API contract, in
@@ -100,7 +101,7 @@ instead of copy-pasting `AGENTS.md` / `CLAUDE.md` / skills between repositories.
 - **Parallel-session safety** — two sessions in one checkout share the test database, and the falsely-red
   gates that follow (`1412 Table definition has changed` → `1146 doesn't exist`) cost real debugging time.
   The test gate takes an exclusive lock around the suite so parallel runs queue; if it cannot be had in
-  `gates.test_lock_wait_seconds` (default 300) it **skips and says so** rather than reporting a red that
+  `gates.test_lock_wait_seconds` (default 45) it **skips and says so** rather than reporting a red that
   belongs to nobody. Opt out with `gates.test_db_lock: false`. The complementary practice the plugin
   cannot enforce — one git worktree per parallel session — is documented in `working-memory`.
 - **Working memory** — `working-memory` guideline + a `SessionStart` hook that cheaply re-injects
@@ -160,7 +161,7 @@ toggles (`format_on_edit`, `analyse_on_stop`, `test_on_stop`, `openapi_on_stop`,
 toggles `enforce_runner` and `lock_shipped_migrations` — default **on** — and `lock_edits_in_discovery`
 — default **off**). `runner` is honored by every gate: set `"runner": "host"` and the gates drop the Sail
 prefix (`php artisan …`, `./vendor/bin/pint`) and stop denying host commands. `test_db_lock` (default
-**on**) and `test_lock_wait_seconds` (default 300) serialise the suite across parallel sessions. A `memory` block toggles the working-memory layer (`session_context`,
+**on**) and `test_lock_wait_seconds` (default 45) serialise the suite across parallel sessions. A `memory` block toggles the working-memory layer (`session_context`,
 `checkpoint`, `impact_cache` — all default on). Defaults to Sail + MySQL.
 
 The plan-approval gate is the `start-task` → approval → `implement-approved` split; enable

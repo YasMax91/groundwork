@@ -64,8 +64,10 @@ Who writes it:
   `## Decisions`. Read that section before asking anything — a decision the user already made is never
   re-asked, whatever the transcript lost (see [clarify-protocol.md](clarify-protocol.md)).
 - **implement-approved** — update it as each slice goes red→green; flip `[ ]`→`[x]` and `red`→`green`.
-- **final-check** — on a clean handoff, mark the task done (or delete the file) so the next session
-  starts fresh.
+- **final-check** — on a clean handoff, mark the task done so the next session starts fresh. **Deleting
+  the file is only safe once the change is committed** (or if it never touched the contract surface): the
+  `openapi` Stop gate reads the `OpenAPI:` line from here against the *uncommitted* working tree, so an
+  early deletion destroys the exemption the task declared and blocks its own "done".
 
 ## `impact/<slug>.md` — the blast-radius cache
 
@@ -106,7 +108,7 @@ uncommitted controller, and a `task-state.md` describing someone else's task.
 
 What the plugin does: the test gate takes an exclusive lock (`.claude/groundwork/locks/test-db`) around the
 suite, so parallel runs queue instead of corrupting each other. If the lock cannot be had within
-`gates.test_lock_wait_seconds` (default 300), the gate **skips and says so** rather than reporting a red
+`gates.test_lock_wait_seconds` (default 45), the gate **skips and says so** rather than reporting a red
 that belongs to no one. Opt out with `gates.test_db_lock: false`.
 
 What it cannot do, so it is a practice rather than a rule: **give each parallel session its own git
