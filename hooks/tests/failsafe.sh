@@ -29,8 +29,9 @@ printf '<?php\nclass A {}\n' > "$d/app/A.php"
 runs() { # name hook stdin
   local name="$1" hook="$2" stdin="${3:-}" got
   ( cd "$d" && printf '%s' "$stdin" | bash "$HOOKS/$hook" >/dev/null 2>&1 ); got=$?
-  # 0 = allowed, 2 = a deliberate block. Anything else is a broken script (127, 1 from set -u, ...).
-  if [ "$got" -eq 0 ] || [ "$got" -eq 2 ]; then
+  # 0 = allowed, 1 = "did not run, and reported it", 2 = a deliberate block.
+  # Anything else means the script itself broke (127, or 1 from an unbound variable).
+  if [ "$got" -eq 0 ] || [ "$got" -eq 1 ] || [ "$got" -eq 2 ]; then
     pass=$((pass+1)); printf '  ok   %-28s (exit %s)\n' "$name" "$got"
   else
     fail=$((fail+1)); printf '  FAIL %-28s (exit %s — hook broke without lib.sh)\n' "$name" "$got"

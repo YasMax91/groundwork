@@ -115,7 +115,7 @@ d="$ROOT/ac11"; fixture "$d" true; touch_with_annotation "$d"
 mkdir -p "$d/vendor/bin"
 printf '#!/bin/sh\necho "Command \\"l5-swagger:generate\\" is not defined."\nexit 1\n' > "$d/vendor/bin/sail"
 chmod +x "$d/vendor/bin/sail"
-expect "AC11 env failure allows"    0 "$d"
+expect "AC11 env failure reports"   1 "$d"
 
 d="$ROOT/ac12"; fixture "$d" true; touch_with_annotation "$d"
 mkdir -p "$d/vendor/bin"
@@ -220,6 +220,32 @@ expect "AC23 greedy block bypass"    2 "$d"
 d="$ROOT/ac24"; fixture "$d" true
 printf '/**\n * Reports.\n */ Route::post(%s, [R::class, %s]);\n' "'/reports'" "'store'" >> "$d/app/Http/Controllers/FooController.php"
 expect "AC24 closer-with-code bypass" 2 "$d"
+
+# --- #4: the contract gate must not be satisfied by a bare token or an empty yaml ---
+d="$ROOT/ac25"; fixture "$d" true; touch_controller "$d"
+printf '<?php\n// TODO OA\\ later\n' > "$d/unrelated.php"
+expect "AC25 bare OA token rejected" 2 "$d"
+
+d="$ROOT/ac26"; fixture "$d" true; touch_controller "$d"
+: > "$d/swagger-notes.yaml"
+expect "AC26 empty yaml rejected"    2 "$d"
+
+d="$ROOT/ac27"; fixture "$d" true; touch_controller "$d"
+printf 'openapi: 3.0.0\npaths:\n  /api/foo:\n    get: {}\n' > "$d/openapi.yaml"
+expect "AC27 real yaml accepted"     0 "$d"
+
+# --- M10 (was covered by NO test): a spec that generates with warnings must block ---
+d="$ROOT/ac28"; fixture "$d" true; touch_with_annotation "$d"
+mkdir -p "$d/vendor/bin"
+printf '#!/bin/sh\necho "Multiple @OA\\Get() with the same operationId \"getOrders\""\nexit 0\n' > "$d/vendor/bin/sail"
+chmod +x "$d/vendor/bin/sail"
+expect "AC28 duplicate operationId"  2 "$d"
+
+d="$ROOT/ac29"; fixture "$d" true; touch_with_annotation "$d"
+mkdir -p "$d/vendor/bin"
+printf '#!/bin/sh\necho "\$ref \"#/components/schemas/OrderResource\" not found"\nexit 0\n' > "$d/vendor/bin/sail"
+chmod +x "$d/vendor/bin/sail"
+expect "AC29 unresolved ref"         2 "$d"
 
 echo
 echo "  passed: $pass, failed: $fail"

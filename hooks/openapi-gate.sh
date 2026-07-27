@@ -20,6 +20,19 @@ set -uo pipefail
 command -v gw_cmd          >/dev/null 2>&1 || gw_cmd() { printf './vendor/bin/sail %s %s' "$1" "${2:-}"; }
 command -v gw_runner_ready >/dev/null 2>&1 || gw_runner_ready() { [ -x ./vendor/bin/sail ]; }
 
+# Committing must not disarm the gate. The plugin's own flow ends in a commit, so the last Stop of a
+# task would otherwise run against an empty working tree and verify nothing at all. Unpushed commits
+# still count as "work in progress"; once pushed, the gate lets go.
+gw_changed_paths() {
+  local wt up committed=""
+  wt="$(git status --porcelain -uall 2>/dev/null | sed -e 's/^...//' -e 's/.* -> //' -e 's/^"//' -e 's/"$//' || true)"
+  if [ "$(jq -r '.gates.check_unpushed' .groundwork.json 2>/dev/null)" != "false" ]; then
+    up="$(git rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null || true)"
+    [ -n "$up" ] && committed="$(git diff --name-only "$up..HEAD" 2>/dev/null || true)"
+  fi
+  printf '%s\n%s\n' "$wt" "$committed" | grep -v '^$' | sort -u
+}
+
 [ -f .groundwork.json ] || exit 0
 [ "$(jq -r '.gates.openapi_on_stop' .groundwork.json 2>/dev/null)" = "false" ] && exit 0
 
@@ -38,8 +51,7 @@ git rev-parse --is-inside-work-tree >/dev/null 2>&1 || exit 0
 # `-uall` is required: without it a brand-new directory is reported as the directory itself
 # ("?? app/Http/Resources/"), which would hide every file in it from the surface check.
 # Then strip the 2-char status + space, and take the target of a rename.
-changed="$(git status --porcelain -uall 2>/dev/null \
-  | sed -e 's/^...//' -e 's/.* -> //' -e 's/^"//' -e 's/"$//' || true)"
+changed="$(gw_changed_paths)"
 [ -n "$changed" ] || exit 0
 
 # --- did the change touch the API contract surface? ---
@@ -67,7 +79,7 @@ done <<< "$changed"
 #   * `#[Attribute]` opens with '#' and is CODE (routing/middleware/policy) -> never comment-only;
 #   * anything after a closing `*/` is code, however the line starts -> covers both
 #     `/* a */ realCode(); /* b */` and a `*/ realCode();` block closer;
-#   * an `OA\` token anywhere means annotations moved -> not comment-only.
+#   (an `OA\` token is handled earlier by spec_touched, so it never reaches this branch).
 # It waives only the "annotations must change" demand. It exits early *because* nothing was
 # documented and nothing needs regenerating; whenever the spec WAS touched, control reaches the
 # generation check below as usual. Anything uncertain (no diff, untracked file) falls through to
@@ -82,7 +94,9 @@ for f in "${files_arr[@]}"; do
 done
 
 if [ "$untracked_touched" -eq 0 ] && [ "${#files_arr[@]}" -gt 0 ]; then
-  changed_lines="$(git diff HEAD -- "${files_arr[@]}" 2>/dev/null \
+  diff_base="HEAD"; up="$(git rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null || true)"
+  [ -n "$up" ] && diff_base="$up"
+  changed_lines="$(git diff "$diff_base" -- "${files_arr[@]}" 2>/dev/null \
     | grep -E '^[+-]' | grep -vE '^(\+\+\+|---)' || true)"
   # A line carrying anything after a closing `*/` is code, however it starts. This one check closes
   # both `/* a */ realCode(); /* b */` (a greedy one-line block) and a `*/ realCode();` block closer.
@@ -105,8 +119,9 @@ fi
 # keep a static document — so look across the whole diff, not just the touched endpoints.
 spec_touched=0
 
-# (a) tracked files: an added/removed line carrying an OA annotation
-if git diff HEAD 2>/dev/null | grep -qE '^[+-].*OA\\'; then
+# (a) tracked files: an added/removed line carrying a REAL OA annotation — `OA\Get(`, `@OA\Schema(`
+# and so on. A bare mention such as `// TODO OA\ later` is not documentation and must not pass.
+if git diff "${diff_base:-HEAD}" 2>/dev/null | grep -qE '^[+-].*@?OA\\[A-Z][A-Za-z]*[[:space:]]*\('; then
   spec_touched=1
 fi
 
@@ -115,15 +130,21 @@ if [ "$spec_touched" -eq 0 ]; then
   while IFS= read -r f; do
     [ -n "$f" ] || continue
     [ -f "$f" ] || continue
-    if grep -qE 'OA\\' "$f" 2>/dev/null; then spec_touched=1; break; fi
+    if grep -qE '@?OA\\[A-Z][A-Za-z]*[[:space:]]*\(' "$f" 2>/dev/null; then spec_touched=1; break; fi
   done <<< "$changed"
 fi
 
 # (c) a static spec document changed (projects that hand-maintain the YAML/JSON)
 if [ "$spec_touched" -eq 0 ]; then
-  if printf '%s\n' "$changed" | grep -qiE '(openapi|swagger|api-docs).*\.(ya?ml|json)$'; then
-    spec_touched=1
-  fi
+  # A hand-maintained document counts only if it actually has content — an empty file named
+  # swagger-notes.yaml is not a spec change.
+  while IFS= read -r f; do
+    [ -n "$f" ] || continue
+    printf '%s' "$f" | grep -qiE '(openapi|swagger|api-docs).*\.(ya?ml|json)$' || continue
+    if [ -s "$f" ] && grep -qiE 'paths|openapi|swagger|components' "$f" 2>/dev/null; then
+      spec_touched=1; break
+    fi
+  done <<< "$changed"
 fi
 
 # --- escape hatch: the task declared the contract untouched ---
@@ -172,10 +193,16 @@ command -v timeout >/dev/null 2>&1 && gen="timeout 120 $gen"
 out="$($gen 2>&1)"; status=$?
 if [ "$status" -ne 0 ]; then
   # A missing artisan command / container down is an env issue, not a bad spec — do not block.
-  case "$out" in
-    *"is not defined"*|*"Command \""*"\" is not defined"*|*"Could not open input file"*|*"Cannot connect"*|*"No such container"*)
-      exit 0 ;;
-  esac
+  # Same rule the other two gates use: a command that never RAN is an environment problem; a
+  # substring inside real generator output is not. Exit 127 is conclusive; otherwise the phrase
+  # counts only when nothing indicates the generator actually produced results.
+  gen_ran='@OA|\$ref|operationId|schemas?|Generating|Regenerating|annotation'
+  gen_env='is not defined|Could not open input file|command not found|No such container|Cannot connect|Is the docker daemon running'
+  if [ "$status" -eq 127 ] || { printf '%s' "$out" | grep -qE "$gen_env" \
+       && ! printf '%s' "$out" | grep -qiE "$gen_ran"; }; then
+    echo "groundwork openapi-gate: the generate command could not run — the spec was NOT verified." >&2
+    exit 1
+  fi
   {
     echo "groundwork openapi-gate: OpenAPI generation FAILED — the spec is broken, not done yet."
     printf '%s\n' "$out" | tail -30
@@ -184,7 +211,8 @@ if [ "$status" -ne 0 ]; then
 fi
 
 # swagger-php reports schema problems as warnings on a zero exit — treat them as failures.
-if printf '%s' "$out" | grep -qiE '(warning|error|deprecated).*(@OA|OA\\|\$ref|operationid|schema)'; then
+if printf '%s' "$out" | grep -qiE '(warning|error|deprecated).*(@OA|OA\\|\$ref|operationid|schema)' \
+   || printf '%s' "$out" | grep -qiE '\$ref .*not (found|defined)|Required @OA\\[A-Za-z]+\(\) not found|same operationId|failed to generate|multiple @OA'; then
   {
     echo "groundwork openapi-gate: OpenAPI generated with warnings — unresolved refs / duplicate operationIds / malformed schemas."
     printf '%s\n' "$out" | grep -iE 'warning|error' | tail -20

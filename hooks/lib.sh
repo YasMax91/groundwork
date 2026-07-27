@@ -20,9 +20,13 @@ gw_runner() {
   if [ -f .groundwork.json ] && command -v jq >/dev/null 2>&1; then
     r="$(jq -r '.runner // empty' .groundwork.json 2>/dev/null || true)"
   fi
+  # Normalise, then validate: `Host`, `HOST`, `host ` are honoured; anything else is a typo that
+  # would otherwise resolve to sail, find no binary, and switch every gate off in silence.
+  r="$(printf '%s' "$r" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')"
   case "$r" in
-    host) printf 'host' ;;
-    *)    printf 'sail' ;;
+    host)   printf 'host' ;;
+    sail|'') printf 'sail' ;;
+    *)      printf 'invalid' ;;
   esac
 }
 
@@ -53,8 +57,9 @@ gw_cmd() {
 # Sail needs its binary (a fresh clone before `composer install` must not be blocked).
 gw_runner_ready() {
   case "$(gw_runner)" in
-    host) return 0 ;;
-    *)    [ -x ./vendor/bin/sail ] ;;
+    host)    return 0 ;;
+    invalid) return 1 ;;
+    *)       [ -x ./vendor/bin/sail ] ;;
   esac
 }
 

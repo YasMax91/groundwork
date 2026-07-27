@@ -1,7 +1,7 @@
 {
   "name": "groundwork",
   "description": "RaDevs AI-SDD workflow for Laravel backends: grounded spec-driven development, an anti-hallucination protocol for external integrations, and enforced Laravel standards with tool-gates.",
-  "version": "0.17.1",
+  "version": "0.18.0",
   "author": {
     "name": "Max Yastremskyi (YasMax91)"
   },

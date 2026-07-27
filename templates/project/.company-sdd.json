@@ -14,7 +14,8 @@
     "lock_shipped_migrations": true,
     "lock_edits_in_discovery": false,
     "test_db_lock": true,
-    "test_lock_wait_seconds": 45
+    "test_lock_wait_seconds": 45,
+    "check_unpushed": true
   },
   "memory": {
     "session_context": true,

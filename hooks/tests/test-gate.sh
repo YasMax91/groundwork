@@ -48,7 +48,7 @@ expect "sail missing skips"        0 "$d"          # unchanged bootstrap fail-op
 d="$ROOT/t5"; fixture "$d" '{ "runner": "host", "commands": { "test": "./bad.sh" },
   "gates": { "test_db_lock": true, "test_lock_wait_seconds": 1 } }'; stub "$d/bad.sh" 1
 mkdir -p "$d/.claude/groundwork/locks/test-db"                 # someone else holds it, fresh
-expect "busy lock allows (no red)" 0 "$d"
+expect "busy lock reports, no red" 1 "$d"
 
 # --- the lock is released after a run, so a second run is not blocked by the first ---
 d="$ROOT/t6"; fixture "$d" '{ "runner": "host", "commands": { "test": "./ok.sh" },

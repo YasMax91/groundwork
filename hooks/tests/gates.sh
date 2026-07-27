@@ -56,10 +56,10 @@ expect "no php no-op"             0 "$d" "done-gate.sh"
 # REGRESSION GUARD (the contract both gates state in their header): an unreachable command is an
 # ENVIRONMENT problem, never a red. runner:host with no override must not block the Stop forever.
 d="$ROOT/d7"; repo "$d" '{ "runner": "host" }'; printf '<?php\n' > "$d/x.php"
-expect "host missing cmd allows"  0 "$d" "done-gate.sh"
+expect "host missing cmd reports"  1 "$d" "done-gate.sh"
 d="$ROOT/d8"; repo "$d" '{ "runner": "host", "commands": { "analyse": "./nope.sh" } }'
 printf '<?php\n' > "$d/x.php"
-expect "missing script allows"    0 "$d" "done-gate.sh"
+expect "missing script reports"    1 "$d" "done-gate.sh"
 
 # --- H1: a RED suite whose output merely CONTAINS an env phrase must still block.
 # "No such file or directory" / "command not found" appear routinely inside real Laravel failures
@@ -88,13 +88,30 @@ expect "red analyse w/ env phrase" 2 "$d" "done-gate.sh"
 # a command that genuinely could not run is still waived
 d="$ROOT/h1c"; repo "$d" '{ "runner": "host", "commands": { "test": "./nope.sh" } }'
 printf '<?php\n' > "$d/x.php"
-expect "unrunnable command allowed" 0 "$d" "test-gate.sh"
+expect "unrunnable cmd reports"    1 "$d" "test-gate.sh"
 
 # H2: skipping because the runner is unavailable must SAY so, not go silent
 d="$ROOT/h2"; repo "$d" '{ "runner": "sail" }'; printf '<?php\n' > "$d/x.php"
 msg="$( cd "$d" && bash "$HOOKS/test-gate.sh" 2>&1 >/dev/null )"
-if [ -n "$msg" ]; then pass=$((pass+1)); printf '  ok   %-32s [says why]\n' "silent skip is reported"
-else fail=$((fail+1)); printf '  FAIL %-32s skipped with no message\n' "silent skip is reported"; fi
+( cd "$d" && bash "$HOOKS/test-gate.sh" >/dev/null 2>&1 ); rc=$?
+# stderr alone is not enough: on exit 0 the harness sends it to the debug log and nobody sees it.
+if [ -n "$msg" ] && [ "$rc" -eq 1 ]; then pass=$((pass+1)); printf '  ok   %-32s [message + visible exit]\n' "skip is actually visible"
+else fail=$((fail+1)); printf '  FAIL %-32s (msg=%s rc=%s)\n' "skip is actually visible" "${msg:+yes}" "$rc"; fi
+
+# --- #1: committing must NOT disarm the gate while the work is unpushed ---
+d="$ROOT/c1"; mkdir -p "$d/remote"
+( cd "$d/remote" && git init -q --bare )
+mkdir -p "$d/wt"; printf '{ "runner": "host", "commands": { "test": "./bad.sh" } }\n' > "$d/wt/.groundwork.json"
+printf '#!/bin/sh\nexit 1\n' > "$d/wt/bad.sh"; chmod +x "$d/wt/bad.sh"
+( cd "$d/wt" && git init -q && git config user.email t@t && git config user.name t \
+  && printf 'x\n' > a.txt && git add -A && git commit -qm init \
+  && git remote add origin ../remote && git push -q -u origin HEAD >/dev/null 2>&1 )
+printf '<?php\nclass Broken {}\n' > "$d/wt/x.php"
+expect "red blocks before commit"  2 "$d/wt" "test-gate.sh"
+( cd "$d/wt" && git add -A && git commit -qm "work" )
+expect "red still blocks after commit" 2 "$d/wt" "test-gate.sh"
+( cd "$d/wt" && git push -q origin HEAD >/dev/null 2>&1 )
+expect "pushed work is released"   0 "$d/wt" "test-gate.sh"
 
 echo
 echo "format-on-edit:"
