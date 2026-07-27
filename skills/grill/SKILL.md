@@ -15,6 +15,10 @@ put every genuine decision to the user, ask the frontier in one `AskUserQuestion
 each question with your recommendation and its consequence, and let each answer push the frontier
 outward.
 
+This skill is the **manual entry point** — for grilling something that is not a task yet. Inside a task,
+the agent offers the same loop and, once you accept, runs it directly (see "Unbounded mode" in
+`${CLAUDE_SKILL_DIR}/../../guidelines/clarify-protocol.md`); you never have to type the command to get it.
+
 Two things differ from the in-pipeline loop:
 
 - **No round cap.** The user asked to be grilled and ends it by saying so. Keep going while the frontier

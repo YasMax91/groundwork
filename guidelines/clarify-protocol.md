@@ -86,7 +86,27 @@ defect whether or not anyone was tired of questions.
 **When the cap is reached and the frontier is still refilling, the thinking is not ready.** Offer the
 `grill` skill instead of banking the remainder as assumptions — a frontier that keeps regenerating at the
 L3/L4 cap says the intent, not the detail, is unsettled, and an unbounded interview is the tool for that.
-Offer it; never start it unasked.
+Offer it; never start it unasked — and when the offer is accepted, run the loop yourself (see "Unbounded
+mode" below).
+
+## Unbounded mode — when the user accepts a grilling
+
+`grill` is a **user-invoked** skill (`disable-model-invocation: true`): it costs no context and the agent
+cannot start it. But offering it and then telling the user to go type `/grill` is a step that buys
+nothing — the skill holds no mechanism of its own, only *this* protocol with two changes.
+
+So when the user accepts the offer, **run it yourself, right there**:
+
+- **No round cap.** Keep going while the frontier refills; the user ends it by saying so.
+- **Explore for real.** Read the code, the CRD, and the docs as questions demand them, and spawn
+  subagents for anything wide — a fact you skipped becomes a question you should not have asked.
+- **Close with the decision summary**: what was **settled** (each decision + the option chosen) · what
+  stays **assumed** (and what it would cost to be wrong) · **what it changes** for the original plan.
+- Then return to where the task was: continue `start-task`, write the spec, or stop if the thinking was
+  the deliverable.
+
+The `/grill` command remains the entry point for grilling something that is **not** a task yet — a plan,
+an architecture call, an idea. Inside a task, the agent runs the same loop without it.
 
 ## Calibration — proportional to level
 

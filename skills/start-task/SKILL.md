@@ -65,7 +65,10 @@ Stay in **Discovery mode**: inspect and plan only, do not edit files until the p
 
 7b. **When the intent is too unformed for a plan, offer `grill`.** Do not plan on top of a guess — offer
    it as one option in the interview round below (with your recommendation stated), and never start it
-   unasked. The signals — any one is enough:
+   unasked. **If the user accepts, run the unbounded loop yourself** — no round cap, closing with the
+   decision summary, per "Unbounded mode" in
+   `${CLAUDE_SKILL_DIR}/../../guidelines/clarify-protocol.md`; do not send them off to type `/grill`.
+   The signals — any one is enough:
    - the request names a **problem, not a change** ("orders get lost", "clients complain about payments");
    - **two or more incompatible readings** survive this discovery pass;
    - it is an **architecture or product call** (what should exist), not a code change (how to build it);

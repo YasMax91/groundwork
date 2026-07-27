@@ -18,7 +18,9 @@ instead of copy-pasting `AGENTS.md` / `CLAUDE.md` / skills between repositories.
   says so in one line rather than inventing alternatives; at L3/L4 the same options feed the ADR. And when
   the intent is too unformed to plan at all — a problem rather than a change, no statable definition of
   "done", or an interview whose questions keep regenerating — it offers the `grill` skill instead of
-  planning on top of a guess.
+  planning on top of a guess — and if you accept, it runs that unbounded interview **right there**,
+  without you typing the command. `/grill` stays the manual way in for stress-testing something that is
+  not a task yet.
 - **Blast radius that follows the task** — a new sub-request mid-session is treated as a scope change: its
   seeds are compared against the cached impact map, and a miss re-maps over the union of old and new seeds
   (a targeted self-trace at L0/L1). The cheap comparison runs at every level, because three small

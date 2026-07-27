@@ -49,7 +49,9 @@ a useful spec beats a perfect document.
 - If the spec is incomplete, clarify the missing business rule or state the assumption explicitly.
 - **If the decisions are too unsettled to write down, offer the user `/grill` before the spec** — not a
   spec padded with assumptions. A document that records guesses as scope is more expensive than one more
-  interview. Offer it; `grill` is user-invoked and is never started unasked.
+  interview. Offer it; `grill` is user-invoked and is never started unasked — but if the user accepts,
+  run the unbounded loop yourself per "Unbounded mode" in
+  `${CLAUDE_SKILL_DIR}/../../guidelines/clarify-protocol.md`.
 - Update the spec if implementation discovers a material constraint, conflict, or safer approach.
 - Keep all spec text in English. The chat выжимка is the one exception — it is always Russian. The
   English spec file is the source of truth; the Russian summary is the digest. Never make the user
