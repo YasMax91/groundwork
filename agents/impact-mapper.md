@@ -40,6 +40,15 @@ For every touched service, model, resource, request, or table, trace:
 Use Boost MCP tools where available — `database-schema` for FK/cascades, `application-info` for
 models, `php artisan route:list` for the HTTP surface — and `Grep`/`Glob` for reverse references.
 
+**Symbol edges: the language server first, grep second.** When a PHP language server is running in
+the session (the `php-lsp` companion plugin), resolve callers and definitions of a class, method, or
+property through its navigation rather than by name matching — it follows imports, aliases, and
+inheritance, and it does not drown you in a common method name shared by ten unrelated classes. Then
+still grep, because the edges the language server cannot see are exactly the dangerous ones: string
+class names, `event('name')`, `dispatch()` by alias, container bindings, config-driven wiring, Blade
+and JSON references. No language server in the session means grep does the whole job — say so instead
+of narrowing the sweep.
+
 ## Output format
 
 1. **Summary** — the seeds and the size/shape of the blast radius (how far it reaches).

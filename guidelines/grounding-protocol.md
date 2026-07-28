@@ -5,15 +5,22 @@ The most damaging failure mode is confidently guessing instead of checking. It b
 service, SDK, webhook, or third-party API — but reading reality, citing the source, and proving by a
 real run apply to internal work too (see rules 3 and 6).
 
-## Two sources of ground truth
+## Sources of ground truth
 
 - **Laravel / framework** — use the Laravel Boost MCP tools **first**: `search-docs` (version-aware
   documentation for the installed packages), `application-info` (installed packages, versions,
   Eloquent models), `database-schema`, `database-query`, `last-error`, log readers. Do not recall
   Laravel APIs from memory when Boost can confirm them.
+- **Packages Boost does not index** (a Spatie/Filament version it has no docs for, a provider's PHP
+  SDK, a JS build tool) — when the **Context7** MCP is installed, pull the library's own documentation
+  through it before falling back to WebFetch. Cite it like any other source; a Context7 excerpt with no
+  version behind it is `assumed`, not `verified`.
 - **External third-party APIs** (payments, booking, messaging, etc.) — Boost does **not** cover
   these. Fetch the official documentation (WebFetch / WebSearch) and quote the exact capability
   statements.
+
+None of these tools is assumed present. When one is missing, use the next source down and say which
+one you used — a missing MCP changes the evidence, never the requirement for evidence.
 
 ## Rules
 

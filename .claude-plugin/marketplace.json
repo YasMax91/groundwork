@@ -3,11 +3,17 @@
   "owner": {
     "name": "RaDevs"
   },
+  "allowCrossMarketplaceDependenciesOn": ["claude-plugins-official"],
   "plugins": [
     {
       "name": "groundwork",
       "source": "./",
       "description": "RaDevs AI-SDD workflow for Laravel backends: grounded SDD, an integration grounding protocol, and enforced Laravel standards with tool-gates."
+    },
+    {
+      "name": "groundwork-pack",
+      "source": "./pack",
+      "description": "One-install bundle: groundwork plus the external plugins it leans on (php-lsp, context7, playwright, semgrep, 42crunch, sentry, github)."
     }
   ],
   "metadata": {

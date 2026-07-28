@@ -49,8 +49,10 @@ change gets a browser run, a pure internal refactor gets neither.
   join that passes phpunit and 500s live is exactly what this catches). If the app is not served this
   session, fall back to the closest real exercise (`$this->getJson(...)` against the HTTP kernel) and say
   the wire was not hit.
-- **Admin / UI / CSS — a real browser.** When a browser-driving tool is available (e.g. the
-  `claude-in-chrome` MCP), open the actual screen and verify what the gates cannot see: (1) the asset /
+- **Admin / UI / CSS — a real browser.** When a browser-driving tool is available — the
+  `claude-in-chrome` MCP, the `playwright` companion plugin, or any other browser MCP in the session;
+  take whichever is there rather than declaring the check impossible — open the actual screen and
+  verify what the gates cannot see: (1) the asset /
   route **loads** at runtime (network — the edited file is really requested, not ignored by the theme),
   (2) the edited style / behavior is the **effective computed** one (not shadowed by theme specificity),
   after a hard refresh, and (3) no **persisted client state** (`localStorage` / session) is masking it.

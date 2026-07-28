@@ -208,6 +208,39 @@ the working tree plus unpushed commits.
 `init` generates thin, domain-only contracts by grounded discovery (deriving facts from the code,
 Boost, and docs, labelling anything assumed), installs Boost, and drops `.groundwork.json`.
 
+## Companion plugins — `groundwork-pack`
+
+A second, component-free plugin in this marketplace: its manifest is nothing but a `dependencies`
+list, so one install pulls this plugin plus the external plugins the pipeline leans on. The workflow
+plugin stays self-contained — install `groundwork` on its own and nothing external is
+required.
+
+```
+/plugin marketplace add anthropics/claude-plugins-official
+/plugin install groundwork-pack@yasmax
+```
+
+| Plugin | Why it is in the set |
+| --- | --- |
+| `php-lsp` (Intelephense) | Real definitions and references instead of grep — `impact-mapper` maps the blast radius off the language server rather than off naming conventions. |
+| `context7` | Version-aware docs for what Boost does not cover: Spatie, Filament, provider SDKs. A second citable source for `grounding-protocol`. |
+| `playwright` | A browser that is present everywhere, so the live-verification step of `final-check` does not depend on a browser MCP the developer may not have. |
+| `semgrep` | Security-oriented static analysis next to Pint/Larastan, on the same edit loop. |
+| `42crunch-api-security-testing` | OWASP API audit of the OpenAPI document the `openapi` gate keeps in sync. |
+| `sentry` | Production stack traces during a bugfix, before the repro is guessed. |
+| `github` | PRs and issues from the session. |
+
+Both marketplaces have to be configured: a dependency whose marketplace is missing stays unresolved
+and disables the bundle. Cross-marketplace resolution is opt-in — `allowCrossMarketplaceDependenciesOn`
+in `marketplace.json` names the one marketplace this bundle may pull from. `claude plugin prune`
+removes the auto-installed dependencies if the bundle is uninstalled.
+
+The dependencies bring their own runtime requirements, none of which this plugin manages: `php-lsp`
+needs `npm i -g intelephense`, `context7` and `playwright` run through `npx`, and the SaaS-backed ones
+(`sentry`, `github` — `GITHUB_PERSONAL_ACCESS_TOKEN`, `42crunch`, `semgrep`) authenticate per their own
+instructions. Gates and skills never assume any of them: each is used when present and reported as
+unavailable when not.
+
 ## Update everywhere
 
 ```
@@ -260,6 +293,7 @@ once with `claude --debug` in your project before enabling.
 
 ```
 .claude-plugin/   plugin.json · marketplace.json
+pack/             groundwork-pack — dependency-only bundle (this plugin + companion plugins)
 skills/           start-task · spec · implement-approved · risk-review · final-check · ground-integration · frontend-handoff · client-doc · openapi-audit · grill · init · deep-grounding · deep-discovery · deep-review
 agents/           impact-mapper · blind-spot-mapper · grounded-researcher · adversarial-verifier · conformance-reviewer
 hooks/            hooks.json · lib.sh (shared resolvers) · session-start.sh · pre-compact.sh · format-on-edit.sh · done-gate.sh · test-gate.sh · openapi-gate.sh · trim-output.sh · pre-tool-guard.sh · statusline.sh · tests/all.sh
