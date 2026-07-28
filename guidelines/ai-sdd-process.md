@@ -55,6 +55,47 @@ reviewer's time on its own line — belongs to a document or an explicit "how lo
 owned by the **`client-doc`** skill ([../skills/client-doc/SKILL.md](../skills/client-doc/SKILL.md)).
 A passing remark about time in conversation just needs the right unit, not the whole table.
 
+**Calibrate against the repository, never against a previous estimate.** Before any estimate covering
+more than one task, measure what this repo actually ships in a day:
+
+```bash
+git log --format='%ad %s' --date=short --since='2 months ago'
+```
+
+Group by date and read what landed together — a day that closes a provider integration, a schema
+change and two reports is the throughput to plan against. An older estimate document in the same repo
+is an **input, not an authority**: its numbers were written before the work, and unless someone
+recorded actual-vs-estimated afterwards, nothing has confirmed them. Inheriting its coefficients is
+how an estimate silently doubles.
+
+**Know what actually costs the time.** Writing code is not the dominant cost — migrations, models,
+form requests, resources, tests and OpenAPI are minutes. Three things are:
+
+1. **External uncertainty** — reading a third-party API against its official docs, live sandbox probes,
+   establishing what the provider really does. Nothing accelerates this.
+2. **Undecided product questions** — wherever the requirement admits more than one reading and someone
+   else has to choose.
+3. **Cost of being wrong** — money, access, personal data. Those carry deliberately more testing.
+
+Typical shape once calibrated: an internal task on mechanisms that already exist is **1–2.5 h**; a task
+with an external integration or live verification is **3–5 h**; an unsettled product question sits at
+the top of its range. If a task lands far outside this, say why in the same line.
+
+**Estimate the delta, not a rewrite.** If the functionality existed and was removed or deferred, the
+implementation is in git history — say so and estimate restoring it. The same holds for anything the
+codebase already does elsewhere: the estimate covers adapting it, not inventing it.
+
+**Sanity-check before publishing.** Divide the total by the measured daily throughput. If the result
+implies the team ships far less per day than the log shows it shipping, the estimate is wrong — rework
+it rather than publish a padded number. Padding is not caution: it costs the client money and it costs
+the schedule its credibility. An estimate the author cannot defend against the repo's own history is
+not an estimate.
+
+**Estimates are not sprint capacity.** They exclude review cycles and the rework after them,
+coordination with other people, production support and QA. When converting to sprints, plan **45–60 %
+of nominal capacity** in estimate-hours and state the factor used, so the reader can re-plan with their
+own.
+
 ## Fan-out by level (effort scaling)
 
 Match agent fan-out to task level. Over-spawning wastes ~15× the tokens; coding is a poor multi-agent

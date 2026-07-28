@@ -47,6 +47,12 @@ The unit is the **real time the AI spends writing the functionality** — produc
 tests, and its documentation. A human does not write this code; he reviews and accepts it. **Man-days and
 developer hours are therefore the wrong unit and never appear.**
 
+**Calibrate the numbers before writing them down** — measure the repo's own throughput from `git log`,
+estimate the delta where the work already exists in history, and sanity-check the total against that
+throughput. The rules are in
+[`../../guidelines/ai-sdd-process.md`](../../guidelines/ai-sdd-process.md) §Estimates; this section
+only governs how the calibrated numbers are presented to the client.
+
 - **A range per block of functionality, then a total.** A single number reads as a promise; a range reads
   as an estimate. Name what would push it to the top of the range.
 - **The reviewer's time is its own line** — what the client's side spends checking and accepting. It is
