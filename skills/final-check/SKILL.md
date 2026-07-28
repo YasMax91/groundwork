@@ -142,9 +142,11 @@ bug fix that introduced no new vocabulary changes nothing here.
 
 ## Close the checkpoint
 
-When the handoff is clean and the gates are green, mark the task done in
-`.claude/groundwork/task-state.md` so the next session starts fresh instead of resuming a finished task. If
-work remains, leave the checkpoint reflecting the true remaining state.
+When the handoff is clean and the gates are green, set `Mode: Done — <what shipped>` in
+`.claude/groundwork/task-state.md` so the next session starts fresh instead of resuming a finished task.
+That line is also what stops the `SessionStart` hook from re-injecting the whole checkpoint — a closed
+task costs a pointer, an open one costs its body. If work remains, leave the checkpoint reflecting the
+true remaining state.
 
 **Do not delete the file while the working tree still holds an uncommitted contract-surface change.** The
 `openapi` Stop gate reads the `OpenAPI: n/a — <reason>` line *from this file*, against the **working

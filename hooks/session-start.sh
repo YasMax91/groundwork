@@ -43,8 +43,16 @@ fi
 # --- active task checkpoint (the working-memory file the skills maintain) ---
 state=".claude/groundwork/task-state.md"
 if [ -f "$state" ]; then
-  add "Active task checkpoint (${state}) — resume from here; it is the source of truth for task state:"
-  add "$(head -45 "$state" | sed 's/^/  /')"
+  # A checkpoint is worth ~1k tokens, so it is injected in full only while the task is actually
+  # running. A finished or hand-edited one (`Mode: DONE — committed …`) yields no canonical mode:
+  # point at the file instead of paying for it on every session that has nothing to resume.
+  case "$(gw_mode "$state")" in
+    Discovery|Spec|Plan|Implementation|Review)
+      add "Active task checkpoint (${state}) — resume from here; it is the source of truth for task state:"
+      add "$(head -45 "$state" | sed 's/^/  /')" ;;
+    *)
+      add "Checkpoint present but not in an active mode: ${state} — $(head -1 "$state" 2>/dev/null | sed 's/^#[[:space:]]*//'). Read it only if this session continues that task." ;;
+  esac
 fi
 
 # --- most recent spec (by mtime) ---

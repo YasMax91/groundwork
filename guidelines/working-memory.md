@@ -19,11 +19,16 @@ If a toggle is `false`, skip that mechanism silently.
 
 ## `task-state.md` — the checkpoint
 
-Keep it **terse** — it is re-injected every session, so every line costs. Template:
+Keep it **terse** — it is re-injected every session, so every line costs. **Close it when the work
+ships**: set `Mode: Done — <what shipped>`, and the `SessionStart` hook stops injecting the body and
+leaves a one-line pointer instead (measured: ~1100 tokens down to ~180 on every session in that
+project). Any of the five working modes keeps the full injection, because a task you are still in is
+exactly what the checkpoint exists to restore. Template:
 
 ```markdown
 # Task: <short title>
-- Mode: Discovery | Spec | Plan | Implementation | Review
+- Mode: Discovery | Spec | Plan | Implementation | Review | Done — <what shipped>
+
 - Level: L0..L4
 - Spec: docs/specs/<file>.md | (none yet)
 - Impact map: .claude/groundwork/impact/<slug>.md | (n/a)

@@ -10,7 +10,11 @@ Stay in **Discovery mode**: inspect and plan only, do not edit files until the p
 
 1. **Read the project `AGENTS.md`** for domain facts, invariants, permission rules, and runtime
    commands.
-2. **Classify the task** (L0 tiny → L4 critical). State the level and what it implies.
+2. **Classify the task** (L0 tiny → L4 critical). State the level and what it implies. The level also
+   decides **what you read**: at L0/L1 stay inside this skill — the per-level scale-downs below already
+   state the whole contour (one question at most, a fail-first regression test, a live exercise of the
+   one thing fixed), so opening the fan-out, clarify and blind-spot guidelines spends thousands of
+   tokens to arrive back here. Open them from **L2** up, and only the ones that step actually needs.
 3. **Inspect the directly-involved code.** Prefer Boost MCP tools — `application-info`,
    `database-schema`, `search-docs` — over recalling from memory. Read the actual routes, requests,
    controllers, services, models, resources, migrations, and tests the task names.
