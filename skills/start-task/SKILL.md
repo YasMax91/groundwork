@@ -1,5 +1,5 @@
 ---
-description: Start a backend task through the RaDevs AI-SDD discovery/plan workflow. Use at the beginning of any non-trivial feature, bug fix, or API/schema/permission/workflow/integration change, before writing code.
+description: Start a backend task through the Groundwork AI-SDD discovery/plan workflow. Use at the beginning of any non-trivial feature, bug fix, or API/schema/permission/workflow/integration change, before writing code.
 ---
 
 # Start task (discovery & plan)

@@ -1,4 +1,4 @@
-# Blind-spot protocol (RaDevs) — surface what the user doesn't know to ask
+# Blind-spot protocol (Groundwork) — surface what the user doesn't know to ask
 
 The user cannot ask about what he does not know he is missing. The plugin already catches **known
 unknowns** — ambiguity in what was said (the clarify pass), code blast radius (`impact-mapper`), a

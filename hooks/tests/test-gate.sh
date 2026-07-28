@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# RaDevs plugin :: executable proof for test-gate.sh (W11-AC2, AC6, AC7).
+# Groundwork plugin :: executable proof for test-gate.sh (W11-AC2, AC6, AC7).
 # The gate must serialise the suite across parallel sessions without ever inventing a red:
 # a busy test DB is an environment problem, a failing suite is a defect. Only the second blocks.
 # Run: bash hooks/tests/test-gate.sh

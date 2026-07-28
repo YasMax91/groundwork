@@ -1,4 +1,4 @@
-# Laravel standards (RaDevs)
+# Laravel standards (Groundwork)
 
 Curated, opinionated standards for Laravel backends. Stay on the framework's grain; the standards are
 enforced by tool-gates (Pint / Larastan / PHPUnit). Confirm version-specific details with Boost

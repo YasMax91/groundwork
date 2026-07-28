@@ -2,7 +2,7 @@
 
 - Type: plugin self-improvement — **subtractive**: level-calibration and conflict removal across the
   rules Waves 8–11 added, plus one small gate-cache. Cross-cutting change to when rules apply → **L3**.
-- Author: Max Yastremskyi (YasMax91). Owner: RaDevs.
+- Author: Max Yastremskyi (YasMax91).
 - Source: an adversarial audit of the *combined* rule set after Waves 8–11 (2026-07-27), run before the
   author started using v0.16.0. It returned **REFUTED** with 16 findings — 4 high — every one of which was
   independently re-verified against the source before this spec was written.

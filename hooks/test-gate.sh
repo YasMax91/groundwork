@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# RaDevs plugin :: Stop hook.
+# Groundwork plugin :: Stop hook.
 # Block "done" if the test suite fails on changed PHP. Fires only when PHP changed;
 # never blocks on environment problems (Sail down, not a git repo, etc.).
 set -uo pipefail
@@ -11,7 +11,7 @@ set -uo pipefail
 command -v gw_cmd          >/dev/null 2>&1 || gw_cmd() { printf './vendor/bin/sail %s %s' "$1" "${2:-}"; }
 command -v gw_runner_ready >/dev/null 2>&1 || gw_runner_ready() { [ -x ./vendor/bin/sail ]; }
 
-# Only act in a RaDevs-initialized project — elsewhere the plugin is inert, and now that a skip
+# Only act in a Groundwork-initialized project — elsewhere the plugin is inert, and now that a skip
 # is a visible notice, staying silent here matters.
 [ -f .groundwork.json ] || exit 0
 

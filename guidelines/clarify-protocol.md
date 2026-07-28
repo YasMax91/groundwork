@@ -1,4 +1,4 @@
-# Clarify protocol (RaDevs) — ask for decisions, never for facts
+# Clarify protocol (Groundwork) — ask for decisions, never for facts
 
 An assumed decision is the cheapest defect to prevent and the most expensive to find. This protocol is
 how the agent resolves what only the user can answer — before the plan exists, not after the code does.

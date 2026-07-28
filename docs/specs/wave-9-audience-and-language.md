@@ -2,7 +2,7 @@
 
 - Type: plugin self-improvement — methodology + one new skill + one new template (prose / templates;
   **no hooks, no scripts**). Cross-cutting change to how the agent addresses the reader → **L3**.
-- Author: Max Yastremskyi (YasMax91). Owner: RaDevs.
+- Author: Max Yastremskyi (YasMax91).
 - Source: the session-mined complaint brief for the v0.12.0 window (2026-07-21 → 2026-07-27). Wave 9 is
   the second package — jargon aimed at a non-technical owner (~8 cases, every project), a technical spec
   delivered where a **client document** was needed, estimates with no rule at all, and client/BA drafts

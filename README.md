@@ -1,8 +1,20 @@
-# groundwork
+# Groundwork
 
-Claude Code plugin for Laravel backends — created and maintained by **Max Yastremskyi** (YasMax91).
-One central, versioned source for how the RaDevs team works, so projects stay thin and consistent
-instead of copy-pasting `AGENTS.md` / `CLAUDE.md` / skills between repositories.
+A Claude Code plugin that makes an agent work a Laravel backend the way a senior engineer does:
+find the blast radius before planning, agree on the plan before writing code, prove external-API
+claims against cited docs instead of guessing, and refuse to call anything "done" until the gates —
+format, static analysis, tests, OpenAPI — are green and the change has been exercised against the
+running app.
+
+The name is the method: *groundwork* is both the discovery and specification that come before the
+first line of code, and the grounding protocol that makes the agent cite or verify a claim rather
+than invent it.
+
+One versioned source of process for every project, so repositories stay thin — domain facts in their
+own `AGENTS.md`, nothing else copy-pasted between them.
+
+Created and maintained by **Max Yastremskyi** ([YasMax91](https://github.com/YasMax91)). MIT.
+Battle-tested day to day on production Laravel backends at RaDevs.
 
 ## What's inside
 
@@ -122,7 +134,7 @@ instead of copy-pasting `AGENTS.md` / `CLAUDE.md` / skills between repositories.
   and a cached `impact-mapper` blast-radius map under `.claude/groundwork/` — context stays light, but
   nothing is forgotten across stops, restarts, or compaction.
 - **Status / UI** — a persistent status line (`branch · engine · mode · level · spec`, opt-in via
-  `init` + `ui.statusline`), in-action hook messages (`RaDevs: running tests…`), and a session banner +
+  `init` + `ui.statusline`), in-action hook messages (`Groundwork: running tests…`), and a session banner +
   title. All fail-safe — unsupported display fields degrade to a no-op.
 - **Templates** — thin project `AGENTS.md` / `CLAUDE.md` / `.groundwork.json` and six spec templates.
 
@@ -202,7 +214,7 @@ the working tree plus unpushed commits.
 ## Install (in a project)
 
 ```
-/plugin marketplace add <git-url-of-this-repo>
+/plugin marketplace add YasMax91/groundwork
 /plugin install groundwork@yasmax
 /groundwork:init
 ```

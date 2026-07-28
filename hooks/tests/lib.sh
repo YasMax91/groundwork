@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# RaDevs plugin :: executable proof for hooks/lib.sh (W11-AC1..AC5, AC8).
+# Groundwork plugin :: executable proof for hooks/lib.sh (W11-AC1..AC5, AC8).
 # The shared resolver decides which command every gate runs and whether the one hard
 # mode-gate fires, so each function gets its cases here. Run: bash hooks/tests/lib.sh
 set -uo pipefail

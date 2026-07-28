@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# RaDevs plugin :: shared hook resolvers.
+# Groundwork plugin :: shared hook resolvers.
 #
 # Three things every gate re-derived by hand, so a fix lands in one place:
 #   * gw_cmd           — a gate command built for the .groundwork.json `runner`

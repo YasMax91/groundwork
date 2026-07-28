@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# RaDevs plugin :: PreCompact hook.
+# Groundwork plugin :: PreCompact hook.
 # Context is about to be compacted (transcript thinned). Drop a breadcrumb into the
 # task checkpoint so that after compaction — when SessionStart re-injects this file —
 # the agent treats the checkpoint as the source of truth instead of a thinned

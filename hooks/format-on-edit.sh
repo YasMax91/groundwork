@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# RaDevs plugin :: PostToolUse(Write|Edit) hook.
+# Groundwork plugin :: PostToolUse(Write|Edit) hook.
 # Auto-format an edited PHP file via the project's formatter. Best-effort, never blocks.
 set -uo pipefail
 

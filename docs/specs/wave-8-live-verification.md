@@ -2,7 +2,7 @@
 
 - Type: plugin self-improvement — methodology + templates + one runnable deliverable (prose / templates;
   **no hooks, no scripts** — the Part C hook work is Wave 11). Cross-cutting behavior change → **L3**.
-- Author: Max Yastremskyi (YasMax91). Owner: RaDevs.
+- Author: Max Yastremskyi (YasMax91).
 - Source: the session-mined complaint brief for the v0.12.0 window (2026-07-21 → 2026-07-27, 36 sessions
   across 4 projects). Wave 8 is the first package (the dominant pain, ~16 cases). Extends the
   [enhancement roadmap](plugin-enhancement-roadmap.md), post-Wave 7.

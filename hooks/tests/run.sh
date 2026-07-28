@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# RaDevs plugin :: executable proof for pre-tool-guard.sh.
+# Groundwork plugin :: executable proof for pre-tool-guard.sh.
 # A denying hook can break the workflow, so each acceptance criterion (AC1..AC7 in
 # docs/specs/wave-2-enforcement.md) gets a case here. Feeds crafted JSON on stdin to the
 # guard inside a throwaway fixture and asserts the exit code (2 = deny, 0 = allow).

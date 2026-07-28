@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# RaDevs plugin :: status line — one-line workflow state for the bottom bar.
+# Groundwork plugin :: status line — one-line workflow state for the bottom bar.
 # Wired via the project .claude/settings.json `statusLine` (the `init` skill offers it).
 # Claude Code passes session JSON on stdin; we drain it but rely on project files + git.
-# Fail-safe: outside a RaDevs project, or when ui.statusline is false, print nothing.
+# Fail-safe: outside a Groundwork project, or when ui.statusline is false, print nothing.
 set -uo pipefail
 
 cat >/dev/null 2>&1 || true   # drain stdin (session JSON); we don't depend on it
@@ -37,7 +37,7 @@ if [ -f "$state" ]; then
   s="$(field Spec  | sed -E 's#.*/##' | awk '{print $1}')";       [ -n "$s" ] && spec="$s"
 fi
 
-out="RaDevs · ${branch}"
+out="Groundwork · ${branch}"
 [ "${dirty:-0}" != "0" ] && out="${out}*${dirty}"
 out="${out} · ${engine} · ${mode}"
 [ -n "$level" ] && out="${out} ${level}"

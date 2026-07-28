@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# RaDevs plugin :: PostToolUse(Bash) hook — optional, fail-safe output trimmer.
+# Groundwork plugin :: PostToolUse(Bash) hook — optional, fail-safe output trimmer.
 # Collapses the passing-test / clean-analysis spam from known-noisy project commands to
 # save context, WITHOUT ever hiding a failure.
 #

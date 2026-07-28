@@ -1,4 +1,4 @@
-# Grounding protocol (RaDevs) — read reality, never guess
+# Grounding protocol (Groundwork) — read reality, never guess
 
 The most damaging failure mode is confidently guessing instead of checking. It bites hardest on
 **external integrations**, where this protocol is mandatory for any work that touches an external

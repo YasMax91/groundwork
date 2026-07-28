@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# RaDevs plugin :: executable proof for session-start.sh.
+# Groundwork plugin :: executable proof for session-start.sh.
 # The checkpoint is the expensive part of the injection (~1k tokens), so it is paid for only while
 # a task is actually running. These tests pin both directions. Run: bash hooks/tests/session-start.sh
 set -uo pipefail
@@ -52,8 +52,8 @@ valid_json "finished checkpoint valid JSON"   "$d"
 
 # Every other guarantee the hook already made stays intact.
 d="$ROOT/none"; mkdir -p "$d"
-if [ -z "$(ctx "$d")" ]; then pass=$((pass+1)); printf '  ok   %-34s\n' "non-RaDevs project stays silent"
-else fail=$((fail+1)); printf '  FAIL %-34s expected no output\n' "non-RaDevs project stays silent"; fi
+if [ -z "$(ctx "$d")" ]; then pass=$((pass+1)); printf '  ok   %-34s\n' "non-Groundwork project stays silent"
+else fail=$((fail+1)); printf '  FAIL %-34s expected no output\n' "non-Groundwork project stays silent"; fi
 
 d="$ROOT/off"; mkdir -p "$d/.claude/groundwork"
 printf '{ "memory": { "session_context": false } }\n' > "$d/.groundwork.json"

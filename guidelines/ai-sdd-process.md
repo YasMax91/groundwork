@@ -1,6 +1,6 @@
-# AI-SDD process (RaDevs)
+# AI-SDD process (Groundwork)
 
-Generic spec-driven workflow for any RaDevs Laravel project. Domain facts live in the
+Generic spec-driven workflow for any Laravel project. Domain facts live in the
 project's `AGENTS.md`; this file is the process. Read together with
 [grounding-protocol.md](grounding-protocol.md), [blind-spot-protocol.md](blind-spot-protocol.md),
 [laravel-standards.md](laravel-standards.md), and [tdd-protocol.md](tdd-protocol.md).

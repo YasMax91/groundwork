@@ -2,7 +2,7 @@
 
 - Type: plugin self-improvement — methodology only (prose; **no hooks, no scripts, no new skills**).
   Changes when three existing mechanisms fire → **L3**.
-- Author: Max Yastremskyi (YasMax91). Owner: RaDevs.
+- Author: Max Yastremskyi (YasMax91).
 - Source: the session-mined complaint brief for the v0.12.0 window (2026-07-21 → 2026-07-27), items
   **B-2** (`grill` never offered), **B-3** (blast radius not re-mapped when the task grows), **B-6**
   (options never presented as a visible step) and the **A5** half not closed by Wave 8. Third package of

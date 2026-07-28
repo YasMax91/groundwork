@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# RaDevs plugin :: Stop hook — the OpenAPI contract gate.
+# Groundwork plugin :: Stop hook — the OpenAPI contract gate.
 # The published spec must never lag the code: if this task changed the API contract surface
 # (routes, controllers, FormRequests, Resources) and nothing in the diff touched the OpenAPI
 # spec, "done" is blocked. When annotations DID change, the spec is regenerated so broken
 # schemas fail here instead of in the frontend.
 #
 # Fail-safe by design — it must never block on an environment problem:
-#   * acts only in a RaDevs project (.groundwork.json) that actually has OpenAPI tooling;
+#   * acts only in a Groundwork project (.groundwork.json) that actually has OpenAPI tooling;
 #   * opt-out via gates.openapi_on_stop=false;
 #   * ALLOW (exit 0) on any missing field, parse error, or uncertainty;
 #   * escape hatch: declare "OpenAPI: n/a — <reason>" in the task checkpoint when the change

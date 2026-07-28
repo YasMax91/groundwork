@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# RaDevs plugin :: run every hook test suite.
+# Groundwork plugin :: run every hook test suite.
 # The hooks are the only executable part of this plugin, and a denying hook can strand a
 # workflow — so they carry tests, and this is the one command that runs all of them.
 # Run: bash hooks/tests/all.sh

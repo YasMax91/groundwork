@@ -1,9 +1,12 @@
 {
   "name": "groundwork",
-  "description": "RaDevs AI-SDD workflow for Laravel backends: grounded spec-driven development, an anti-hallucination protocol for external integrations, and enforced Laravel standards with tool-gates.",
-  "version": "0.19.1",
+  "description": "Spec-driven workflow for Laravel backends: grounded discovery and specs before code, an anti-hallucination protocol for external integrations, and Laravel standards enforced by tool-gates.",
+  "version": "0.20.0",
   "author": {
     "name": "Max Yastremskyi (YasMax91)"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "homepage": "https://github.com/YasMax91/groundwork",
+  "repository": "https://github.com/YasMax91/groundwork",
+  "keywords": ["laravel", "php", "spec-driven-development", "code-review", "openapi"]
 }

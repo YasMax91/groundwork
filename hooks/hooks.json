@@ -6,7 +6,7 @@
           {
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/hooks/session-start.sh",
-            "statusMessage": "RaDevs: loading project state…"
+            "statusMessage": "Groundwork: loading project state…"
           }
         ]
       }
@@ -28,7 +28,7 @@
           {
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/hooks/pre-tool-guard.sh",
-            "statusMessage": "RaDevs: checking command…"
+            "statusMessage": "Groundwork: checking command…"
           }
         ]
       }
@@ -40,7 +40,7 @@
           {
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/hooks/format-on-edit.sh",
-            "statusMessage": "RaDevs: formatting…"
+            "statusMessage": "Groundwork: formatting…"
           }
         ]
       },
@@ -60,17 +60,17 @@
           {
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/hooks/done-gate.sh",
-            "statusMessage": "RaDevs: static analysis…"
+            "statusMessage": "Groundwork: static analysis…"
           },
           {
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/hooks/test-gate.sh",
-            "statusMessage": "RaDevs: running tests…"
+            "statusMessage": "Groundwork: running tests…"
           },
           {
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/hooks/openapi-gate.sh",
-            "statusMessage": "RaDevs: checking OpenAPI…"
+            "statusMessage": "Groundwork: checking OpenAPI…"
           }
         ]
       }

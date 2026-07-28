@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# RaDevs plugin :: executable proof for done-gate.sh and format-on-edit.sh (W11-AC2, AC12).
+# Groundwork plugin :: executable proof for done-gate.sh and format-on-edit.sh (W11-AC2, AC12).
 # Both learned the runner in Wave 11, and done-gate also learned `-uall`. Neither had a suite.
 # Run: bash hooks/tests/gates.sh
 set -uo pipefail

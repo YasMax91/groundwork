@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# RaDevs plugin :: executable proof for W11-AC8 — every hook survives a missing lib.sh.
+# Groundwork plugin :: executable proof for W11-AC8 — every hook survives a missing lib.sh.
 # The shared library is a new dependency for seven hooks, so its absence is tested rather than
 # assumed: each hook must still run (never a shell error) and fall back to its Sail defaults.
 # Run: bash hooks/tests/failsafe.sh

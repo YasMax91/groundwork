@@ -3,7 +3,7 @@
 - Type: plugin self-improvement — **shell hooks + one shared library + tests**, plus a small prose pass.
   The only wave in the feedback programme that ships executable code → **L3** (a denying hook can strand
   the workflow).
-- Author: Max Yastremskyi (YasMax91). Owner: RaDevs.
+- Author: Max Yastremskyi (YasMax91).
 - Source: **Part C** of the session-mined complaint brief for the v0.12.0 window — parallel sessions
   sharing one test DB, an over-stating checkpoint, a brittle `Mode:` parser, `runner: host` ignored, and
   the OpenAPI generation step silently no-opping. Final package of the

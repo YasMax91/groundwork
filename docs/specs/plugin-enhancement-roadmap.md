@@ -1,4 +1,4 @@
-# RaDevs Laravel-back plugin — enhancement roadmap
+# Groundwork plugin — enhancement roadmap
 
 Status: original roadmap **complete** (2026-07-21) — Wave 1 (E4/E7/E6) v0.5.0 · Wave 0 spike · Wave 2 (E1) v0.6.0
 (E2 dropped) · Wave 3 (E3) v0.7.0 · Wave 4 (E5/E8/E9) v0.8.0 · Wave 5 (status/UI, post-roadmap UX
@@ -6,7 +6,7 @@ request) v0.9.0 · Wave 6 (blind-spot surfacing, post-roadmap UX request) v0.10.
 contract gate, post-roadmap) v0.11.0 · Wave 7 (interview loop + living domain contract + skill
 hygiene, post-roadmap) v0.12.0. **Feedback programme (Waves 8–12) complete** — Wave 8 v0.13.0 ·
 Wave 9 v0.14.0 · Wave 10 v0.15.0 · Wave 11 v0.16.0 · Wave 12 v0.17.0 (calibration), all conformance-verified.
-Author: Max Yastremskyi (YasMax91) · Owner: RaDevs
+Author: Max Yastremskyi (YasMax91)
 
 A prioritized, grounded backlog of improvements to the `groundwork` plugin. The current
 plugin (v0.4.0) already implements most of the 2025–2026 frontier — just-in-time context via
@@ -94,7 +94,7 @@ short session. Everything in Wave 2/3 below is contingent on it.
   - `E1-AC2` WHEN an `Edit` targets a migration file tracked in git, THE hook SHALL deny it unless
     `gates.lock_shipped_migrations` is `false`. (test: hook unit test)
   - `E1-AC3` WHEN `.groundwork.json` is absent OR the relevant toggle is `false`, THE hook SHALL be a
-    silent no-op (never break a non-RaDevs project). (test: hook unit test)
+    silent no-op (never break a non-Groundwork project). (test: hook unit test)
   - `E1-AC4` WHEN the runner is already present in the command (`./vendor/bin/sail …`), THE hook SHALL
     allow it. (test: hook unit test)
   - `E1-AC5` WHEN `./vendor/bin/sail` is absent or not executable (e.g. a fresh clone pre-`composer

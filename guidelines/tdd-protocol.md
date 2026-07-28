@@ -1,6 +1,6 @@
-# TDD protocol (RaDevs) — test-first by default
+# TDD protocol (Groundwork) — test-first by default
 
-Test-first discipline for RaDevs Laravel work. Read together with
+Test-first discipline for Laravel work. Read together with
 [ai-sdd-process.md](ai-sdd-process.md), [laravel-standards.md](laravel-standards.md), and
 [grounding-protocol.md](grounding-protocol.md). The standards say *what* to test and which gate
 enforces it; this protocol says *when to write it* — first.

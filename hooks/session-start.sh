@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# RaDevs plugin :: SessionStart hook.
+# Groundwork plugin :: SessionStart hook.
 # Cheaply re-inject project state at session start / resume / post-compact so the
 # agent does not re-read the same files every time. Emits `additionalContext` JSON.
-# Silent on non-RaDevs projects and on any error — it must never break a session.
+# Silent on non-Groundwork projects and on any error — it must never break a session.
 set -uo pipefail
 
 # Shared resolvers (canonical Mode); fail-safe fallback to the raw first word.
@@ -13,7 +13,7 @@ command -v gw_mode >/dev/null 2>&1 || gw_mode() {
     | head -1 | sed -E 's/^[^:]*:[[:space:]]*//' | awk -F'|' '{print $1}' | awk '{print $1}'
 }
 
-# Only act in a RaDevs-initialized project.
+# Only act in a Groundwork-initialized project.
 [ -f .groundwork.json ] || exit 0
 # Respect the opt-out toggle.
 [ "$(jq -r '.memory.session_context' .groundwork.json 2>/dev/null)" = "false" ] && exit 0
@@ -25,7 +25,7 @@ add() { ctx="${ctx}$1
 # --- runner + DB engine (the contract the agent must honor) ---
 runner="$(jq -r '.runner // "sail"' .groundwork.json 2>/dev/null || echo sail)"
 engine="$(jq -r '.database.default // "mysql"' .groundwork.json 2>/dev/null || echo mysql)"
-add "RaDevs workflow active. Runner: ${runner}. DB engine: ${engine} — code and tests target this engine, never SQLite."
+add "Groundwork workflow active. Runner: ${runner}. DB engine: ${engine} — code and tests target this engine, never SQLite."
 
 # --- git state ---
 if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
@@ -60,7 +60,7 @@ spec="$(find docs/specs -type f -name '*.md' 2>/dev/null -exec ls -t {} + 2>/dev
 [ -n "$spec" ] && add "Most recent spec: ${spec}"
 
 # --- status banner + session title (Wave 5; honor ui.status_messages) ---
-title="RaDevs: ${branch:-?}"
+title="Groundwork: ${branch:-?}"
 banner=""
 if [ "$(jq -r '.ui.status_messages' .groundwork.json 2>/dev/null)" != "false" ]; then
   mode_line=""
@@ -69,9 +69,9 @@ if [ "$(jq -r '.ui.status_messages' .groundwork.json 2>/dev/null)" != "false" ];
     # session title fall back to the branch rather than echoing raw Markdown.
     m="$(gw_mode "$state")"
     l="$(grep -iE '^[[:space:]]*-?[[:space:]]*Level:' "$state" 2>/dev/null | head -1 | sed -E 's/^[^:]*:[[:space:]]*//' | awk '{print $1}')"
-    [ -n "$m" ] && { title="RaDevs: ${m}${l:+ $l}"; mode_line=" · ${m}${l:+ $l}"; }
+    [ -n "$m" ] && { title="Groundwork: ${m}${l:+ $l}"; mode_line=" · ${m}${l:+ $l}"; }
   fi
-  banner="RaDevs · ${branch:-?} · ${engine}${mode_line}"
+  banner="Groundwork · ${branch:-?} · ${engine}${mode_line}"
 fi
 
 # Emit the SessionStart output. jq handles escaping. sessionTitle/systemMessage are added

@@ -1,4 +1,4 @@
-# Working memory (RaDevs) — persist task state, don't re-derive it
+# Working memory (Groundwork) — persist task state, don't re-derive it
 
 Cheap, durable memory for the workflow so the **context window stays light but nothing is
 forgotten** across stops, restarts, and compaction. Read together with

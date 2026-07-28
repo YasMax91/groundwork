@@ -1,7 +1,7 @@
 {
   "name": "groundwork-pack",
-  "description": "One-install bundle: the RaDevs AI-SDD workflow plus the external plugins its steps reach for — PHP code intelligence, package docs, a browser for live verification, and production incidents. MCP/LSP only, so the standing context cost stays near zero.",
-  "version": "1.0.0",
+  "description": "One-install bundle: the Groundwork workflow plus the external plugins its steps reach for — PHP code intelligence, package docs, a browser for live verification, and production incidents. MCP/LSP only, so the standing context cost stays near zero.",
+  "version": "1.1.0",
   "author": {
     "name": "Max Yastremskyi (YasMax91)"
   },

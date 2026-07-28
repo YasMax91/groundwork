@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# RaDevs plugin :: PreToolUse(Bash|Edit|Write) hook — enforcement gate.
+# Groundwork plugin :: PreToolUse(Bash|Edit|Write) hook — enforcement gate.
 # Turns advisory rules into engine-level denials:
 #   (a) Laravel/PHP commands must go through the runner (Sail), not the host.
 #   (b) never edit a shipped (git-tracked) migration.
 #   (c) optional: no app-code edits while the task is in Discovery/Plan mode (default OFF).
 #
 # Fail-safe by design — it must never break a tool call on its own bug:
-#   * acts only in a RaDevs project (.groundwork.json present); silent no-op otherwise;
+#   * acts only in a Groundwork project (.groundwork.json present); silent no-op otherwise;
 #   * every toggle is opt-out via .groundwork.json `gates`;
 #   * ALLOW (exit 0) on any missing field, parse error, or uncertainty;
 #   * DENY via exit 2 + a stderr reason (the documented PreToolUse blocking path — stderr
@@ -24,7 +24,7 @@ command -v gw_mode         >/dev/null 2>&1 || gw_mode() {
     | head -1 | sed -E 's/^[^:]*:[[:space:]]*//' | awk -F'|' '{print $1}' | awk '{print $1}'
 }
 
-# Only enforce in a RaDevs-initialized project; never touch a non-RaDevs repo.
+# Only enforce in a Groundwork-initialized project; never touch a non-Groundwork repo.
 [ -f .groundwork.json ] || exit 0
 
 input="$(cat 2>/dev/null || true)"

@@ -1,4 +1,4 @@
-# OpenAPI protocol (RaDevs) — the spec is part of the contract, not documentation afterwards
+# OpenAPI protocol (Groundwork) — the spec is part of the contract, not documentation afterwards
 
 The published OpenAPI/Swagger document is the contract the frontend and every external consumer read.
 It must be **current** (never behind the code) and **complete to the last detail** (never a bare

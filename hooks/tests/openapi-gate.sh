@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# RaDevs plugin :: executable proof for openapi-gate.sh.
+# Groundwork plugin :: executable proof for openapi-gate.sh.
 # A blocking Stop gate can strand the workflow, so every branch gets a case here: it must block
 # a contract change that skipped the spec, and stay silent on everything else.
 # No framework — plain bash. Run: bash hooks/tests/openapi-gate.sh
@@ -72,7 +72,7 @@ cat > "$d/composer.json" <<'JSON'
 JSON
 expect "AC4 no tooling"            0 "$d"
 
-# --- AC5: no .groundwork.json -> not a RaDevs project ---
+# --- AC5: no .groundwork.json -> not a Groundwork project ---
 d="$ROOT/ac5"; fixture "$d" true; touch_controller "$d"; rm -f "$d/.groundwork.json"
 expect "AC5 no config"             0 "$d"
 

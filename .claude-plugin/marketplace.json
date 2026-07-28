@@ -1,14 +1,14 @@
 {
   "name": "yasmax",
   "owner": {
-    "name": "RaDevs"
+    "name": "Max Yastremskyi (YasMax91)"
   },
   "allowCrossMarketplaceDependenciesOn": ["claude-plugins-official"],
   "plugins": [
     {
       "name": "groundwork",
       "source": "./",
-      "description": "RaDevs AI-SDD workflow for Laravel backends: grounded SDD, an integration grounding protocol, and enforced Laravel standards with tool-gates."
+      "description": "Spec-driven workflow for Laravel backends: grounded discovery and specs before code, an anti-hallucination protocol for external integrations, and Laravel standards enforced by tool-gates."
     },
     {
       "name": "groundwork-pack",
@@ -17,6 +17,6 @@
     }
   ],
   "metadata": {
-    "description": "RaDevs internal Claude Code plugins for Laravel backend development."
+    "description": "Claude Code plugins by Max Yastremskyi."
   }
 }

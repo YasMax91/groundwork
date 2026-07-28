@@ -11,7 +11,7 @@
 
 Turn the advisory rules — "all Laravel/PHP through the runner", "never edit a shipped migration",
 "no code while planning" — into engine-level `PreToolUse` denials. Fail-safe, opt-out aware, never
-breaks a non-RaDevs repo.
+breaks a non-Groundwork repo.
 
 ## Scope (Wave 2)
 
@@ -32,7 +32,7 @@ decision.
 Contract (all verified in Wave 0): read the stdin JSON (`tool_name`, `tool_input`, …); **exit 0 to
 allow** (silent), **exit 2 + a stderr reason to deny** (the documented blocking path; stderr is fed
 back so the model self-corrects). Fail-safe everywhere: any missing field, parse error, or absent
-config → exit 0 (allow). Only acts in a RaDevs project (`.groundwork.json` present).
+config → exit 0 (allow). Only acts in a Groundwork project (`.groundwork.json` present).
 
 - **(a) Runner enforcement** — toggle `gates.enforce_runner` (default `true`); tool `Bash`,
   `cmd = .tool_input.command`:

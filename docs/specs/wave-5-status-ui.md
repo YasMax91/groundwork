@@ -39,10 +39,10 @@ later); the proven `pre-tool-guard.sh` exit-2 deny mechanism is **unchanged** (n
 
 ### `hooks/statusline.sh` (new) — the persistent bar
 
-One line: `RaDevs · <branch>[*<dirty>] · <engine> · <mode> L<level> · spec:<name>`. Reads
+One line: `Groundwork · <branch>[*<dirty>] · <engine> · <mode> L<level> · spec:<name>`. Reads
 `.groundwork.json` (engine/runner), `.claude/groundwork/task-state.md` (mode/level/spec), git
 (branch/dirty). Reads stdin JSON defensively (CC passes session info) but does **not** depend on it.
-Fail-safe: outside a RaDevs project (no `.groundwork.json`) → print nothing, exit 0. Honors a
+Fail-safe: outside a Groundwork project (no `.groundwork.json`) → print nothing, exit 0. Honors a
 `ui.statusline` toggle.
 
 ### `init` wiring (skills/init/SKILL.md)
@@ -58,18 +58,18 @@ it resolves at init time and notes the `claude --debug` confirmation step. Off u
 ### `statusMessage` on the existing hooks (hooks/hooks.json)
 
 Add a `statusMessage` to each hook command so the user sees the current action while it runs:
-- PreToolUse `pre-tool-guard.sh` → "RaDevs: checking command…"
-- PostToolUse format → "RaDevs: formatting…"
-- Stop `done-gate.sh` → "RaDevs: static analysis…"
-- Stop `test-gate.sh` → "RaDevs: running tests…"
-- SessionStart → "RaDevs: loading project state…"
+- PreToolUse `pre-tool-guard.sh` → "Groundwork: checking command…"
+- PostToolUse format → "Groundwork: formatting…"
+- Stop `done-gate.sh` → "Groundwork: static analysis…"
+- Stop `test-gate.sh` → "Groundwork: running tests…"
+- SessionStart → "Groundwork: loading project state…"
 Pure config; if the field is unsupported it is ignored (no-op).
 
 ### `sessionTitle` + `systemMessage` on SessionStart (hooks/session-start.sh)
 
 The hook already emits `additionalContext`. Extend its JSON output (exit 0) with:
-- `sessionTitle`: `RaDevs: <task title or branch> [<mode> L<level>]` (from task-state, else branch).
-- `systemMessage`: a one-line banner — `RaDevs · <branch> · <engine> · <mode> · spec:<name>` — so the
+- `sessionTitle`: `Groundwork: <task title or branch> [<mode> L<level>]` (from task-state, else branch).
+- `systemMessage`: a one-line banner — `Groundwork · <branch> · <engine> · <mode> · spec:<name>` — so the
   user sees the state without reading context. Honors `ui.status_messages` (default on).
 
 ### Config + docs
@@ -82,9 +82,9 @@ The hook already emits `additionalContext`. Extend its JSON output (exit 0) with
 
 ## Acceptance criteria (EARS — dogfooding E4)
 
-- [ ] **W5-AC1** WHEN `statusline.sh` runs in a RaDevs project THE SYSTEM SHALL print one line with
+- [ ] **W5-AC1** WHEN `statusline.sh` runs in a Groundwork project THE SYSTEM SHALL print one line with
       branch · engine · mode · level · spec. → test: hooks/tests/statusline.sh cases
-- [ ] **W5-AC2** WHEN `statusline.sh` runs outside a RaDevs project (no `.groundwork.json`) OR
+- [ ] **W5-AC2** WHEN `statusline.sh` runs outside a Groundwork project (no `.groundwork.json`) OR
       `ui.statusline` is false THE SYSTEM SHALL print nothing and exit 0. → test: statusline cases
 - [ ] **W5-AC3** WHEN `.claude/groundwork/task-state.md` is absent THE statusline SHALL still render
       (mode/level/spec shown as "—"), never error. → test: statusline cases

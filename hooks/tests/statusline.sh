@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# RaDevs plugin :: executable proof for statusline.sh (W5-AC1..AC3).
+# Groundwork plugin :: executable proof for statusline.sh (W5-AC1..AC3).
 # Builds throwaway fixtures and asserts the rendered line. Run: bash hooks/tests/statusline.sh
 set -uo pipefail
 
@@ -39,7 +39,7 @@ empty "AC2 toggle off" "$d"
 
 # AC3: project but no task-state -> still renders, never errors
 d="$ROOT/ac3"; mkdir -p "$d"; printf '{ "database": { "default": "mysql" } }\n' > "$d/.groundwork.json"
-contains "AC3 no taskstate" "$d" "RaDevs"
+contains "AC3 no taskstate" "$d" "Groundwork"
 contains "AC3 mysql"        "$d" "mysql"
 
 # W11-AC4/AC5: only a canonical Mode renders; Markdown emphasis is stripped, garbage is not shown
