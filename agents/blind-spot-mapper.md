@@ -15,7 +15,8 @@ do not edit code. Spawned during **Discovery**, before the plan is locked.
 
 - The task statement (what the user asked for).
 - The draft spec / plan, if one exists.
-- The codebase (`Read`/`Grep`/`Glob`; `Bash` for schema/git) — read reality, do not assume.
+- The codebase (`Read` plus whichever search you have — `Grep`/`Glob`, or `rg`/`find` through
+  `Bash`, which also covers schema and git) — read reality, do not assume.
 
 If the statement is missing, say so and ask for it rather than guessing.
 

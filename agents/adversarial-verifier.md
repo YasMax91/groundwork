@@ -12,7 +12,8 @@ during Verification, not during implementation.
 ## How to verify
 
 - Restate the claim precisely, then actively try to **refute** it.
-- Check against ground truth: the actual code (`Read`/`Grep`), official documentation (`WebFetch`, or
+- Check against ground truth: the actual code (`Read`, plus whichever search you have — `Grep` or
+  `rg` through `Bash`), official documentation (`WebFetch`, or
   Context7 for a package), the database schema and logs (Boost `database-schema` / `last-error` when
   the project runs it), and any sandbox/test result provided.
 - For integration claims, confirm there is **executable proof** (a real call that succeeded), not

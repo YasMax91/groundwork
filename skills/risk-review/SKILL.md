@@ -40,11 +40,13 @@ verifies every finding before reporting (only confirmed risks survive).
 - **N+1 / performance** — relationships eager-loaded intentionally on list endpoints.
 - **Vulnerability classes the gates do not model** — when the diff touches authentication, RBAC, file
   upload, raw SQL (`DB::raw`, `whereRaw`), deserialization, redirects built from input, or anything
-  handling secrets, scan the changed files with `semgrep` (the companion plugin) and judge each hit:
-  a confirmed risk with its fix, or dismissed with the reason. Pint/Larastan/PHPUnit stay the gates;
-  this is the pass that looks for the injection/authz class they were never built to catch. Not
-  installed, or the surface is untouched — say the scan did not run, so nobody reads silence as a
-  clean scan.
+  handling secrets, run a scanner over **the changed files only** — `semgrep --config auto <files>`
+  when the binary is on the machine — and judge each hit: a confirmed risk with its fix, or dismissed
+  with the reason. Scoping to the diff is what keeps this cheap; a whole-project scan on every review
+  is not. Pint/Larastan/PHPUnit stay the gates; this is the pass for the injection/authz class they
+  were never built to catch. No scanner, or the surface is untouched: say the scan did not run — and
+  when it is that surface with no scanner, reason through the injection and authorization paths by
+  hand rather than letting silence read as clean.
 - **Test-first discipline** — for L2+/bug fixes the covered behavior has fail-first tests (red→green);
   a bug fix has a regression test that failed before the fix. See the TDD protocol
   (`${CLAUDE_SKILL_DIR}/../../guidelines/tdd-protocol.md`).

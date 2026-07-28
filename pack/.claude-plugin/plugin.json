@@ -1,6 +1,6 @@
 {
   "name": "groundwork-pack",
-  "description": "One-install bundle: the RaDevs AI-SDD workflow plus the external plugins its steps reach for — PHP code intelligence, package docs, a browser for live verification, security scanning, and production incidents.",
+  "description": "One-install bundle: the RaDevs AI-SDD workflow plus the external plugins its steps reach for — PHP code intelligence, package docs, a browser for live verification, and production incidents. MCP/LSP only, so the standing context cost stays near zero.",
   "version": "1.0.0",
   "author": {
     "name": "Max Yastremskyi (YasMax91)"
@@ -11,8 +11,6 @@
     { "name": "php-lsp", "marketplace": "claude-plugins-official" },
     { "name": "context7", "marketplace": "claude-plugins-official" },
     { "name": "playwright", "marketplace": "claude-plugins-official" },
-    { "name": "semgrep", "marketplace": "claude-plugins-official" },
-    { "name": "42crunch-api-security-testing", "marketplace": "claude-plugins-official" },
     { "name": "sentry", "marketplace": "claude-plugins-official" }
   ]
 }

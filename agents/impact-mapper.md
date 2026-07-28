@@ -40,7 +40,11 @@ For every touched service, model, resource, request, or table, trace:
 - **Tests** — feature/unit tests covering any of the above; they encode the contract you must not break.
 
 Use Boost MCP tools where available — `database-schema` for FK/cascades, `application-info` for
-models, `php artisan route:list` for the HTTP surface — and `Grep`/`Glob` for reverse references.
+models, `php artisan route:list` for the HTTP surface. Reverse references come from search: the
+`Grep`/`Glob` tools when your tool list has them, otherwise `rg -n` / `find` through `Bash` — check
+what you actually have before planning the sweep. Either way, exclude `vendor/`, `node_modules/`,
+`storage/` and `public/build/`, and search for the symbol, not for a whole file's contents: an
+unfiltered dump costs a hundred times what the matching lines do and buries the edge you needed.
 You have no language server: symbol edges here are grep + Boost, so an inherited or aliased call site
 is one you must find by name. Report a symbol you could not resolve as an unresolved edge rather than
 as an absent one.

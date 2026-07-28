@@ -222,23 +222,43 @@ required.
 /plugin install groundwork-pack@yasmax
 ```
 
-Each one is installed because a **named step** reaches for it. A plugin with no step in the pipeline
-does not belong in the bundle — `github` was dropped for exactly that reason, since `gh` already
-covers PR work from `Bash` without a second credential.
+A plugin enters on two conditions: a **named step** reaches for it, and it costs close to nothing when
+that step is not running.
 
-| Plugin | The step that uses it |
-| --- | --- |
-| `php-lsp` (Intelephense) | `start-task` step 3 — symbol lookup goes through the `LSP` tool before grep, which follows imports, aliases and inheritance a name match misses. Main-session only: a background subagent has no `LSP` tool, so `impact-mapper` stays on grep + Boost. |
-| `context7` | `grounding-protocol` — the source between Boost and the open web, for packages Boost does not index (a Spatie/Filament version, a provider SDK). `grounded-researcher` follows the same order. |
-| `playwright` | `final-check` live verification — the browser drive for admin/UI/CSS work, so the step does not depend on `claude-in-chrome` being present for whoever runs it. |
-| `semgrep` | `risk-review` — the scan on a diff touching auth, RBAC, upload, raw SQL, deserialization or secrets; the vulnerability class Pint/Larastan/PHPUnit were never built to catch. |
-| `42crunch-api-security-testing` | `openapi-protocol` verification step 4 — the OWASP-API audit of the regenerated document for a public endpoint at L3/L4, where a spec can match the code and still describe a BOLA. |
-| `sentry` | `start-task` step 3 — a production bug starts at the real issue (stack trace, release, frequency), not at a repro reconstructed from the report. |
+| Plugin | The step that uses it | Standing cost |
+| --- | --- | --- |
+| `php-lsp` (Intelephense) | `start-task` step 3 — symbol lookup goes through the `LSP` tool before grep, which follows imports, aliases and inheritance a name match misses. Main-session only: a background subagent has no `LSP` tool, so `impact-mapper` stays on grep + Boost. | none — an LSP config, no context |
+| `context7` | `grounding-protocol` — the source between Boost and the open web, for packages Boost does not index (a Spatie/Filament version, a provider SDK). `grounded-researcher` follows the same order. | 2 deferred MCP tools |
+| `playwright` | `final-check` live verification — the browser drive for admin/UI/CSS work, so the step does not depend on `claude-in-chrome` being present for whoever runs it. | deferred MCP tools |
+| `sentry` | `start-task` step 3 — a production bug starts at the real issue (stack trace, release, frequency), not at a repro reconstructed from the report. | deferred MCP tools + router skills |
 
-Every one of these steps is conditional on the tool being installed, and every one of them requires
-saying so when it is not — an unrun scan is reported, never passed off as a clean one. Nothing in the
-gates depends on the bundle: `format`, `analyse`, `test` and `openapi` are shell commands through the
-runner and behave identically without it.
+Every step is conditional on the tool being present and has to say so when it is not — an unrun scan
+is reported, never passed off as a clean one, and the check it would have done falls back to reasoning
+by hand rather than disappearing. Nothing in the gates depends on the bundle: `format`, `analyse`,
+`test` and `openapi` are shell commands through the runner and behave identically without it.
+
+### Deliberately not bundled
+
+Two tools have a step in the pipeline but stay opt-in, because their cost is paid on every turn
+whether or not the step runs:
+
+- **`semgrep`** — the `risk-review` scan calls the **CLI** (`semgrep --config auto <changed files>`),
+  which runs locally and needs no account. The marketplace *plugin* is the thing to avoid by default:
+  it installs a hook that scans on every file write and its setup expects a Semgrep cloud login, so a
+  scan meant for one review step becomes output on every edit.
+- **`42crunch`** — a real OWASP-API audit of the OpenAPI document, but it ships five model-invoked
+  skills whose descriptions sit in context permanently, and it needs a 42Crunch account. Worth
+  installing for a project with a public API and a subscription; not worth it for everyone else, where
+  `openapi-protocol` step 4 walks the same questions by hand.
+
+### What the bundle costs
+
+MCP tool definitions are deferred: with [tool search](https://code.claude.com/docs/en/mcp) on (the
+default), only tool *names* and server instructions load at session start, so three MCP servers add
+roughly a thousand tokens, not the tens of thousands their full schemas would. That is the whole
+reason the set favours MCP- and LSP-only plugins over skill-heavy ones. Turn a server off in `/mcp`
+for a session that will not touch it, and check `ENABLE_TOOL_SEARCH` before adding anything larger —
+with tool search disabled, every schema loads upfront.
 
 **Subagents reach MCP by server name.** A subagent's `tools` list is an allowlist that drops every MCP
 server it does not name, so the agents grant themselves exactly what their job needs — `impact-mapper`
@@ -253,8 +273,10 @@ in `marketplace.json` names the one marketplace this bundle may pull from. `clau
 removes the auto-installed dependencies if the bundle is uninstalled.
 
 The dependencies bring their own runtime requirements, none of which this plugin manages: `php-lsp`
-needs `npm i -g intelephense`, `context7` and `playwright` run through `npx`, and `sentry`, `42crunch`
-and `semgrep` authenticate per their own instructions.
+needs `npm i -g intelephense`; `context7` and `playwright` run through `npx` on Node 18+ (a Context7
+API key is optional, for higher rate limits); `sentry` authenticates against the org that already
+receives the project's errors. The optional pair needs `semgrep` on `PATH` (Homebrew or pipx) and a
+42Crunch account respectively.
 
 ## Update everywhere
 

@@ -66,12 +66,14 @@ per resource, referenced everywhere.
    field dropped from the code is dropped from the schema with it.
 3. For a new endpoint, confirm it appears in the generated document — a route with no annotation
    generates nothing and silently ships undocumented.
-4. **Audit the document, not just its freshness — public endpoints at L3/L4.** When the change adds or
-   alters a publicly reachable operation and the `42crunch` plugin is installed, run its audit over the
-   regenerated document and carry the OWASP-API findings (object-level authorization, missing
-   authentication, unconstrained payloads) into the risk review as contract risks. A spec that matches
-   the code can still describe an endpoint that hands out other tenants' objects — that is what this
-   step catches and the drift check cannot. Not installed: say the audit did not run.
+4. **Audit the document, not just its freshness — public endpoints at L3/L4.** A spec that matches the
+   code can still describe an endpoint that hands out another tenant's objects; the drift check above
+   cannot see that. When the change adds or alters a publicly reachable operation, walk the OWASP-API
+   questions over the regenerated document — object-level authorization on every id parameter,
+   authentication declared on every non-public operation, payloads and page sizes bounded — and carry
+   what fails into the risk review as a contract risk. A project that has the `42crunch` plugin
+   installed and set up (it needs a 42Crunch account) can run its `42crunch-audit` skill instead of
+   doing this by hand; say which of the two happened.
 
 ## Scope — this task, not the whole project
 

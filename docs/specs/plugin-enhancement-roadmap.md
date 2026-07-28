@@ -413,10 +413,14 @@ unsound hypotheses before they reached implementation.
 - ~~Adding external MCPs beyond Boost~~ — **reopened and shipped in v0.19.0** as the
   `groundwork-pack` companion bundle. What changed: the rejection assumed an MCP would be added
   for its own sake. The bundle inverts the test — a plugin enters only when a *named step* reaches for
-  it (`start-task` → `LSP`/Sentry, `grounding-protocol` → Context7, `final-check` → a browser,
-  `risk-review` → semgrep, `openapi-protocol` → 42crunch), every such step is conditional on the tool
-  being installed and must report when it did not run, and no gate depends on any of them. `github` was
-  considered and dropped: no step needed it and `gh` already covers PR work from `Bash`.
+  it (`start-task` → `LSP`/Sentry, `grounding-protocol` → Context7, `final-check` → a browser), every
+  such step is conditional on the tool being present and must report when it did not run, and no gate
+  depends on any of them. The second condition is cost: only MCP/LSP plugins qualify, because
+  [tool search](https://code.claude.com/docs/en/mcp) defers MCP schemas while a plugin's skills sit in
+  context on every turn. Three were considered and left out — `github` (no step needs it; `gh` covers
+  PR work from `Bash`), `semgrep` (its plugin hooks scan on every file write and expect a cloud login;
+  `risk-review` calls the CLI on the diff instead), `42crunch` (five model-invoked skills plus a paid
+  account; `openapi-protocol` step 4 walks the same OWASP-API questions by hand).
 
 ## Source appendix (confidence)
 

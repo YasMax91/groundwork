@@ -54,9 +54,20 @@ owns its protocol.
 - **Premature completion** — a step ends before it is genuinely done. Sharpen the completion criterion
   first; only split the sequence if the rush survives a sharp criterion.
 
+## Name a capability, not a tool you did not verify
+
+Text that prescribes a tool the executor does not have is worse than silence: the agent spends a turn
+discovering the gap. Three verified traps in this plugin's own history — a subagent's `tools`
+allowlist drops every MCP server it does not name (so `impact-mapper` needs `mcp__laravel-boost`
+spelled out); the `LSP` tool exists only in the main session, never in a background subagent; and
+`Grep`/`Glob` are absent in some builds, where search is `rg`/`find` through `Bash`. Write the
+capability with its fallback — "whichever search you have" — and check the executor's real tool list
+before making a single tool the instruction.
+
 ## Before committing a change to this plugin
 
 - Does every new sentence survive the no-op test?
+- Does every tool it names exist for whoever executes that line?
 - Is each new meaning in exactly one file?
 - Did a skill grow past ~6 KB, or a description past two lines?
 - Does a new prohibition have a positive form?
