@@ -38,6 +38,13 @@ verifies every finding before reporting (only confirmed risks survive).
 - **Queues / scheduler / cache** — side effects behind jobs/events; cache is not the source of truth;
   deployment accounts for cache/config rebuild.
 - **N+1 / performance** — relationships eager-loaded intentionally on list endpoints.
+- **Vulnerability classes the gates do not model** — when the diff touches authentication, RBAC, file
+  upload, raw SQL (`DB::raw`, `whereRaw`), deserialization, redirects built from input, or anything
+  handling secrets, scan the changed files with `semgrep` (the companion plugin) and judge each hit:
+  a confirmed risk with its fix, or dismissed with the reason. Pint/Larastan/PHPUnit stay the gates;
+  this is the pass that looks for the injection/authz class they were never built to catch. Not
+  installed, or the surface is untouched — say the scan did not run, so nobody reads silence as a
+  clean scan.
 - **Test-first discipline** — for L2+/bug fixes the covered behavior has fail-first tests (red→green);
   a bug fix has a regression test that failed before the fix. See the TDD protocol
   (`${CLAUDE_SKILL_DIR}/../../guidelines/tdd-protocol.md`).

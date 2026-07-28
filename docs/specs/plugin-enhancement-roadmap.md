@@ -410,7 +410,13 @@ unsound hypotheses before they reached implementation.
 
 - Subagent cross-session `memory:` — speculative value for this workflow; revisit later.
 - Repository/DDD/CQRS scaffolding — explicitly against the Laravel standards.
-- Adding external MCPs beyond Boost — no clear need; revisit if a docs/issues MCP proves valuable.
+- ~~Adding external MCPs beyond Boost~~ — **reopened and shipped in v0.19.0** as the
+  `groundwork-pack` companion bundle. What changed: the rejection assumed an MCP would be added
+  for its own sake. The bundle inverts the test — a plugin enters only when a *named step* reaches for
+  it (`start-task` → `LSP`/Sentry, `grounding-protocol` → Context7, `final-check` → a browser,
+  `risk-review` → semgrep, `openapi-protocol` → 42crunch), every such step is conditional on the tool
+  being installed and must report when it did not run, and no gate depends on any of them. `github` was
+  considered and dropped: no step needed it and `gh` already covers PR work from `Bash`.
 
 ## Source appendix (confidence)
 

@@ -45,7 +45,10 @@ Use Boost and the codebase as the source of truth, and label every section:
    grounding, TDD, and Laravel standards. Do not duplicate the generic process.
 4. Run `./vendor/bin/sail composer require laravel/boost --dev` then
    `./vendor/bin/sail artisan boost:install` (Boost appends its `<laravel-boost-guidelines>` block;
-   it coexists with the domain contract). Point the MCP command at Sail if needed.
+   it coexists with the domain contract). Point the MCP command at Sail if needed, and **keep the
+   server named `laravel-boost`** in `.mcp.json` — the plugin's agents allowlist their MCP access by
+   server name, so a renamed server silently leaves `impact-mapper` and `adversarial-verifier` without
+   schema and log access.
 5. **Enable working memory.** The `.groundwork.json` `memory` block (`session_context`,
    `checkpoint`, `impact_cache`, all default `true`) drives the `SessionStart`/`PreCompact` hooks and
    the task checkpoint + impact-map cache the workflow skills keep under `.claude/groundwork/`. Add

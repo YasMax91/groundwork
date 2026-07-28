@@ -116,6 +116,12 @@ stated gap. Skip for L0/L1.
 
 Never report unqualified "100% done". State what is `verified` vs `assumed`.
 
+**When the work goes out as a pull request**, its body is this summary — behavior change, what was
+verified with the observed result, risks, what stayed unverified — not a fresh description written
+from the diff. It comes after the commit (the `frontend-handoff` step below asks for that) and needs
+its own explicit yes before `gh pr create`; a reviewer reading an invented summary reviews the wrong
+change.
+
 ## Converge (re-audit vs the full spec)
 
 Beyond the diff-scoped conformance review, re-audit the spec's **full** acceptance-criteria set against

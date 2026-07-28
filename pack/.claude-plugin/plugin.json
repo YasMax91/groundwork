@@ -1,6 +1,6 @@
 {
   "name": "groundwork-pack",
-  "description": "One-install bundle: the RaDevs AI-SDD workflow plus the external plugins it leans on — PHP code intelligence, package docs, a browser for live verification, security scanning, and production/PR context.",
+  "description": "One-install bundle: the RaDevs AI-SDD workflow plus the external plugins its steps reach for — PHP code intelligence, package docs, a browser for live verification, security scanning, and production incidents.",
   "version": "1.0.0",
   "author": {
     "name": "Max Yastremskyi (YasMax91)"
@@ -13,7 +13,6 @@
     { "name": "playwright", "marketplace": "claude-plugins-official" },
     { "name": "semgrep", "marketplace": "claude-plugins-official" },
     { "name": "42crunch-api-security-testing", "marketplace": "claude-plugins-official" },
-    { "name": "sentry", "marketplace": "claude-plugins-official" },
-    { "name": "github", "marketplace": "claude-plugins-official" }
+    { "name": "sentry", "marketplace": "claude-plugins-official" }
   ]
 }

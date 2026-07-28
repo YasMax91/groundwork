@@ -14,6 +14,13 @@ Stay in **Discovery mode**: inspect and plan only, do not edit files until the p
 3. **Inspect the directly-involved code.** Prefer Boost MCP tools — `application-info`,
    `database-schema`, `search-docs` — over recalling from memory. Read the actual routes, requests,
    controllers, services, models, resources, migrations, and tests the task names.
+   - **Symbols: the `LSP` tool before grep**, when a PHP language server is active (`php-lsp`) — it
+     follows imports, aliases and inheritance a name match misses. Grep still owns what it cannot see:
+     string class names, `event('…')`, container bindings, config- and Blade-driven wiring. The
+     `impact-mapper` subagent has no `LSP` tool, so resolve a symbol its map left open yourself.
+   - **A production bug starts at the incident.** When the report comes from production and the project
+     reports to Sentry (the `sentry` plugin), read the actual issue — stack trace, release, frequency —
+     before forming a hypothesis, instead of reconstructing a repro from the user's wording.
 4. **Map the connections — do not stop at the involved files.** Discovery is wide; only the change is
    narrow. Trace outward in *both* directions from every touched symbol: who calls it, and what it
    pulls in. Chase the Laravel edges grep alone misses — events/listeners, observers, jobs, scheduled

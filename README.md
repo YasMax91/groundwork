@@ -194,6 +194,8 @@ the working tree plus unpushed commits.
 
 - **Boost → the framework**: version-aware Laravel docs, DB schema, models, logs (a per-project
   `laravel/boost` composer dependency).
+- **Context7 → the packages Boost does not index** (a Spatie/Filament version, a provider SDK):
+  library docs, cited like any other source. Optional — part of the companion bundle below.
 - **This plugin's protocol → external APIs** (payments, booking, messaging): capability matrix +
   cited source + sandbox proof. This is the part Boost does not cover.
 
@@ -220,15 +222,30 @@ required.
 /plugin install groundwork-pack@yasmax
 ```
 
-| Plugin | Why it is in the set |
+Each one is installed because a **named step** reaches for it. A plugin with no step in the pipeline
+does not belong in the bundle — `github` was dropped for exactly that reason, since `gh` already
+covers PR work from `Bash` without a second credential.
+
+| Plugin | The step that uses it |
 | --- | --- |
-| `php-lsp` (Intelephense) | Real definitions and references instead of grep — `impact-mapper` maps the blast radius off the language server rather than off naming conventions. |
-| `context7` | Version-aware docs for what Boost does not cover: Spatie, Filament, provider SDKs. A second citable source for `grounding-protocol`. |
-| `playwright` | A browser that is present everywhere, so the live-verification step of `final-check` does not depend on a browser MCP the developer may not have. |
-| `semgrep` | Security-oriented static analysis next to Pint/Larastan, on the same edit loop. |
-| `42crunch-api-security-testing` | OWASP API audit of the OpenAPI document the `openapi` gate keeps in sync. |
-| `sentry` | Production stack traces during a bugfix, before the repro is guessed. |
-| `github` | PRs and issues from the session. |
+| `php-lsp` (Intelephense) | `start-task` step 3 — symbol lookup goes through the `LSP` tool before grep, which follows imports, aliases and inheritance a name match misses. Main-session only: a background subagent has no `LSP` tool, so `impact-mapper` stays on grep + Boost. |
+| `context7` | `grounding-protocol` — the source between Boost and the open web, for packages Boost does not index (a Spatie/Filament version, a provider SDK). `grounded-researcher` follows the same order. |
+| `playwright` | `final-check` live verification — the browser drive for admin/UI/CSS work, so the step does not depend on `claude-in-chrome` being present for whoever runs it. |
+| `semgrep` | `risk-review` — the scan on a diff touching auth, RBAC, upload, raw SQL, deserialization or secrets; the vulnerability class Pint/Larastan/PHPUnit were never built to catch. |
+| `42crunch-api-security-testing` | `openapi-protocol` verification step 4 — the OWASP-API audit of the regenerated document for a public endpoint at L3/L4, where a spec can match the code and still describe a BOLA. |
+| `sentry` | `start-task` step 3 — a production bug starts at the real issue (stack trace, release, frequency), not at a repro reconstructed from the report. |
+
+Every one of these steps is conditional on the tool being installed, and every one of them requires
+saying so when it is not — an unrun scan is reported, never passed off as a clean one. Nothing in the
+gates depends on the bundle: `format`, `analyse`, `test` and `openapi` are shell commands through the
+runner and behave identically without it.
+
+**Subagents reach MCP by server name.** A subagent's `tools` list is an allowlist that drops every MCP
+server it does not name, so the agents grant themselves exactly what their job needs — `impact-mapper`
+gets `mcp__laravel-boost` and nothing else; `grounded-researcher` and `adversarial-verifier` also get
+`mcp__context7`. Two consequences worth knowing: a Boost server registered under a different name is
+invisible to them (`init` fixes the name for this reason), and the `LSP` tool is main-session only, so
+symbol-level navigation belongs to `start-task`, never to the mapper.
 
 Both marketplaces have to be configured: a dependency whose marketplace is missing stays unresolved
 and disables the bundle. Cross-marketplace resolution is opt-in — `allowCrossMarketplaceDependenciesOn`
@@ -236,10 +253,8 @@ in `marketplace.json` names the one marketplace this bundle may pull from. `clau
 removes the auto-installed dependencies if the bundle is uninstalled.
 
 The dependencies bring their own runtime requirements, none of which this plugin manages: `php-lsp`
-needs `npm i -g intelephense`, `context7` and `playwright` run through `npx`, and the SaaS-backed ones
-(`sentry`, `github` — `GITHUB_PERSONAL_ACCESS_TOKEN`, `42crunch`, `semgrep`) authenticate per their own
-instructions. Gates and skills never assume any of them: each is used when present and reported as
-unavailable when not.
+needs `npm i -g intelephense`, `context7` and `playwright` run through `npx`, and `sentry`, `42crunch`
+and `semgrep` authenticate per their own instructions.
 
 ## Update everywhere
 

@@ -13,7 +13,7 @@
     {
       "name": "groundwork-pack",
       "source": "./pack",
-      "description": "One-install bundle: groundwork plus the external plugins it leans on (php-lsp, context7, playwright, semgrep, 42crunch, sentry, github)."
+      "description": "One-install bundle: groundwork plus the external plugins its steps reach for (php-lsp, context7, playwright, semgrep, 42crunch, sentry)."
     }
   ],
   "metadata": {
