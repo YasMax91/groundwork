@@ -3,7 +3,8 @@
 Generic spec-driven workflow for any Laravel project. Domain facts live in the
 project's `AGENTS.md`; this file is the process. Read together with
 [grounding-protocol.md](grounding-protocol.md), [blind-spot-protocol.md](blind-spot-protocol.md),
-[laravel-standards.md](laravel-standards.md), and [tdd-protocol.md](tdd-protocol.md).
+[laravel-standards.md](laravel-standards.md), [tdd-protocol.md](tdd-protocol.md), and
+[writing-standards.md](writing-standards.md).
 
 ## Operating modes
 
@@ -49,52 +50,63 @@ scope the edit tightly, never the investigation.
 
 ## Estimates
 
-The unit is always **real AI-hours to write the functionality**, never man-days or developer hours: a
-human reviews this code, he does not write it. The **full format** — ranges per block, a total, the
-reviewer's time on its own line — belongs to a document or an explicit "how long will this take?", and is
-owned by the **`client-doc`** skill ([../skills/client-doc/SKILL.md](../skills/client-doc/SKILL.md)).
-A passing remark about time in conversation just needs the right unit, not the whole table.
+The unit is **the wall-clock time the agent itself spends producing the work** — writing the code, its
+tests and its OpenAPI, and running the gates. It is not how long a developer would have taken, and it is
+not a man-day relabelled in a smaller-sounding unit. Work built on mechanisms this codebase already has
+is normally **minutes**; hours appear only when something genuinely slow sits in the loop, and that thing
+is named on the same line. An estimate that reads like a human work day for a CRUD endpoint is wrong by
+construction — no calibration rescues it.
 
-**Calibrate against the repository, never against a previous estimate.** Before any estimate covering
-more than one task, measure what this repo actually ships in a day:
+The **full format** — a line per block of work, a total, and human time on its own line — belongs to a
+document or an explicit "how long will this take?", and is owned by the **`client-doc`** skill
+([../skills/client-doc/SKILL.md](../skills/client-doc/SKILL.md)). A passing remark about time in
+conversation just needs the right unit, not the whole table.
+
+**Human time is its own line and is never added to the agent's.** Everything the agent cannot do itself
+belongs there, each with its owner: registering an account with a provider, issuing API keys, configuring
+a webhook in someone else's dashboard, passing a verification, granting access, deciding an open product
+question, reviewing and accepting the result. Folding these into the development number is exactly how
+twenty minutes of writing code is published as "a day of work".
+
+**Calibrate against this repository's own clock.** Read how long the work here actually took — commit
+timestamps inside one working session, not calendar days:
 
 ```bash
-git log --format='%ad %s' --date=short --since='2 months ago'
+git log --format='%ad %s' --date=format:'%Y-%m-%d %H:%M' --since='2 months ago'
 ```
 
-Group by date and read what landed together — a day that closes a provider integration, a schema
-change and two reports is the throughput to plan against. An older estimate document in the same repo
-is an **input, not an authority**: its numbers were written before the work, and unless someone
-recorded actual-vs-estimated afterwards, nothing has confirmed them. Inheriting its coefficients is
-how an estimate silently doubles.
+The gap between consecutive commits in a session is the real cost of that slice. Where the log is
+batched or too sparse to read that way, say so and estimate from the delta below rather than inventing a
+coefficient. An older estimate document in the same repo is an **input, not an authority**: its numbers
+were written before the work, and unless someone recorded actual-vs-estimated afterwards, nothing has
+confirmed them. Inheriting its coefficients is how an estimate silently doubles.
 
-**Know what actually costs the time.** Writing code is not the dominant cost — migrations, models,
-form requests, resources, tests and OpenAPI are minutes. Three things are:
+**Know what actually costs the time.** Writing code is not the dominant cost — migrations, models, form
+requests, resources, tests and OpenAPI are minutes. Three things are:
 
 1. **External uncertainty** — reading a third-party API against its official docs, live sandbox probes,
    establishing what the provider really does. Nothing accelerates this.
 2. **Undecided product questions** — wherever the requirement admits more than one reading and someone
-   else has to choose.
+   else has to choose. The waiting is human time, not development time.
 3. **Cost of being wrong** — money, access, personal data. Those carry deliberately more testing.
-
-Typical shape once calibrated: an internal task on mechanisms that already exist is **1–2.5 h**; a task
-with an external integration or live verification is **3–5 h**; an unsettled product question sits at
-the top of its range. If a task lands far outside this, say why in the same line.
 
 **Estimate the delta, not a rewrite.** If the functionality existed and was removed or deferred, the
 implementation is in git history — say so and estimate restoring it. The same holds for anything the
 codebase already does elsewhere: the estimate covers adapting it, not inventing it.
 
-**Sanity-check before publishing.** Divide the total by the measured daily throughput. If the result
-implies the team ships far less per day than the log shows it shipping, the estimate is wrong — rework
-it rather than publish a padded number. Padding is not caution: it costs the client money and it costs
-the schedule its credibility. An estimate the author cannot defend against the repo's own history is
-not an estimate.
+**Calendar time is not development time.** If the reader needs a date, it is the agent's time plus the
+wait on the human steps already listed — each named, so the reader can see which of them is actually the
+long pole. Never pad the development number to cover that wait.
 
-**Estimates are not sprint capacity.** They exclude review cycles and the rework after them,
-coordination with other people, production support and QA. When converting to sprints, plan **45–60 %
-of nominal capacity** in estimate-hours and state the factor used, so the reader can re-plan with their
-own.
+**Sanity-check before publishing.** Compare the total against the measured commit intervals and against
+the delta actually being written. If it implies this repo ships far less per session than its own log
+shows, the estimate is wrong — rework it rather than publish a padded number. Padding is not caution: it
+costs the client money and it costs the schedule its credibility. An estimate the author cannot defend
+against the repo's own history is not an estimate.
+
+**No slop in the number.** No false precision (a range whose ends differ by minutes is one number), no
+hedging disclaimers around it, no block invented to make the table look substantial. See
+[writing-standards.md](writing-standards.md).
 
 ## Fan-out by level (effort scaling)
 

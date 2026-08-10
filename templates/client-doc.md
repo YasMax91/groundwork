@@ -20,25 +20,34 @@ never seen the system understands the loss.>
 
 ## What is left for later, and why
 
-<Deliberately deferred scope. No hours attached — "later" must never read as "included".>
+<Deliberately deferred scope. No time attached — "later" must never read as "included".>
 
 ## How long it takes
 
-Time the AI spends writing this functionality (a human reviews the result, he does not write the code):
+Time the AI spends building this (a human reviews the result, he does not write the code). Minutes where
+it is minutes:
 
-| Part of the work | AI-hours |
+| Part of the work | Time |
 |---|---|
-| <block> | <N–M> |
-| <block> | <N–M> |
+| <block> | <N min / N–M h> |
+| <block> | <N min / N–M h> |
 | **Total** | **<N–M>** |
 
-Your time to review and accept: **<N–M hours>** — this is not development time.
-
-<One line: what would push the estimate to the top of the range.>
+<One line: what would push it to the top of the range — and only if something genuinely would.>
 
 ## What we need from you
 
-<Decisions, access, content, or data — each with what it blocks until it arrives.>
+<Decisions, access, content, or data — each with what it blocks until it arrives, in your own words.>
+
+Time on your side, which is not development time and is not added to the number above:
+
+| What | Who does it | Time |
+|---|---|---|
+| <e.g. create the account in the provider's dashboard and send us the keys> | <you> | <N min> |
+| Reviewing and accepting the result | <you> | <N min / N–M h> |
+
+<If a calendar date is needed: the AI's time plus the wait on the steps in this table. Name the long
+pole.>
 
 ## What happens next
 

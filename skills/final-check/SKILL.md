@@ -116,6 +116,10 @@ stated gap. Skip for L0/L1.
 
 Never report unqualified "100% done". State what is `verified` vs `assumed`.
 
+The summary reports **outcomes, not effort**, per
+`${CLAUDE_SKILL_DIR}/../../guidelines/writing-standards.md` — no "significantly improved", no count of
+files read, no "Conclusion" section, and a failure written in the same plain voice as a success.
+
 **When the work goes out as a pull request**, its body is this summary — behavior change, what was
 verified with the observed result, risks, what stayed unverified — not a fresh description written
 from the diff. It comes after the commit (the `frontend-handoff` step below asks for that) and needs

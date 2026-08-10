@@ -22,6 +22,9 @@ to build the UI against this backend and the design.
   auth, states, and visibility from the actual routes, `FormRequest`s, `JsonResource`s, enums,
   policies, and migrations you just built. Mark anything uncertain as an assumption; never invent a
   field or rule. See `${CLAUDE_SKILL_DIR}/../../guidelines/grounding-protocol.md`.
+- **No slop**, per `${CLAUDE_SKILL_DIR}/../../guidelines/writing-standards.md`: no preamble about what
+  the document covers, no restating the same rule in three sections, no filler adjectives. The reader is
+  building from this — every sentence is either the contract or a decision he has to make.
 
 ## When it applies
 

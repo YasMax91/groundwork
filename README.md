@@ -54,8 +54,10 @@ Battle-tested day to day on production Laravel backends at RaDevs.
   endpoint is: the problem, what he will be able to do, what is in and out of scope, what is needed from
   him. Deliberately without tests, acceptance criteria, endpoints, schema, or architecture — if those are
   wanted, the artifact is a `spec`, and the skill says so instead of producing a hybrid. Estimates are
-  **real AI-hours to write the functionality** — never man-days, since a human reviews this code rather
-  than writing it — as ranges per block plus a total, with the reviewer's time on its own line. Ships as
+  **the real wall-clock time the agent spends building it** — never man-days, and never a man-day
+  relabelled as hours: work on existing mechanisms is minutes and is published as minutes. Everything
+  that needs a person — provider accounts, API keys, decisions, review — is a separate line with its own
+  owner, never added to the development number. Ships as
   an English canonical file (what you send) plus a full Russian mirror (what you read), regenerated from
   the English so the two cannot drift.
 - **Blind-spot surfacing** — the agent proactively raises what you did not think to ask: unintended
@@ -346,7 +348,7 @@ pack/             groundwork-pack — dependency-only bundle (this plugin + comp
 skills/           start-task · spec · implement-approved · risk-review · final-check · ground-integration · frontend-handoff · client-doc · openapi-audit · grill · init · deep-grounding · deep-discovery · deep-review
 agents/           impact-mapper · blind-spot-mapper · grounded-researcher · adversarial-verifier · conformance-reviewer
 hooks/            hooks.json · lib.sh (shared resolvers) · session-start.sh · pre-compact.sh · format-on-edit.sh · done-gate.sh · test-gate.sh · openapi-gate.sh · trim-output.sh · pre-tool-guard.sh · statusline.sh · tests/all.sh
-guidelines/       ai-sdd-process · grounding-protocol · blind-spot-protocol · clarify-protocol · openapi-protocol · laravel-standards · tdd-protocol · working-memory
+guidelines/       ai-sdd-process · grounding-protocol · blind-spot-protocol · clarify-protocol · openapi-protocol · laravel-standards · tdd-protocol · writing-standards · working-memory
 docs/             skill-hygiene (author-facing) · specs/
 templates/        project/ · specs/ · frontend/ (feature · handoff — both pointing at the runnable request package) · client-doc.md · adr.md
 ```

@@ -53,6 +53,10 @@ a useful spec beats a perfect document.
   run the unbounded loop yourself per "Unbounded mode" in
   `${CLAUDE_SKILL_DIR}/../../guidelines/clarify-protocol.md`.
 - Update the spec if implementation discovers a material constraint, conflict, or safer approach.
+- Write it per `${CLAUDE_SKILL_DIR}/../../guidelines/writing-standards.md`: every sentence carries a fact
+  the reader does not have, no preamble or wrap-up, no section kept alive without content, no hedging
+  where a probe would settle it. A spec is a contract — restated background and filler make the binding
+  clauses harder to find.
 - Keep all spec text in English. The chat выжимка is the one exception — it is always Russian. The
   English spec file is the source of truth; the Russian summary is the digest. Never make the user
   read the full spec to get the gist.
