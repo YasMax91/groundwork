@@ -61,7 +61,8 @@ Stay in **Discovery mode**: inspect and plan only, do not edit files until the p
    conflicts, gaps surfaced as explicit questions to resolve before planning) · blind spots (dimensions
    you did not ask about — consequences / missing requirements / domain-product angles, per the
    blind-spot protocol; material only, or "none") · test plan (red list —
-   fail-first tests for L2+/bug fixes) · implementation plan · risks & assumptions · stop point.
+   fail-first tests for L2+/bug fixes) · implementation plan · **cost of silence** (what you decided for
+   the user, and what each costs if wrong — step 8a) · risks & assumptions · stop point.
 7a. **Take a position before you ask — the approaches block.** Present your **2–3 candidate approaches**
    to the task, recommended one first, each with its reason and what choosing it forecloses. This is plan
    altitude — *how we solve this* — not the per-question options of the interview, and it comes **before**
@@ -74,27 +75,41 @@ Stay in **Discovery mode**: inspect and plan only, do not edit files until the p
      the decision is cross-cutting and durable (the `spec` skill's ≥2 options are these same two,
      considered before the plan rather than reconstructed after it).
 
-7b. **When the intent is too unformed for a plan, offer `grill`.** Do not plan on top of a guess — offer
-   it as one option in the interview round below (with your recommendation stated), and never start it
-   unasked. **If the user accepts, run the unbounded loop yourself** — no round cap, closing with the
-   decision summary, per "Unbounded mode" in
-   `${CLAUDE_SKILL_DIR}/../../guidelines/clarify-protocol.md`; do not send them off to type `/grill`.
-   The signals — any one is enough:
+7b. **Offer the unbounded interview — recommend it when the signals below fire.** From **L2 up** the
+   depth choice is one of the questions in the first interview round every time (proceed at the level's
+   calibration · run the unbounded interview now), so the user chooses the depth rather than finding out
+   later that he was never asked. Never start it unasked. **If he accepts, run the loop yourself** — no
+   round cap, closing with the decision summary, per "Unbounded mode" in
+   `${CLAUDE_SKILL_DIR}/../../guidelines/clarify-protocol.md`; do not send him off to type `/grill`, which
+   is the entry point for something that is not a task yet.
+   **Recommend it** — the option comes first, marked as recommended, with the reason in the same line —
+   when any one of these holds:
    - the request names a **problem, not a change** ("orders get lost", "clients complain about payments");
    - **two or more incompatible readings** survive this discovery pass;
    - it is an **architecture or product call** (what should exist), not a code change (how to build it);
    - **nobody can state what "done" looks like** yet — no acceptance shape can be written;
-   - it is **L3/L4** and the goal itself, not just the mechanism, is still open.
+   - it is **L3/L4** and the goal itself, not just the mechanism, is still open;
+   - the task touches a **mandatory subject** — money, permissions/access, what the client sees, or an
+     external integration — and more of those decisions are open than the level's cap can hold (see
+     "When the interrogation is mandatory" in
+     `${CLAUDE_SKILL_DIR}/../../guidelines/clarify-protocol.md`).
 
 8. **Interview for the decisions that are the user's.** Run the clarify rounds per
    `${CLAUDE_SKILL_DIR}/../../guidelines/clarify-protocol.md`: ask the frontier in one
    `AskUserQuestion` call (≤4 questions, each led by your recommendation and its consequence, each in
   plain language — no term the owner must translate first), let each
    answer push the frontier outward, and stop when it is empty. Scaled by level — **L0/L1** at most one
-   question, **L2** one round, **L3/L4** up to **3** rounds with anything unresolved recorded as an
-   explicit assumption. A blind spot that needs a product call enters here as a question when the level's
+   question, **L2** up to **2** rounds (blocking decisions and any product fork that would ship
+   differently), **L3/L4** up to **4** rounds. Money, permissions/access, what the client sees, and
+   external-integration behaviour carry a round of their own from L2 up, however settled the request
+   sounds. A blind spot that needs a product call enters here as a question when the level's
    calibration admits one; when it does not, it is recorded as an explicit assumption instead — never
    silently dropped (see the blind-spot protocol). Look up every fact yourself; never spend a question on one.
+
+8a. **State the cost of silence before the plan.** List every decision you took on the user's behalf —
+   what was assumed · why you chose it · what it costs if it is wrong · the one line that changes it — in
+   the plain-language form the clarify protocol specifies. If the list is empty, say so; that is a claim
+   that the frontier really was empty, not a formality to skip. Then continue to the plan.
 9. **Write the task checkpoint** to `.claude/groundwork/task-state.md` — mode, level, spec path, the
    slice/red list, the decisions just settled, assumptions, open approvals — so the work survives a
    restart or compaction (the `SessionStart` hook re-injects it automatically, no re-reading). This

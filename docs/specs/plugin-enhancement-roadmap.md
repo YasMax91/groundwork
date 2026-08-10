@@ -6,6 +6,8 @@ request) v0.9.0 · Wave 6 (blind-spot surfacing, post-roadmap UX request) v0.10.
 contract gate, post-roadmap) v0.11.0 · Wave 7 (interview loop + living domain contract + skill
 hygiene, post-roadmap) v0.12.0. **Feedback programme (Waves 8–12) complete** — Wave 8 v0.13.0 ·
 Wave 9 v0.14.0 · Wave 10 v0.15.0 · Wave 11 v0.16.0 · Wave 12 v0.17.0 (calibration), all conformance-verified.
+**Wave 13** (author feedback, 2026-08-10) — v0.22.0 estimates in the agent's real build time + writing
+standards · v0.23.0 interview depth; structurally verified.
 Author: Max Yastremskyi (YasMax91)
 
 A prioritized, grounded backlog of improvements to the `groundwork` plugin. The current
@@ -378,6 +380,23 @@ Sequenced by pain, not by tier. Four packages:
   both test-first: repeat Stop-gate runs are skipped while the changed PHP is byte-identical to the last
   green one (`gates.reuse_green_run`), and a comment-only edit no longer trips the OpenAPI gate. 109 hook
   tests.
+
+- **Wave 13 — real build time, no slop, and an interview that actually happens.** ✅ **shipped in
+  v0.22.0 + v0.23.0** → [wave-13-estimates-and-interview-depth.md](wave-13-estimates-and-interview-depth.md).
+  Author feedback, not an audit, and both findings have the same shape: a rule that was correct on paper
+  and never changed the output. The estimate rule said "never man-days" while supplying human
+  coefficients (1–2.5 h internal, 3–5 h with an integration) — so the unit changed and the number did
+  not; it now measures the agent's own wall-clock time, calibrated against commit intervals inside a
+  session, with everything a person must do (provider accounts, keys, access, decisions, review) on its
+  own line and never added in. The clarify rule required an interview and then capped L2 — where most
+  tasks land — at one round of blocking questions, offering the unbounded interview only in
+  pathological cases; L2 now runs up to two rounds covering product forks, L3/L4 up to four, money /
+  permissions / client-visible behaviour / external integrations each carry a mandatory round, and the
+  unbounded interview is a standing choice in the first round rather than an exception. Whatever the
+  agent still decided alone is shown before the plan as the **cost of silence**. Two supporting
+  changes: `guidelines/writing-standards.md` (new) governs documents, estimates and reports, and the
+  SessionStart context states that a task described in chat enters through `start-task` with no command
+  — the author writes tasks as prose, so the protocol could not depend on him invoking a skill.
 
 Deliberately **not** touched by this programme (verified working across the window — do not regress):
 the plan-approval gate (never violated), test-first red→green, grounding by live probe (it caught a

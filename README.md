@@ -29,10 +29,10 @@ Battle-tested day to day on production Laravel backends at RaDevs.
   choose between shapes of a solution instead of ratifying one. When a single path is plainly right it
   says so in one line rather than inventing alternatives; at L3/L4 the same options feed the ADR. And when
   the intent is too unformed to plan at all — a problem rather than a change, no statable definition of
-  "done", or an interview whose questions keep regenerating — it offers the `grill` skill instead of
-  planning on top of a guess — and if you accept, it runs that unbounded interview **right there**,
-  without you typing the command. `/grill` stays the manual way in for stress-testing something that is
-  not a task yet.
+  "done", or an interview whose questions keep regenerating — the unbounded interview is not just offered
+  but **recommended**, instead of planning on top of a guess. Accept it and the agent runs that interview
+  **right there**, without you typing the command. `/grill` stays the manual way in for stress-testing
+  something that is not a task yet.
 - **Blast radius that follows the task** — a new sub-request mid-session is treated as a scope change: its
   seeds are compared against the cached impact map, and a miss re-maps over the union of old and new seeds
   (a targeted self-trace at L0/L1). The cheap comparison runs at every level, because three small
@@ -40,10 +40,14 @@ Battle-tested day to day on production Laravel backends at RaDevs.
   stops covering the work.
 - **Interview loop** — `clarify-protocol` + `AskUserQuestion` rounds before the plan: facts are the
   agent's to find, decisions are yours to make. Each question leads with the agent's recommendation, so
-  you can click through and still land somewhere defensible; scaled by level (L0/L1 barely ask, L3/L4 up
-  to three rounds), and every answer is recorded so a compaction never re-asks it. The `grill` skill
-  runs the same interview standalone — to stress-test a plan, a decision, or an idea that never becomes
-  code.
+  you can click through and still land somewhere defensible; scaled by level (L0/L1 barely ask, L2 up to
+  two rounds, L3/L4 up to four), and every answer is recorded so a compaction never re-asks it. Money,
+  permissions, what the client sees, and external-integration behaviour carry a round of their own from
+  L2 up however settled the request sounds, and the first round always offers the unbounded interview as
+  a choice — you pick the depth instead of learning later that you were not asked. Whatever the agent
+  still decided for you is listed before the plan as the **cost of silence**: what was assumed, what it
+  costs if wrong, and the one line that changes it. The `grill` skill runs the same interview standalone
+  — to stress-test a plan, a decision, or an idea that never becomes code.
 - **Plain language first** — every text where *you* decide (the discovery report, each interview
   question and option, the blind-spot block) opens with the lived consequence in everyday words and keeps
   the code, field name, or status number after it: "клиент нажимает «Оплатить» и видит ошибку, деньги не
@@ -157,11 +161,12 @@ flowchart TD
 
     D3 --> R1[First response opens in plain language<br/>then 14 sections]
     R1 --> R2[2–3 candidate approaches<br/>recommended one first]
-    R2 --> R3{Intent too unformed?}
-    R3 -->|yes| G[Offer /grill · never start it]
-    R3 -->|no| R4[Interview: AskUserQuestion rounds<br/>≤4 questions, recommendation first]
+    R2 --> R4[Interview: AskUserQuestion rounds<br/>≤4 questions, recommendation first<br/>L2 offers the unbounded interview as a choice]
+    R4 --> R5{Frontier still refilling at the cap?}
+    R5 -->|yes| G[Offer the unbounded interview · never start it]
     G --> R4
-    R4 --> CP[Write the checkpoint]
+    R5 -->|no| CS[Cost of silence: what was decided for you<br/>and what each costs if wrong]
+    CS --> CP[Write the checkpoint]
     CP --> APV{{Your approval — nothing is edited before it}}
     APV --> SP[Spec: EARS criteria → failing tests]
     SP --> IM[Implement red → green<br/>OpenAPI in the same slice<br/>sub-request re-maps the blast radius]
@@ -188,8 +193,9 @@ and its consumers. The blast-radius cache is reused only when three conditions h
 it still covers the seeds of the work at hand.
 
 **Before asking, the agent takes a position:** two or three candidate approaches with the recommended one
-first — and if the intent is too unformed to plan at all, it offers `grill` rather than planning on a
-guess. Questions then arrive as buttons, each led by a recommendation, in plain language.
+first — and if the intent is too unformed to plan at all, it recommends the unbounded interview rather
+than planning on a guess. Questions then arrive as buttons, each led by a recommendation, in plain
+language.
 
 **Nothing is edited before your approval**, and the decisions you make are written to a checkpoint that
 survives a restart or a compaction.

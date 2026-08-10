@@ -26,6 +26,9 @@ add() { ctx="${ctx}$1
 runner="$(jq -r '.runner // "sail"' .groundwork.json 2>/dev/null || echo sail)"
 engine="$(jq -r '.database.default // "mysql"' .groundwork.json 2>/dev/null || echo mysql)"
 add "Groundwork workflow active. Runner: ${runner}. DB engine: ${engine} — code and tests target this engine, never SQLite."
+# A task typed as plain prose is still a task: name the entry point, since the user is not
+# expected to invoke the skill by hand.
+add "A task described in chat enters through the 'start-task' skill — no command needed from the user: classify, map the blast radius, interview for the decisions that are his, then plan. Interview depth is the clarify protocol's calibration, and from L2 up the first round offers the unbounded interview as a choice."
 
 # --- git state ---
 if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then

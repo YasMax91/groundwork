@@ -16,8 +16,9 @@ each question with your recommendation and its consequence, and let each answer 
 outward.
 
 This skill is the **manual entry point** — for grilling something that is not a task yet. Inside a task,
-the agent offers the same loop and, once you accept, runs it directly (see "Unbounded mode" in
-`${CLAUDE_SKILL_DIR}/../../guidelines/clarify-protocol.md`); you never have to type the command to get it.
+the agent offers the same loop in its first interview round from L2 up and, once you accept, runs it
+directly (see "Unbounded mode" in `${CLAUDE_SKILL_DIR}/../../guidelines/clarify-protocol.md`); you never
+have to type the command to get it.
 
 Two things differ from the in-pipeline loop:
 

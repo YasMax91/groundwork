@@ -84,10 +84,16 @@ claim about the decision tree, not about patience — an unasked decision that s
 defect whether or not anyone was tired of questions.
 
 **When the cap is reached and the frontier is still refilling, the thinking is not ready.** Offer the
-`grill` skill instead of banking the remainder as assumptions — a frontier that keeps regenerating at the
-L3/L4 cap says the intent, not the detail, is unsettled, and an unbounded interview is the tool for that.
-Offer it; never start it unasked — and when the offer is accepted, run the loop yourself (see "Unbounded
-mode" below).
+unbounded interview instead of banking the remainder as assumptions — a frontier that keeps regenerating
+at the cap of **any level from L2 up** says the intent, not the detail, is unsettled, and an unbounded
+interview is the tool for that. The same offer is due when a mandatory subject above did not fit inside
+the cap. Offer it; never start it unasked — and when the offer is accepted, run the loop yourself (see
+"Unbounded mode" below).
+
+**The offer is a standing option, not an exception.** From **L2 up**, the first interview round carries
+the depth choice as one of its questions — proceed at the level's calibration, or run the unbounded
+interview now — so the user picks the depth instead of discovering afterwards that he was not asked. At
+L0/L1 it is not offered: an interview is not what a typo needs.
 
 ## Unbounded mode — when the user accepts a grilling
 
@@ -110,14 +116,48 @@ an architecture call, an idea. Inside a task, the agent runs the same loop witho
 
 ## Calibration — proportional to level
 
-Interrogation fatigue is the failure mode that kills the mechanism: past a certain length the user stops
-reading options and clicks the first one. So the loop scales with what an assumed decision would cost:
+Interrogation fatigue is real, but it comes from *bad* questions — a fact you could have looked up, an
+option the owner has to decode, a round with no recommendation in it. The cure is question quality, not
+silence: a decision skipped to spare the user two clicks costs him a rebuild. So the loop scales with
+what an assumed decision would cost:
 
 - **L0/L1** — no loop. At most one question, and only when a blocking ambiguity genuinely stops the
   work; otherwise proceed on a stated assumption.
-- **L2** — one round, blocking decisions only.
-- **L3/L4** — rounds until the frontier is empty, capped at **3**. Anything unresolved at the cap is
-  recorded as an explicit assumption in the spec — visible and reversible, never silent.
+- **L2** — rounds until the frontier is empty, capped at **2**. Blocking decisions **and** any product
+  fork whose two readings would ship differently — not blocking decisions alone.
+- **L3/L4** — rounds until the frontier is empty, capped at **4**.
+
+Anything unresolved at the cap is recorded as an explicit assumption in the spec — visible and
+reversible, never silent — and the **cost of silence** below is stated for each one.
+
+## When the interrogation is mandatory
+
+At **L2 and above**, these carry a round of their own even when the request looks settled and the user
+gave no sign of doubt. Each is a place where a wrong assumption is paid for in money, access, or trust,
+and where the agent has no standing to choose:
+
+- **Money** — anything that computes, charges, discounts, refunds, or reports an amount.
+- **Permissions and access** — who may see or do this, and what happens to those who may not.
+- **What the client sees** — visibility rules, notifications, exports, anything leaving the system with
+  his name on it.
+- **External integrations** — behaviour that depends on a provider's contract rather than this codebase.
+- **Two or more open product forks** — when discovery ends with several genuine readings still standing,
+  they are asked, not averaged into a plan.
+
+Where the level's cap does not fit them all, that is the signal for the unbounded offer below, not a
+reason to drop the remainder into assumptions.
+
+## The cost of silence — stated before the plan
+
+Every decision the agent takes on itself is named before the plan is presented, each in one line: **what
+was assumed · why the agent chose it · what it costs if it is wrong · one line to change it**. This is
+not the risks section — risks are what might happen to the work; this is what the agent decided *for* the
+user without asking.
+
+The list is a decision surface, so it obeys the plain-language rule: "orders older than a year stay out
+of the export (if that is wrong, the client's yearly report is short and he finds out from his
+accountant)", not "assumed `created_at >= now()->subYear()` filter". An empty list is stated as empty,
+which is itself a claim: it says the frontier really was empty.
 
 ## Anti-patterns
 
@@ -129,6 +169,12 @@ reading options and clicks the first one. So the loop scales with what an assume
   round, when the second only exists if the first came back "queued".
 - **Re-asking a settled decision** — the checkpoint's `## Decisions` is there to prevent it.
 - **Interviewing an L1 bug fix** — the protocol scales down to nearly nothing for a reason.
+- **Skipping a mandatory subject because the user sounded certain** — confidence about the goal is not a
+  decision about the money, the permission, or what the client sees.
+- **Banking the remainder as assumptions at the cap** — when the frontier is still refilling, the
+  unbounded round is the honest exit; a list of assumptions is what you write when it is genuinely empty.
+- **A silent assumption** — one recorded in the spec but never shown to the user with what it costs to be
+  wrong.
 
 ## Reference case
 

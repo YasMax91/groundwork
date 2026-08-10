@@ -52,10 +52,12 @@ never raised).
 question carrying your recommendation, per [clarify-protocol.md](clarify-protocol.md) — prediction
 surfaces the dimension, the interview settles it.
 
-**When the level's interview calibration will not admit it** — a non-blocking item at L0/L1, or a
-non-blocking one past L2's single round — there is a third path, and it is never "drop it": record it as
-an **explicit assumption** with its consequence, in the first response and in the spec. Surfaced and
-assumed is honest; silently discarded because the question budget was full is not.
+**When the level's interview calibration will not admit it** — a non-blocking item at L0/L1, or one left
+over at the level's round cap — there is a third path, and it is never "drop it": record it as an
+**explicit assumption** with its consequence, in the first response and in the spec, and carry it into
+the **cost-of-silence** list the user sees before the plan. Surfaced and assumed is honest; silently
+discarded because the question budget was full is not. If items of that kind keep arriving at the cap,
+the honest move is the unbounded-interview offer, not a longer assumption list.
 
 ## Calibration — material only, or say "none" (the make-or-break rule)
 
