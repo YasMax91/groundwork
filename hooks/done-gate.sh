@@ -28,10 +28,9 @@ gw_changed_paths() {
   printf '%s\n%s\n' "$wt" "$committed" | grep -v '^$' | sort -u
 }
 
-# Resolve gate command + opt-out from .groundwork.json (runner-aware; Sail by default).
+# Resolve gate command + override from .groundwork.json (runner-aware; Sail by default).
 cmd="$(gw_cmd composer analyse)"; overridden=0
 if [ -f .groundwork.json ]; then
-  [ "$(jq -r '.gates.analyse_on_stop' .groundwork.json 2>/dev/null)" = "false" ] && exit 0
   override="$(jq -r '.commands.analyse // empty' .groundwork.json 2>/dev/null || true)"
   [ -n "$override" ] && { cmd="$override"; overridden=1; }
 fi
@@ -39,9 +38,28 @@ fi
 # Only act when PHP actually changed since the last commit.
 # `-uall` is required: without it a brand-new directory is reported as the directory itself
 # ("?? app/Services/"), hiding every PHP file in it and silently skipping the gate.
+# This check now precedes the opt-out so that a disabled gate stays completely silent on a change
+# that has no PHP in it at all.
 git rev-parse --is-inside-work-tree >/dev/null 2>&1 || exit 0
 changed="$(gw_changed_paths | grep -E '\.php$' || true)"
 [ -z "$changed" ] && exit 0
+
+# Opt-out, and the reason for it. Turning the gate off is a legitimate project decision; leaving the
+# Definition of Done promising a static-analysis step nobody runs is not. So the opt-out is silent
+# only when the project stated why — otherwise changed PHP went unanalysed and that is reported.
+if [ "$(jq -r '.gates.analyse_on_stop' .groundwork.json 2>/dev/null)" = "false" ]; then
+  [ -n "$(jq -r '.gates.analyse_skip_reason // empty' .groundwork.json 2>/dev/null || true)" ] && exit 0
+  echo "groundwork done-gate: static analysis is off (gates.analyse_on_stop=false) and no reason is recorded — changed PHP was NOT analysed. Configure an analyser (the init skill offers Larastan) or record gates.analyse_skip_reason." >&2
+  exit 1
+fi
+
+# A declared no-op is not a pass. `echo '...'`, `true` and `:` all exit 0, so a project that wrote one
+# into commands.analyse to silence the gate was being told its static analysis ran clean.
+case "$(printf '%s' "$cmd" | awk '{print $1}')" in
+  echo|true|:|printf)
+    echo "groundwork done-gate: commands.analyse is a declared no-op ($cmd) — NOTHING WAS ANALYSED. A no-op cannot report a pass. Configure a real analyser (the init skill offers Larastan), or set gates.analyse_on_stop=false with gates.analyse_skip_reason." >&2
+    exit 1 ;;
+esac
 
 # If the gate relies on Sail and it is unavailable, do not block (env issue).
 # An explicit `commands.analyse` override wins: only its own Sail dependency is checked.

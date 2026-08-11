@@ -340,6 +340,14 @@ the generate command with `commands.openapi_generate`, the watched paths with `o
 (defaults to `routes/`, `app/Http/Controllers/`, `app/Http/Requests/`, `app/Http/Resources/`), and
 force it on for a project with a hand-maintained document via `openapi.enabled: true`.
 
+`gates.analyse_on_stop` (default **on**) blocks "done" when static analysis fails on changed PHP — and
+as of v0.25.0 it can no longer be satisfied by a placeholder. `echo '…'`, `true` and `:` all exit 0, so
+a project that wrote one into `commands.analyse` to quiet the gate was being told its analysis ran
+clean; the gate now refuses a no-op command and says nothing was analysed. Turning the gate off stays a
+legitimate decision, but it is recorded as one: set `gates.analyse_on_stop: false` together with
+`gates.analyse_skip_reason`, or every Stop with changed PHP reports that the code went unanalysed. The
+`init` skill offers Larastan with a generated baseline so an existing codebase is judged on new code.
+
 `gates.coverage_claim` (default **on**) watches what the agent *said* rather than what the repository
 holds. "I checked it selectively" satisfies the Definition of Done's "state what stayed unverified"
 literally while hiding whether that was eight of nine or one of nine, so a verification claim now takes

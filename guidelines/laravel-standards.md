@@ -62,7 +62,10 @@ enforced by tool-gates (Pint / Larastan / PHPUnit). Confirm version-specific det
   (`gates.lock_shipped_migrations`, default on).
 - **Format**: Pint (`./vendor/bin/sail pint`) — runs automatically on edit via the plugin hook.
 - **Static analysis**: Larastan / PHPStan (`./vendor/bin/sail composer analyse`) — the done-gate;
-  catches the "wrong shape / 500 to the frontend" class early.
+  catches the "wrong shape / 500 to the frontend" class early. A project without an analyser says so
+  (`gates.analyse_on_stop: false` **plus** `gates.analyse_skip_reason`) rather than pointing
+  `commands.analyse` at `echo` or `true`: a no-op exits 0, which had the gate reporting a clean
+  analysis for a project that had none. The gate refuses a no-op command outright.
 - **Tests**: PHPUnit (`./vendor/bin/sail artisan test`) — feature tests for API/validation/
   authorization/response shape; unit tests for services and calculations; a regression test for
   every bug fix. Write them **test-first** for L2+ features and bug fixes — see

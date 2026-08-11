@@ -421,6 +421,19 @@ Sequenced by pain, not by tier. Four packages:
   calibration from the first line, per Wave 12's lesson. 26 new hook tests, 163 across 9 suites.
   Research and the rejected alternatives: [modernization-research-2026-08.md](modernization-research-2026-08.md).
 
+- **Wave 15 — static analysis that actually runs.** ✅ **shipped in v0.25.0 (2026-08-11)** →
+  [wave-15-static-analysis-that-runs.md](wave-15-static-analysis-that-runs.md). Research item E11, found
+  by reading a live project's own config rather than the plugin's: `commands.analyse` was
+  `echo 'no static-analysis tool configured…'` with `analyse_on_stop: false`. `echo` exits 0, so with the
+  toggle on the gate would have reported a clean analysis for a project with no analyser — and with it
+  off, a hundred changed PHP files produced no analysis and no mention of its absence, while the L2+
+  Definition of Done kept listing the step. The gate now refuses a no-op command by its first word
+  (`echo`/`true`/`:`/`printf`, so `./echoes.sh` still runs) and reports rather than blocks; the opt-out
+  check moved after the changed-PHP check so a disabled gate is silent on a non-PHP change, and is
+  silent on a PHP change only when `gates.analyse_skip_reason` records why. `init` gained a step that
+  offers Larastan with a baseline, forbids placeholder commands, and writes a decline as toggle + reason.
+  5 new tests, 170 across 9 suites.
+
 Deliberately **not** touched by this programme (verified working across the window — do not regress):
 the plan-approval gate (never violated), test-first red→green, grounding by live probe (it caught a
 non-existent `/payment/links` endpoint by probing before any code), and the agent's own self-catch of

@@ -200,7 +200,9 @@ passing · every acceptance-criterion ID mapped to a passing test (no AC unmappe
 complete for every touched endpoint** — annotations updated in the same change, every reachable status
 code documented, request body from the FormRequest, response schema from the JsonResource, generation
 clean (see [openapi-protocol.md](openapi-protocol.md); the `openapi` Stop gate enforces it) ·
-format + static analysis run (or skip reason stated) · **exercised live against the running app** for
+format + static analysis run — and where either was skipped, the report carries the reason, not merely
+the config (a gate that did not run has verified nothing, whatever its exit code) · **exercised live
+against the running app** for
 the touched surface — a real HTTP run for an endpoint, a real browser drive for admin/UI/CSS (asset
 loads · effective computed style · no persisted state masking it), or an explicit statement of what
 stayed unverified with repro steps; green tests are never reported as "works live" · **every consumer of

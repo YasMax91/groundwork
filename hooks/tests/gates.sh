@@ -46,12 +46,39 @@ stub "$d/bad.sh" 1; mkdir -p "$d/app/Services"; printf '<?php\n' > "$d/app/Servi
 expect "new dir php detected"     2 "$d" "done-gate.sh"
 
 # opt-out and no-PHP stay silent
-d="$ROOT/d5"; repo "$d" '{ "runner": "host", "commands": { "analyse": "./bad.sh" }, "gates": { "analyse_on_stop": false } }'
+# W14b/E11: an opt-out is silent only when the project SAID WHY. An undocumented opt-out with changed
+# PHP is a silent skip — the Definition of Done keeps promising a step nobody runs — so it reports.
+d="$ROOT/d5"; repo "$d" '{ "runner": "host", "commands": { "analyse": "./bad.sh" }, "gates": { "analyse_on_stop": false, "analyse_skip_reason": "no analyser in this legacy repo yet" } }'
 stub "$d/bad.sh" 1; printf '<?php\n' > "$d/x.php"
-expect "toggle off no-op"         0 "$d" "done-gate.sh"
+expect "toggle off + reason silent" 0 "$d" "done-gate.sh"
+d="$ROOT/d5b"; repo "$d" '{ "runner": "host", "commands": { "analyse": "./bad.sh" }, "gates": { "analyse_on_stop": false } }'
+stub "$d/bad.sh" 1; printf '<?php\n' > "$d/x.php"
+expect "toggle off, no reason"      1 "$d" "done-gate.sh"
+d="$ROOT/d5c"; repo "$d" '{ "runner": "host", "commands": { "analyse": "./bad.sh" }, "gates": { "analyse_on_stop": false } }'
+stub "$d/bad.sh" 1; printf 'plain\n' > "$d/notes.txt"
+expect "toggle off, no php, quiet"  0 "$d" "done-gate.sh"
 d="$ROOT/d6"; repo "$d" '{ "runner": "host", "commands": { "analyse": "./bad.sh" } }'
 stub "$d/bad.sh" 1; printf 'plain\n' > "$d/notes.txt"
 expect "no php no-op"             0 "$d" "done-gate.sh"
+
+# E11: a declared no-op MUST NOT pass as analysis. `echo '...'` exits 0, so before this the gate
+# reported a clean static-analysis run for a project that has no analyser at all.
+d="$ROOT/n1"; repo "$d" '{ "runner": "host", "commands": { "analyse": "echo \"no static-analysis tool configured\"" } }'
+printf '<?php\n' > "$d/x.php"
+expect "echo stub is not a pass"   1 "$d" "done-gate.sh"
+d="$ROOT/n2"; repo "$d" '{ "runner": "host", "commands": { "analyse": "true" } }'
+printf '<?php\n' > "$d/x.php"
+expect "true stub is not a pass"   1 "$d" "done-gate.sh"
+d="$ROOT/n3"; repo "$d" '{ "runner": "host", "commands": { "analyse": ":" } }'
+printf '<?php\n' > "$d/x.php"
+expect "colon stub is not a pass"  1 "$d" "done-gate.sh"
+d="$ROOT/n4"; repo "$d" '{ "runner": "host", "commands": { "analyse": "  echo skip" } }'
+printf '<?php\n' > "$d/x.php"
+expect "leading space stub"        1 "$d" "done-gate.sh"
+# A real command whose name merely contains a stub word still runs.
+d="$ROOT/n5"; repo "$d" '{ "runner": "host", "commands": { "analyse": "./echoes.sh" } }'
+stub "$d/echoes.sh" 0; printf '<?php\n' > "$d/x.php"
+expect "not a stub: ./echoes.sh"   0 "$d" "done-gate.sh"
 
 # REGRESSION GUARD (the contract both gates state in their header): an unreachable command is an
 # ENVIRONMENT problem, never a red. runner:host with no override must not block the Stop forever.

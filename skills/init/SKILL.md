@@ -69,4 +69,20 @@ Use Boost and the codebase as the source of truth, and label every section:
    API by hand (no generator), set `openapi.enabled: true` to force the gate on. Then sanity-check
    coverage — compare `route:list` against the generated document; if endpoints are undocumented,
    report the count and offer the `openapi-audit` skill rather than fixing it inside `init`.
-8. Present everything for review, highlighting only the `[assumed]` and `[needs you]` items.
+8. **Wire static analysis — and never fake it.** Look for an analyser in `composer.json`
+   (`larastan/larastan`, `phpstan/phpstan`, `vimeo/psalm`). If one is there, set `commands.analyse` to
+   how the project actually runs it and check that it exits clean on the current tree before you write
+   it down. If none is there, offer Larastan: `composer require --dev larastan/larastan`, a
+   `phpstan.neon` at a level the existing code can actually hold, and a **generated baseline** so the
+   gate judges new code rather than drowning the user in inherited errors.
+
+   **Never write a placeholder command.** `echo …`, `true` and `:` all exit 0, so a placeholder in
+   `commands.analyse` made the done-gate report a clean static-analysis run for a project with no
+   analyser at all — the Definition of Done promised a step that never happened. The gate now refuses
+   such a command and reports it, so a placeholder is not a workaround.
+
+   If the user declines an analyser, that is a legitimate decision and it is recorded as one: set
+   `gates.analyse_on_stop: false` **together with** `gates.analyse_skip_reason` naming why. Without the
+   reason the gate reports every Stop with changed PHP as unanalysed — a stated skip is honest, a
+   silent one is the failure this step exists to prevent.
+9. Present everything for review, highlighting only the `[assumed]` and `[needs you]` items.
