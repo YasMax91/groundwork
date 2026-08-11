@@ -107,6 +107,22 @@ if printf '%s' "$out" | grep -q 'permissionDecision'; then
 else
   pass=$((pass+1)); printf '  ok   %-22s (app code untouched)\n' "allow stays narrow"
 fi
+# the first checkpoint of a task is written BEFORE `init` creates .groundwork.json —
+# the auto-approval must not depend on the project being initialized yet
+d="$ROOT/wm-uninit"; mkdir -p "$d/.claude/groundwork"   # deliberately no .groundwork.json
+out="$( cd "$d" && printf '%s' "{\"tool_name\":\"Write\",\"tool_input\":{\"file_path\":\"$d/.claude/groundwork/task-state.md\"}}" | bash "$GUARD" 2>/dev/null )"
+if printf '%s' "$out" | jq -e '.hookSpecificOutput.permissionDecision == "allow"' >/dev/null 2>&1; then
+  pass=$((pass+1)); printf '  ok   %-22s (allow emitted)\n' "checkpoint pre-init"
+else
+  fail=$((fail+1)); printf '  FAIL %-22s got: %s\n' "checkpoint pre-init" "$out"
+fi
+# …and an un-initialized project still gets no blanket allow for anything else
+out="$( cd "$d" && printf '%s' "{\"tool_name\":\"Write\",\"tool_input\":{\"file_path\":\"$d/app/Service.php\"}}" | bash "$GUARD" 2>/dev/null )"
+if printf '%s' "$out" | grep -q 'permissionDecision'; then
+  fail=$((fail+1)); printf '  FAIL %-22s app code auto-approved too\n' "pre-init stays narrow"
+else
+  pass=$((pass+1)); printf '  ok   %-22s (app code untouched)\n' "pre-init stays narrow"
+fi
 
 # --- W11-AC4/AC5: the discovery edit-lock keys on a CANONICAL mode only ---
 d="$ROOT/w11c"; mkdir -p "$d/app" "$d/.claude/groundwork"; sdd "$d" true true true

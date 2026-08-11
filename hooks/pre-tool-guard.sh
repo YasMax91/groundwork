@@ -24,9 +24,6 @@ command -v gw_mode         >/dev/null 2>&1 || gw_mode() {
     | head -1 | sed -E 's/^[^:]*:[[:space:]]*//' | awk -F'|' '{print $1}' | awk '{print $1}'
 }
 
-# Only enforce in a Groundwork-initialized project; never touch a non-Groundwork repo.
-[ -f .groundwork.json ] || exit 0
-
 input="$(cat 2>/dev/null || true)"
 [ -n "$input" ] || exit 0
 
@@ -36,6 +33,29 @@ deny() { # $1 = reason -> stderr, then block
   printf 'groundwork pre-tool-guard: %s\n' "$1" >&2
   exit 2
 }
+
+# The plugin's own working memory needs no human approval — the agent writes the checkpoint on
+# every task, and a permission prompt for a file this plugin created itself is pure friction.
+# A settings.json rule cannot cover it: `Write(path)` rules are accepted but never matched, and a
+# first-time checkpoint is created by Write, not Edit. So authorise it here, narrowly.
+# (`deny`/`ask` rules still win over a hook's allow, so this cannot widen anything the user locked.)
+#
+# This runs BEFORE the `.groundwork.json` gate below: the first checkpoint of a task is written
+# while the project is still un-initialized (start-task precedes init), and the prompt showed up
+# in exactly those projects.
+case "$tool" in
+  Edit|Write)
+    memory="$(printf '%s' "$input" | jq -r '.tool_input.file_path // .tool_input.path // empty' 2>/dev/null || true)"
+    case "$memory" in
+      */.claude/groundwork/*|.claude/groundwork/*)
+        printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow","permissionDecisionReason":"groundwork workflow memory (checkpoint / impact cache) — written by the plugin itself"}}\n'
+        exit 0 ;;
+    esac
+    ;;
+esac
+
+# Only enforce in a Groundwork-initialized project; never touch a non-Groundwork repo.
+[ -f .groundwork.json ] || exit 0
 
 case "$tool" in
   Bash)
@@ -81,16 +101,7 @@ case "$tool" in
     path="$(printf '%s' "$input" | jq -r '.tool_input.file_path // .tool_input.path // empty' 2>/dev/null || true)"
     [ -n "$path" ] || exit 0
 
-    # The plugin's own working memory needs no human approval — the agent writes the checkpoint on
-    # every task, and a permission prompt for a file this plugin created itself is pure friction.
-    # A settings.json rule cannot cover it: `Write(path)` rules are accepted but never matched, and a
-    # first-time checkpoint is created by Write, not Edit. So authorise it here, narrowly.
-    # (`deny`/`ask` rules still win over a hook's allow, so this cannot widen anything the user locked.)
-    case "$path" in
-      */.claude/groundwork/*|.claude/groundwork/*)
-        printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow","permissionDecisionReason":"groundwork workflow memory (checkpoint / impact cache) — written by the plugin itself"}}\n'
-        exit 0 ;;
-    esac
+    # (Workflow-memory paths already returned `allow` above, before the .groundwork.json gate.)
 
     # (b) Shipped-migration lock: deny edits to a git-tracked migration.
     if [ "$(jq -r '.gates.lock_shipped_migrations' .groundwork.json 2>/dev/null)" != "false" ]; then
