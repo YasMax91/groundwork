@@ -348,6 +348,26 @@ the generate command with `commands.openapi_generate`, the watched paths with `o
 (defaults to `routes/`, `app/Http/Controllers/`, `app/Http/Requests/`, `app/Http/Resources/`), and
 force it on for a project with a hand-maintained document via `openapi.enabled: true`.
 
+`gates.task_intent` (default **on**) and `gates.agent_contract` (default **on**) are the two engine-level
+enforcements added in v0.27.0, each replacing a rule that existed only as a sentence in a prompt.
+
+The first is a `UserPromptSubmit` hook. v0.23.0 put "a task described in chat enters through
+`start-task`, no command needed" into the session-start context — but session start happens once, and by
+the tenth task stated in a long session that line is far behind in context. The hook says it again at the
+moment a task is actually stated: it fires on a prose task statement while the checkpoint has no mode,
+adds context, and **never blocks**. It stays quiet on questions, on short replies, on explicit slash
+commands, and once a mode is set — and it fires at most once per session while the mode is still unset,
+because a reminder that repeats every prompt only teaches the reader to skip it. The mode appearing
+resets it for the next task.
+
+The second is a `SubagentStop` hook on `grounded-researcher` and `adversarial-verifier`. The grounding
+protocol's central rule — never guess; every claim carries a source or is marked `UNKNOWN` — was enforced
+only by the agents' own prompts. Now a research report with no URL, no repository document, no
+`file:line` and no `UNKNOWN` is sent back once to add its evidence, and a verification that ends without
+`CONFIRMED` / `REFUTED` / `UNCERTAIN` is sent back once for its verdict. Both were verified against a live
+subagent on Claude Code 2.1.212 before the design was written: the block does send the agent back, and it
+returned with its sources added.
+
 `gates.analyse_on_stop` (default **on**) blocks "done" when static analysis fails on changed PHP — and
 as of v0.25.0 it can no longer be satisfied by a placeholder. `echo '…'`, `true` and `:` all exit 0, so
 a project that wrote one into `commands.analyse` to quiet the gate was being told its analysis ran
@@ -390,7 +410,7 @@ once with `claude --debug` in your project before enabling.
 pack/             groundwork-pack — dependency-only bundle (this plugin + companion plugins)
 skills/           start-task · spec · implement-approved · risk-review · final-check · ground-integration · frontend-handoff · client-doc · openapi-audit · grill · init · deep-grounding · deep-discovery · deep-review
 agents/           impact-mapper · blind-spot-mapper · grounded-researcher · adversarial-verifier · conformance-reviewer
-hooks/            hooks.json · lib.sh (shared resolvers) · session-start.sh · pre-compact.sh · format-on-edit.sh · done-gate.sh · test-gate.sh · openapi-gate.sh · coverage-claim.sh · trim-output.sh · pre-tool-guard.sh · statusline.sh · tests/all.sh
+hooks/            hooks.json · lib.sh (shared resolvers) · session-start.sh · pre-compact.sh · task-intent.sh · format-on-edit.sh · done-gate.sh · test-gate.sh · openapi-gate.sh · coverage-claim.sh · agent-contract.sh · trim-output.sh · pre-tool-guard.sh · statusline.sh · tests/all.sh
 workflows/        deep-review-run.js · deep-discovery-run.js · deep-grounding-run.js — the multi-agent orchestration, executed by the runtime
 guidelines/       ai-sdd-process · grounding-protocol · blind-spot-protocol · clarify-protocol · openapi-protocol · laravel-standards · tdd-protocol · writing-standards · working-memory
 docs/             skill-hygiene (author-facing) · specs/

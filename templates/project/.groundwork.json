@@ -10,6 +10,8 @@
     "test_on_stop": true,
     "openapi_on_stop": true,
     "coverage_claim": true,
+    "task_intent": true,
+    "agent_contract": true,
     "trim_tool_output": false,
     "enforce_runner": true,
     "lock_shipped_migrations": true,

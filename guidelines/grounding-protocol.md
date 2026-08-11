@@ -54,6 +54,13 @@ agent for the documentation sweep (it must cite sources) and the **adversarial-v
 challenge any "it works" claim about an external capability before completion — per the fan-out table in
 [ai-sdd-process.md](ai-sdd-process.md), which owns the per-level calibration for both review agents.
 
+Rule 1 stopped being advice for those two agents. A `SubagentStop` gate reads what each returns: a
+researcher's report that cites no URL, no repository document, no `file:line` and no `UNKNOWN` is sent
+back once to add its evidence, and a verifier that ends without `CONFIRMED` / `REFUTED` / `UNCERTAIN` is
+sent back once for its verdict. The gate blocks at most once per run, never touches the other agents,
+and is silent outside a Groundwork project (`gates.agent_contract`). It checks that a claim carries
+evidence, not that the evidence is good — that judgement stays with the reader.
+
 ## Reference case
 
 An agent claimed a payment provider supported card tokenization and declared the work done; the

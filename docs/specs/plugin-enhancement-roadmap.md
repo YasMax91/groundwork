@@ -450,6 +450,25 @@ Sequenced by pain, not by tier. Four packages:
   registration verified live in a headless session; the orchestration itself is syntax-checked and
   unexecuted — the first real run is the proof, at ~15× tokens.
 
+- **Wave 17 — two rules stop being sentences in a prompt.** ✅ **shipped in v0.27.0 (2026-08-11)** →
+  [wave-17-engine-level-enforcement.md](wave-17-engine-level-enforcement.md). Research items E13 and E14.
+  v0.23.0 told the session at startup that a task described in chat enters through `start-task` — right
+  problem, wrong place: `SessionStart` fires once, and the sessions where it matters are the 450–1350
+  message ones where the tenth task is stated tens of thousands of tokens later. A `UserPromptSubmit`
+  hook now says it at the moment a task is stated, never blocking, and at most once per session while
+  the checkpoint has no mode — silent on questions, on prompts under five words (counted in words,
+  because `${#var}` counts bytes and a Russian thank-you would clear any byte threshold), on explicit
+  slash commands, and once a mode exists, which also resets it for the next task. The second: the
+  grounding protocol's "never guess — a source or `UNKNOWN`" and the verifier's required verdict lived
+  only in the agents' own prompts, the same class of failure Wave 2 moved out of prose for the runner
+  and migration rules. A `SubagentStop` gate matched to the two agents sends back, once, a research
+  report carrying no URL / document / `file:line` / `UNKNOWN`, or a verification ending without
+  CONFIRMED/REFUTED/UNCERTAIN. A spike ran **before** the design and changed it: `SubagentStop` carries
+  `stop_hook_active`, so the planned per-`agent_id` marker file was dropped — and `decision: "block"`
+  was confirmed to genuinely send a live subagent back, which returned with `SOURCE:` on every claim.
+  The gate checks that a claim carries evidence, never that the evidence is good. 39 new tests, 211
+  across 11 suites.
+
 Deliberately **not** touched by this programme (verified working across the window — do not regress):
 the plan-approval gate (never violated), test-first red→green, grounding by live probe (it caught a
 non-existent `/payment/links` endpoint by probing before any code), and the agent's own self-catch of
