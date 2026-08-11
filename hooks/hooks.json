@@ -71,6 +71,11 @@
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/hooks/openapi-gate.sh",
             "statusMessage": "Groundwork: checking OpenAPI…"
+          },
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/coverage-claim.sh",
+            "statusMessage": "Groundwork: checking the coverage claim…"
           }
         ]
       }

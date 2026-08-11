@@ -46,6 +46,7 @@ runs "statusline"      "statusline.sh"      ''
 runs "done-gate"       "done-gate.sh"       ''
 runs "test-gate"       "test-gate.sh"       ''
 runs "openapi-gate"    "openapi-gate.sh"    ''
+runs "coverage-claim"  "coverage-claim.sh"  '{"hook_event_name":"Stop","last_assistant_message":"Проверил выборочно."}'
 runs "format-on-edit"  "format-on-edit.sh"  "{\"tool_input\":{\"file_path\":\"$d/app/A.php\"}}"
 runs "pre-tool-guard"  "pre-tool-guard.sh"  '{"tool_name":"Bash","tool_input":{"command":"ls -la"}}'
 

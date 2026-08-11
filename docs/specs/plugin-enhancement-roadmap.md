@@ -7,7 +7,10 @@ contract gate, post-roadmap) v0.11.0 · Wave 7 (interview loop + living domain c
 hygiene, post-roadmap) v0.12.0. **Feedback programme (Waves 8–12) complete** — Wave 8 v0.13.0 ·
 Wave 9 v0.14.0 · Wave 10 v0.15.0 · Wave 11 v0.16.0 · Wave 12 v0.17.0 (calibration), all conformance-verified.
 **Wave 13** (author feedback, 2026-08-10) — v0.22.0 estimates in the agent's real build time + writing
-standards · v0.23.0 interview depth; structurally verified.
+standards · v0.23.0 interview depth; structurally verified. **Wave 14** (author feedback, 2026-08-11) —
+v0.24.0 the denominator rule + the warn-only coverage-claim gate + the closing cost of silence; hook
+behaviour proven by tests, prose structural. The research sweep behind the remaining backlog is
+[modernization-research-2026-08.md](modernization-research-2026-08.md).
 Author: Max Yastremskyi (YasMax91)
 
 A prioritized, grounded backlog of improvements to the `groundwork` plugin. The current
@@ -397,6 +400,26 @@ Sequenced by pain, not by tier. Four packages:
   changes: `guidelines/writing-standards.md` (new) governs documents, estimates and reports, and the
   SessionStart context states that a task described in chat enters through `start-task` with no command
   — the author writes tasks as prose, so the protocol could not depend on him invoking a skill.
+
+- **Wave 14 — a verification claim carries its denominator, and a silent decision does not stay silent.**
+  ✅ **shipped in v0.24.0 (2026-08-11)** →
+  [wave-14-coverage-and-silent-decisions.md](wave-14-coverage-and-silent-decisions.md). Author feedback
+  again, and again a rule that was correct and toothless: the Definition of Done required "state what
+  stayed unverified" at every level, which *"I checked it selectively"* satisfies literally while hiding
+  whether that was eight of nine or one of nine — the **set** the claim is measured against was never
+  required. A verification claim now takes one of three forms (total · fraction plus the enumerated gap ·
+  "no verification was performed"), the denominator comes from an enumerable set named in the same
+  sentence, and a fraction is never estimated. A fifth Stop hook reads `last_assistant_message` for
+  bilingual hedges and **warns without blocking**, logging every trigger so the false-positive rate is
+  measured before any later wave makes it block — the spike that preceded the design found that
+  `additionalContext` re-enters the model (a soft block, not a warning), so warn-only is `systemMessage`.
+  The same spike found the model refusing to invent a fraction where nothing had been verified, which is
+  why the third form is named explicitly. On the other side, the cost-of-silence list gained its closing
+  half in `final-check` — every decision taken without asking since plan approval, thresholded to items
+  that move observable behaviour, money, permissions, or a contract — and the blind-spot taxonomy gained
+  category 8, unconfirmed assumptions about the reader's own domain. Both new obligations carry level
+  calibration from the first line, per Wave 12's lesson. 26 new hook tests, 163 across 9 suites.
+  Research and the rejected alternatives: [modernization-research-2026-08.md](modernization-research-2026-08.md).
 
 Deliberately **not** touched by this programme (verified working across the window — do not regress):
 the plan-approval gate (never violated), test-first red→green, grounding by live probe (it caught a

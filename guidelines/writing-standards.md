@@ -38,6 +38,30 @@ survives — five sentences is a complete document if five sentences say everyth
 - **Lists in place of thought.** Bullets are for genuinely enumerable things. A chain of reasoning is
   prose; splitting it into fragments loses the connections that made it an argument.
 
+## A verification claim carries its denominator
+
+A claim about verification takes exactly one of three forms, never a fourth:
+
+- **Total** — "exercised 7 of 7 endpoints on the impact map".
+- **Partial** — the fraction plus the enumerated remainder, each with its reason: "ran 3 of 12; the
+  other 9 are «…», not run because «…»".
+- **None** — "no verification was performed", stated plainly.
+
+The denominator comes from a set named in the same sentence and enumerable from the work itself: the
+impact map's consumers, the route list, the acceptance-criterion IDs, the changed files, a workflow's
+states. **A fraction is never estimated.** Where no set can be enumerated, the answer is the third
+form and not a guess — the same rule [grounding-protocol.md](grounding-protocol.md) applies to
+research, applied here to the report.
+
+"Checked it selectively", "went over it superficially", "mostly works" are none of the three. They
+report an impression of effort and leave the reader unable to tell eight-of-nine from one-of-nine,
+while satisfying "state what stayed unverified" on a technicality. The `coverage-claim` Stop hook
+notices the crude form; the smooth form — "verified the endpoint works", no hedge, no denominator —
+is caught by the review agents instead.
+
+Level calibration is in [ai-sdd-process.md](ai-sdd-process.md) §Definition of Done: nothing at L0,
+one sentence without a fraction at L1, fractions from L2 up.
+
 ## Estimates and reports specifically
 
 - **No false precision.** A range whose ends differ by minutes is one number. A number that implies a

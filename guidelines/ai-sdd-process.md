@@ -179,6 +179,18 @@ being used. What scales down is *breadth*, never *proof*:
 Unconditional at **every** level, because they are what makes a report trustworthy rather than thorough:
 state what stayed unverified · never report green tests as "works live" · never claim unqualified "done".
 
+**Every verification claim carries its denominator** — the covered/total fraction against a named,
+enumerable set, or the plain statement that no verification was performed. The three permitted forms
+and the ban on estimating a fraction are in [writing-standards.md](writing-standards.md). Scaled:
+
+- **L0** — nothing; the automatic gates are the whole Definition of Done.
+- **L1** — one sentence, no fraction: what single thing was exercised live, and that nothing else was
+  touched.
+- **L2+** — a fraction per claimed set.
+
+An item enumerated as not covered is a line of its own in the final report, never absorbed into prose:
+"not covered" and "done" are not simultaneously true for the same item.
+
 ## Definition of Done (L2+)
 
 implementation matches the approved spec · public API preserved or intentionally changed ·
@@ -193,7 +205,8 @@ the touched surface — a real HTTP run for an endpoint, a real browser drive fo
 loads · effective computed style · no persisted state masking it), or an explicit statement of what
 stayed unverified with repro steps; green tests are never reported as "works live" · **every consumer of
 a touched shape verified** (List *and* Show, export, API resource, notifications — per the impact map)
-with denormalized/derived values present on real data, or the consumer noted out of scope ·
+with denormalized/derived values present on real data, or the consumer noted out of scope **with the
+note stating who put it there** — the agent may propose it, the report shows whether the user agreed ·
 migration/deployment impact
 documented · **domain contract current** — the project's `AGENTS.md` reflects any entity, invariant,
 permission rule, integration, or term the change introduced · frontend handoff docs in `ai/frontend` created/updated when the change touches the

@@ -113,8 +113,35 @@ stated gap. Skip for L0/L1.
 5. Risks, deployment notes, migrations, cache/config/queue/scheduler impact, API-contract changes.
 6. Anything skipped, deferred, or not run.
 7. Assumptions or CRD/code conflicts.
+8. **What you decided alone** — the closing cost-of-silence list (below).
 
 Never report unqualified "100% done". State what is `verified` vs `assumed`.
+
+**Every verification claim in point 3 carries its denominator** — the covered/total fraction against a
+named set (the impact map's consumers, the routes, the acceptance-criterion IDs, the changed files), or
+the plain statement that no verification was performed. Never estimate the fraction: if the set cannot
+be enumerated, say that instead. "Checked it selectively" and "went over it superficially" are not
+reports — they hide whether that was eight of nine or one of nine. Point 6 then carries each uncovered
+item as its own line, and an out-of-scope note says **who** put it out of scope. Full rule:
+`${CLAUDE_SKILL_DIR}/../../guidelines/writing-standards.md`; level calibration (nothing at L0, one
+sentence at L1, fractions from L2) in `${CLAUDE_SKILL_DIR}/../../guidelines/ai-sdd-process.md`.
+
+## The closing cost of silence
+
+Before the plan, `start-task` listed what you decided for the user. This is the second half: **every
+decision you took without asking since the plan was approved** — one line each, plain language first:
+what was decided · the alternative you did not take · what changes if it was wrong.
+
+- **Threshold** — a decision earns its line only if you made it alone **and** it changes observable
+  behaviour, money, permissions, or a contract. Rounding a total, choosing which role the check reads,
+  what the client's screen ends up showing, what the provider is told on a retry — those qualify. A
+  variable name does not.
+- **No repetition** — anything already listed before the plan stays there.
+- **Scaled** — L0/L1: only if an item clears the threshold. L2+: mandatory, and "none" is valid
+  content, stated as a claim rather than an omission.
+
+Full rule: `${CLAUDE_SKILL_DIR}/../../guidelines/clarify-protocol.md` §The cost of silence — stated
+again at the end.
 
 The summary reports **outcomes, not effort**, per
 `${CLAUDE_SKILL_DIR}/../../guidelines/writing-standards.md` — no "significantly improved", no count of

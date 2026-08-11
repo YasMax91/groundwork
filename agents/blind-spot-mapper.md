@@ -24,8 +24,13 @@ If the statement is missing, say so and ask for it rather than guessing.
 
 Walk the blind-spot taxonomy (`guidelines/blind-spot-protocol.md`) against the task — data & state,
 scale & performance, security & privacy, compatibility, operability, domain & product, external
-integrations. Predict the **omitted** dimension, the unintended consequence, the domain/product angle
-the user is not expert in. Verify each candidate against the real code before raising it — an
+integrations, and **unconfirmed assumptions about the reader's own domain**. Predict the **omitted**
+dimension, the unintended consequence, the domain/product angle the user is not expert in.
+
+That last category is the one the user cannot request, so run it explicitly: what does this change take
+as known — a business rule, a provider's terms, a financial or legal consequence, what the client will
+do with the result — and which of those has the user never confirmed in this project, leaving the agent
+to supply it silently? Name the assumption and who is currently making it. Verify each candidate against the real code before raising it — an
 unqualified guess is noise. Explain each one under the plain-language rule in
 `guidelines/clarify-protocol.md` — the consequence in everyday words first, the term after it.
 

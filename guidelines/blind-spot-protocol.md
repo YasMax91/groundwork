@@ -40,6 +40,12 @@ Walk these categories against the task; a project may extend them in its `AGENTS
    edge cases, conflict with an existing user expectation, localization.
 7. **External integrations** — webhook ordering/retries/idempotency, partial failures, keeping external
    state consistent with local state.
+8. **Unconfirmed assumptions about the reader's own domain** — what this change takes as known: a
+   business rule, a provider's terms, a financial or legal consequence, what the client will do with
+   the result. For each, has the user ever confirmed it in this project, or has the agent been
+   supplying it silently? This is the category that answers "I did not realise" — distinct from
+   category 6, which asks whether the change solves the right problem, where this asks what the change
+   quietly requires the reader to already know.
 
 ## Output — one line per blind spot
 
@@ -82,6 +88,10 @@ spot cannot reproduce it — and returns a ranked list in the output format abov
 - The `spec` skill records the resolved blind spots in the spec's "Blind spots considered" section;
   `implement-approved` escalates any new one found mid-build; `final-check` re-passes for blind spots the
   finished implementation itself created.
+- A blind spot is something nobody saw. A choice the agent made deliberately without asking is not one,
+  and falls into the closing **cost of silence** list instead — see
+  [clarify-protocol.md](clarify-protocol.md). Between them nothing the agent decided alone reaches the
+  end of a task unnamed.
 
 ## Reference case
 

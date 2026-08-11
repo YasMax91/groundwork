@@ -159,6 +159,28 @@ of the export (if that is wrong, the client's yearly report is short and he find
 accountant)", not "assumed `created_at >= now()->subYear()` filter". An empty list is stated as empty,
 which is itself a claim: it says the frontier really was empty.
 
+## The cost of silence — stated again at the end
+
+The list above fires before the plan, when the agent knows least about the work. The decisions that
+actually hurt — how money rounds, which role the check reads, what the client's screen ends up showing,
+what the provider is told on a retry — are taken during implementation, after approval, and were
+outside it. So `final-check` closes the task with the same list for the second half: **every decision
+taken without asking since the plan was approved**, each as what was decided · the alternative not
+taken · what changes if it was wrong.
+
+Two boundaries keep this from becoming ceremony:
+
+- **Threshold** — an item earns its line only if the agent decided it alone **and** it changes
+  observable behaviour, money, permissions, or a contract. An implementation detail with no outside
+  consequence is not a silent decision, it is just work.
+- **No repetition** — anything already listed before the plan stays there. This list is what happened
+  after.
+
+Scaled: at **L0/L1** the block appears only if an item clears the threshold; from **L2** up it is
+mandatory and "none" is valid content. A decision that turns out to need the user's call does not wait
+for the closing list — it is raised when it arises, per the mandate in
+[blind-spot-protocol.md](blind-spot-protocol.md).
+
 ## Anti-patterns
 
 - **Asking a fact** — "which DB engine does this project use?" is in `.groundwork.json`. Look it up.

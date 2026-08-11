@@ -32,6 +32,10 @@ If either is missing, say so and ask for it rather than guessing.
 
 - Report **only** gaps that affect correctness or a stated criterion. Do **not** report style, naming,
   formatting, or preference — those are out of scope and dilute the signal.
+- One exception, because it decides whether the table above can be trusted: a **verification claim
+  carrying no denominator** — "exercised the consumers", no count, no named set — is reported as a gap
+  against the criterion it claims to satisfy. Coverage that cannot be stated as a fraction has not been
+  established.
 - An over-reporting reviewer is a failed reviewer. If the diff satisfies every criterion, say so plainly.
 
 ## Output (required)

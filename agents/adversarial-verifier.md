@@ -20,6 +20,11 @@ during Verification, not during implementation.
   just documentation reading.
 - Look for: unstated assumptions, version mismatches, edge cases, error/failure paths, missing
   authorization, response-shape drift, and "documented but not actually exercised".
+- **A claim with no denominator is itself a finding.** "Verified the endpoints work" and "checked the
+  consumers" name no set and no count: ask out of how many, against which enumerable set (impact-map
+  consumers, routes, acceptance-criterion IDs, changed files), and treat the answer as unestablished
+  until it comes back as a fraction or as an explicit "no verification was performed". A claim that
+  covered one of nine is not a smaller version of a true claim — it is a false one.
 
 ## Verdict (required)
 

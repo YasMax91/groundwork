@@ -340,6 +340,27 @@ the generate command with `commands.openapi_generate`, the watched paths with `o
 (defaults to `routes/`, `app/Http/Controllers/`, `app/Http/Requests/`, `app/Http/Resources/`), and
 force it on for a project with a hand-maintained document via `openapi.enabled: true`.
 
+`gates.coverage_claim` (default **on**) watches what the agent *said* rather than what the repository
+holds. "I checked it selectively" satisfies the Definition of Done's "state what stayed unverified"
+literally while hiding whether that was eight of nine or one of nine, so a verification claim now takes
+one of three forms — a covered/total fraction against a named enumerable set, that fraction plus the
+listed gap, or a plain "no verification was performed" — and a fraction is never estimated. The Stop
+hook reads `last_assistant_message` for hedges in Russian and English and **warns without blocking**,
+logging every trigger to `.claude/groundwork/coverage-claims.log`; a regex over natural language will
+have false positives, and that log is the evidence that decides whether a later version blocks. It
+makes no model call, stays silent when the claim already carries its denominator, and returns nothing
+when `stop_hook_active` is set. The smooth form of the same failure — a confident claim with no hedge
+and no count — is caught by `adversarial-verifier` and `conformance-reviewer` instead.
+
+**And a silent decision does not stay silent.** The cost-of-silence list that `start-task` prints
+before the plan now has a second half in `final-check`: every decision the agent took without asking
+*since* the plan was approved, with the alternative it did not take and what changes if it was wrong.
+An item earns its line only when the agent decided it alone and it moves observable behaviour, money,
+permissions, or a contract. The blind-spot taxonomy gained the matching category — unconfirmed
+assumptions about the business domain, a provider's terms, a financial or legal consequence, and what
+the client will do with the result — which is what "I did not realise it worked that way" looks like
+before it becomes a production incident.
+
 `gates.trim_tool_output` (default **off**) enables a fail-safe `PostToolUse` trimmer that collapses
 passing-test / clean-analysis spam from noisy commands to save context. It never trims when any
 failure indicator is present and does nothing if it cannot positively locate the tool output, so a
@@ -353,7 +374,7 @@ once with `claude --debug` in your project before enabling.
 pack/             groundwork-pack — dependency-only bundle (this plugin + companion plugins)
 skills/           start-task · spec · implement-approved · risk-review · final-check · ground-integration · frontend-handoff · client-doc · openapi-audit · grill · init · deep-grounding · deep-discovery · deep-review
 agents/           impact-mapper · blind-spot-mapper · grounded-researcher · adversarial-verifier · conformance-reviewer
-hooks/            hooks.json · lib.sh (shared resolvers) · session-start.sh · pre-compact.sh · format-on-edit.sh · done-gate.sh · test-gate.sh · openapi-gate.sh · trim-output.sh · pre-tool-guard.sh · statusline.sh · tests/all.sh
+hooks/            hooks.json · lib.sh (shared resolvers) · session-start.sh · pre-compact.sh · format-on-edit.sh · done-gate.sh · test-gate.sh · openapi-gate.sh · coverage-claim.sh · trim-output.sh · pre-tool-guard.sh · statusline.sh · tests/all.sh
 guidelines/       ai-sdd-process · grounding-protocol · blind-spot-protocol · clarify-protocol · openapi-protocol · laravel-standards · tdd-protocol · writing-standards · working-memory
 docs/             skill-hygiene (author-facing) · specs/
 templates/        project/ · specs/ · frontend/ (feature · handoff — both pointing at the runnable request package) · client-doc.md · adr.md
