@@ -19,13 +19,20 @@ plausible-but-wrong noise.
 ## How to run
 
 1. Ensure there is a diff (`git diff`) and, if a spec exists, its acceptance-criterion IDs.
-2. Run the Workflow in `${CLAUDE_SKILL_DIR}/workflow.md`: per risk dimension, find → adversarially
-   verify each finding (≥2 skeptics, refute-by-default) → keep only confirmed; plus a
-   `conformance-reviewer` pass on the diff vs the spec criteria. `log()` the dimension count.
+2. Invoke the `Workflow` tool with `name: "groundwork:deep-review-run"`. Optional `args`: `scope` (what
+   to review, default the working diff) and `criteria` (where the acceptance-criterion IDs live). The
+   script ships with the plugin — do **not** rewrite it inline; it holds the dimension list, the
+   two-lens adversarial panel, and the conformance pass, and it logs its own fan-out.
 3. Present **confirmed** risks (ranked, with file:line) · required approvals · missing / after-the-fact
    tests · suggested fixes · spec-conformance gaps.
 
 ## Output
 
-Ranked confirmed risks, each survived adversarial verification, plus spec-conformance gaps. Workers run
-via `agentType: "groundwork:<agent>"`. Reference script: `${CLAUDE_SKILL_DIR}/workflow.md`.
+Ranked confirmed risks, each survived adversarial verification, plus spec-conformance gaps. The
+workflow returns `examined` and `dropped` alongside `confirmed`, so the report states its denominator —
+"12 findings examined, 5 confirmed, 7 dropped as false alarms" — rather than an unquantified list, per
+`${CLAUDE_SKILL_DIR}/../../guidelines/writing-standards.md`.
+
+Workers run via `agentType: "groundwork:<agent>"`. Script: `workflows/deep-review-run.js` in the plugin
+root, which is also runnable directly as `/groundwork:deep-review-run` when you want the orchestration
+without this skill's level gating.

@@ -22,10 +22,12 @@ mode — confidently assuming a capability the provider does not have.
 
 1. Establish the provider / product / API version, the **list of capabilities** the task needs (one
    row per capability), and the doc **sources** (URLs).
-2. Author and run the Workflow in `${CLAUDE_SKILL_DIR}/workflow.md` (adapt `capabilities` + `sources`).
-   It (a) fans out one `grounded-researcher` per capability — each returns a cited finding; (b) runs an
-   adversarial panel (≥2 `adversarial-verifier` skeptics, distinct lenses, refute-by-default) per row;
-   (c) synthesizes the matrix. `log()` the fan-out size so the cost is visible.
+2. Invoke the `Workflow` tool with `name: "groundwork:deep-grounding-run"` and
+   `args: { capabilities: [...], sources: "<official doc URLs>" }`. The shipped script (a) fans out one
+   `grounded-researcher` per capability — each returns a cited finding; (b) runs an adversarial panel
+   (2 `adversarial-verifier` skeptics, distinct lenses, refute-by-default) per row; (c) synthesizes the
+   matrix. Do **not** rewrite it inline. It refuses to run without `capabilities`, and logs the fan-out
+   size so the cost is visible.
 3. Present the **capability matrix** — per row: supported? · evidence (URL+quote) · adversarial verdict
    · confidence · fallback — plus the open-unknowns list. Resolve every `UNKNOWN`/REFUTED with the user
    **before** any integration code.
@@ -33,5 +35,9 @@ mode — confidently assuming a capability the provider does not have.
 ## Output
 
 The verified capability matrix + open unknowns, ready to seed the `integration-change` spec. Label
-every row `verified` (survived refutation, with evidence) or `assumed`. Workers run via
-`agentType: "groundwork:<agent>"`. Reference script: `${CLAUDE_SKILL_DIR}/workflow.md`.
+every row `verified` (survived refutation, with evidence) or `assumed`. The workflow returns
+`requested` and `returned` alongside the matrix, so a capability whose reader came back empty is
+reported as unanswered rather than quietly missing from the table.
+
+Workers run via `agentType: "groundwork:<agent>"`. Script: `workflows/deep-grounding-run.js` in the
+plugin root, also runnable directly as `/groundwork:deep-grounding-run`.

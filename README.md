@@ -111,7 +111,15 @@ Battle-tested day to day on production Laravel backends at RaDevs.
 - **Deep skills (L3/L4, opt-in)** — `deep-grounding` · `deep-discovery` · `deep-review`: Workflow-driven
   multi-agent escalations of grounding / discovery / review, each finding adversarially verified.
   ~15× tokens, gated to explicit invocation; graceful fallback to the single-agent skill when the
-  `Workflow` tool is unavailable.
+  `Workflow` tool is unavailable. As of v0.26.0 the orchestration ships as **executable workflow
+  scripts** in `workflows/`, not as reference text the model retypes each run — so the fan-out, the
+  adversarial panel and the dedup are identical every time, and a stopped run resumes from its cached
+  agent results instead of starting over. The skills stay the entry points (level gating, cost
+  disclosure, seed collection) and call the scripts with `args`; each script is also runnable directly
+  as `/groundwork:deep-review-run`, `/groundwork:deep-discovery-run`, `/groundwork:deep-grounding-run`
+  when you want the orchestration without the gating. Every script returns its own counts — findings
+  examined vs confirmed, seeds mapped vs failed, edges found vs verified — so the report carries a
+  denominator instead of an unquantified list.
 - **Standards + gates** — `laravel-standards` + hooks: Pint on edit, static analysis and the test
   suite as done-gates, and a `PreToolUse` enforcement guard that denies host Laravel/PHP commands
   (use the runner) and edits to shipped migrations — opt-out per project. Every gate honors the declared
@@ -383,6 +391,7 @@ pack/             groundwork-pack — dependency-only bundle (this plugin + comp
 skills/           start-task · spec · implement-approved · risk-review · final-check · ground-integration · frontend-handoff · client-doc · openapi-audit · grill · init · deep-grounding · deep-discovery · deep-review
 agents/           impact-mapper · blind-spot-mapper · grounded-researcher · adversarial-verifier · conformance-reviewer
 hooks/            hooks.json · lib.sh (shared resolvers) · session-start.sh · pre-compact.sh · format-on-edit.sh · done-gate.sh · test-gate.sh · openapi-gate.sh · coverage-claim.sh · trim-output.sh · pre-tool-guard.sh · statusline.sh · tests/all.sh
+workflows/        deep-review-run.js · deep-discovery-run.js · deep-grounding-run.js — the multi-agent orchestration, executed by the runtime
 guidelines/       ai-sdd-process · grounding-protocol · blind-spot-protocol · clarify-protocol · openapi-protocol · laravel-standards · tdd-protocol · writing-standards · working-memory
 docs/             skill-hygiene (author-facing) · specs/
 templates/        project/ · specs/ · frontend/ (feature · handoff — both pointing at the runnable request package) · client-doc.md · adr.md

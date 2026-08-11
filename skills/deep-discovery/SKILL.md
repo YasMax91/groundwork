@@ -22,14 +22,20 @@ tables). It maps each seed in parallel and consolidates one blast radius, instea
 ## How to run
 
 1. List the seeds (models, services, tables, symbols) and pick a `<slug>` from the primary seed.
-2. Run the Workflow in `${CLAUDE_SKILL_DIR}/workflow.md`: parallel `impact-mapper` per seed (+ a
-   `grounded-researcher` if an external API is involved) → dedup into one blast radius + ranked
-   hotspots → verify the dynamic / unresolved edges. `log()` the seed count.
+2. Invoke the `Workflow` tool with `name: "groundwork:deep-discovery-run"` and
+   `args: { seeds: [...], integration: "<provider or null>" }`. The shipped script fans out one
+   `impact-mapper` per seed (plus a `grounded-researcher` when an external API is involved), dedups into
+   one blast radius with ranked hotspots, then verifies the dynamic edges. Do **not** rewrite it inline.
+   It refuses to run without `seeds`, and it logs both the seed count and any edges left unchecked.
 3. Write the consolidated map to `.claude/groundwork/impact/<slug>.md` and refresh the
    `BASE_COMMIT` / `SEEDS` header (working-memory layer).
 
 ## Output
 
 One blast-radius map · ranked hotspots · checked dynamic-edge findings · a ranked read-list · open
-questions. Workers run via `agentType: "groundwork:<agent>"`. Reference script:
-`${CLAUDE_SKILL_DIR}/workflow.md`.
+questions. The workflow returns `seedCount`, `mappedSeeds`, `failedSeeds`, `edgesFound` and
+`edgesVerified`, so the map is reported with its coverage — a seed that failed to map and an edge left
+unchecked are named, never folded into the total.
+
+Workers run via `agentType: "groundwork:<agent>"`. Script: `workflows/deep-discovery-run.js` in the
+plugin root, also runnable directly as `/groundwork:deep-discovery-run`.

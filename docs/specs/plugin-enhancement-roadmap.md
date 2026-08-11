@@ -434,6 +434,22 @@ Sequenced by pain, not by tier. Four packages:
   offers Larastan with a baseline, forbids placeholder commands, and writes a decline as toggle + reason.
   5 new tests, 170 across 9 suites.
 
+- **Wave 16 — the deep skills ship their orchestration.** ✅ **shipped in v0.26.0 (2026-08-11)** →
+  [wave-16-workflows-as-a-component.md](wave-16-workflows-as-a-component.md). Research item E10. Wave 3
+  left each deep skill's Workflow script in a bundled `workflow.md` for the model to "author and run",
+  which cost reproduction fidelity (nothing guaranteed the run matched the reviewed script — the very
+  property the deep skills exist for), the ability to resume a stopped run, and the tokens to retype
+  ~50 lines before any work began. The platform meanwhile grew the component for this: a `workflows/`
+  directory at the plugin root, namespaced `/<plugin>:<meta.name>`. The three scripts now ship as
+  `deep-review-run` · `deep-discovery-run` · `deep-grounding-run` — suffixed so they do not collide with
+  the identically named skills, which stay the entry points holding level gating, cost disclosure and
+  the cache check. Three additions on the way in: the scripts refuse to run without their required
+  `args` rather than mapping nothing, they return their own counts (findings examined vs confirmed,
+  seeds mapped vs failed, edges found vs verified) so Wave 14's denominator rule reaches the machinery,
+  and a bounded edge list logs what it left unchecked instead of truncating silently. Command
+  registration verified live in a headless session; the orchestration itself is syntax-checked and
+  unexecuted — the first real run is the proof, at ~15× tokens.
+
 Deliberately **not** touched by this programme (verified working across the window — do not regress):
 the plan-approval gate (never violated), test-first red→green, grounding by live probe (it caught a
 non-existent `/payment/links` endpoint by probing before any code), and the agent's own self-catch of
