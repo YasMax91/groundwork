@@ -16,6 +16,27 @@ own `AGENTS.md`, nothing else copy-pasted between them.
 Created and maintained by **Max Yastremskyi** ([YasMax91](https://github.com/YasMax91)). MIT.
 Battle-tested day to day on production Laravel backends at RaDevs.
 
+## In practice
+
+Across **7 production codebases** as of August 2026: ~340 procedure runs, ~160 written specs, 27
+auto-generated frontend hand-offs — and roughly **one task in three stopped before any code was
+written**, because it was mis-scoped, conflicted with behaviour that already existed, or was
+cheaper to solve without development at all.
+
+That number is the point. An agent will happily write plausible code and just as happily report
+that it is done; the cost is not the bad code, it is the code written against a task nobody
+scoped. Groundwork makes the checking part of the process instead of an act of faith afterwards.
+
+```
+/plugin marketplace add YasMax91/groundwork
+/plugin install groundwork@yasmax
+/groundwork:init
+```
+
+Longer write-up, with the gates explained one by one:
+**[yastremskyi.com/groundwork](https://yastremskyi.com/groundwork)**. Full install notes,
+companion plugins and per-project configuration are further down this file.
+
 ## What's inside
 
 - **Process (AI-SDD)** — skills: `start-task`, `spec`, `implement-approved`, `risk-review`,
