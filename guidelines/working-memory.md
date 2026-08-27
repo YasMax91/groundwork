@@ -30,6 +30,8 @@ exactly what the checkpoint exists to restore. Template:
 - Mode: Discovery | Spec | Plan | Implementation | Review | Done — <what shipped>
 
 - Level: L0..L4
+- Kind: <one word: crud | integration | migration | bugfix | contract | rbac | ...>
+- Started: <YYYY-MM-DDTHH:MM:SSZ — set once, when the checkpoint is created>
 - Spec: docs/specs/<file>.md | (none yet)
 - Impact map: .claude/groundwork/impact/<slug>.md | (n/a)
 - OpenAPI: <endpoints this task documents> | n/a — <why the contract is untouched>
@@ -55,6 +57,16 @@ verbatim, so an overstatement is not a note — it is the next session's premise
 `POST /orders`; `PATCH /orders/{id}` not covered" beats "asserted on both endpoints"; a slice is `green`
 only when its test passes **now**; `verified` requires the evidence to exist, everything else is `assumed`.
 A checkpoint that rounds coverage up is how work gets declared done twice and finished once.
+
+`Started:` and `Kind:` exist for the **estimate ledger**. `final-check` closes the window and records
+how long the task actually took, in the agent's active minutes, so later estimates rest on measurement
+rather than on a prior trained on human engineering hours (`hooks/estimate-ledger.sh`,
+[ai-sdd-process.md](ai-sdd-process.md) §Estimates). Two rules: **`Started:` is written once, in UTC,
+when the checkpoint is created, and is never edited afterwards** — a corrected start time is a
+corrected measurement — and a checkpoint without it is skipped by the ledger rather than having a start
+inferred from a file's mtime, which would produce a number that looks measured and is not. `Kind:` is
+one word and free-form; it is what will eventually let an estimate say "a CRUD endpoint here is
+typically N minutes" instead of quoting the level's median.
 
 The `OpenAPI:` line is also the **`openapi` Stop gate's escape hatch**: when a task changes the
 contract surface (routes, controllers, FormRequests, Resources) the gate demands matching spec

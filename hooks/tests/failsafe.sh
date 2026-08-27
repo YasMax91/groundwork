@@ -47,6 +47,7 @@ runs "done-gate"       "done-gate.sh"       ''
 runs "test-gate"       "test-gate.sh"       ''
 runs "openapi-gate"    "openapi-gate.sh"    ''
 runs "coverage-claim"  "coverage-claim.sh"  '{"hook_event_name":"Stop","last_assistant_message":"Проверил выборочно."}'
+runs "estimate-ledger" "estimate-ledger.sh" ''
 runs "task-intent"     "task-intent.sh"     '{"hook_event_name":"UserPromptSubmit","session_id":"s","prompt":"Сделай отчёт по заказам за прошлый месяц"}'
 runs "agent-contract"  "agent-contract.sh"  '{"hook_event_name":"SubagentStop","agent_type":"groundwork:grounded-researcher","last_assistant_message":"no source"}'
 runs "format-on-edit"  "format-on-edit.sh"  "{\"tool_input\":{\"file_path\":\"$d/app/A.php\"}}"
