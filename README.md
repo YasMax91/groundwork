@@ -40,7 +40,7 @@ companion plugins and per-project configuration are further down this file.
 ## What's inside
 
 - **Process (AI-SDD)** — skills: `start-task`, `spec`, `implement-approved`, `risk-review`,
-  `final-check`, `init`. Discovery fans out via the `impact-mapper` agent (scaled by task level
+  `final-check`, `estimate`, `init`. Discovery fans out via the `impact-mapper` agent (scaled by task level
   L0–L4) — the full blast radius before planning, so changes stay scoped without missing a consumer.
   Two review gates: `adversarial-verifier` (is the "it works" claim true?) and `conformance-reviewer`
   (does the diff satisfy the spec's acceptance criteria?). A converge re-check and ADR capture
@@ -85,6 +85,16 @@ companion plugins and per-project configuration are further down this file.
   owner, never added to the development number. Ships as
   an English canonical file (what you send) plus a full Russian mirror (what you read), regenerated from
   the English so the two cannot drift.
+- **Estimates are measured, not felt** — the `estimate` skill answers "how long will this take?" from a
+  ledger of **this machine's own agent time**. `estimate-ledger.sh` records the active minutes of every
+  finished task (idle gaps excluded, so a session you walked away from is not counted as work) and
+  backfills a seed corpus from git history in seconds; an estimate quotes the median and the sample size
+  it rests on. The unit is the agent's active minutes, human time is always a separate line with its
+  owner, and an hour-sized number has to name the slow thing beside it — an external API to establish,
+  a sandbox probe, a migration over a large table. A warn-only Stop gate (`gates.estimate_claim`)
+  catches the ones that do not. Measured on this author's corpus, calendar span overstates active agent
+  time by roughly 3×, which is why "how long did the last one take?" was never a safe substitute for
+  measuring it.
 - **Blind-spot surfacing** — the agent proactively raises what you did not think to ask: unintended
   consequences, missing requirements, and domain/product angles you are not the expert in — each with
   its consequence and a recommended default, in plain language. A `blind spots` block in the first
@@ -429,9 +439,9 @@ once with `claude --debug` in your project before enabling.
 ```
 .claude-plugin/   plugin.json · marketplace.json
 pack/             groundwork-pack — dependency-only bundle (this plugin + companion plugins)
-skills/           start-task · spec · implement-approved · risk-review · final-check · ground-integration · frontend-handoff · client-doc · openapi-audit · grill · init · deep-grounding · deep-discovery · deep-review
+skills/           start-task · spec · implement-approved · risk-review · final-check · estimate · ground-integration · frontend-handoff · client-doc · openapi-audit · grill · init · deep-grounding · deep-discovery · deep-review
 agents/           impact-mapper · blind-spot-mapper · grounded-researcher · adversarial-verifier · conformance-reviewer
-hooks/            hooks.json · lib.sh (shared resolvers) · session-start.sh · pre-compact.sh · task-intent.sh · format-on-edit.sh · done-gate.sh · test-gate.sh · openapi-gate.sh · coverage-claim.sh · agent-contract.sh · trim-output.sh · pre-tool-guard.sh · statusline.sh · tests/all.sh
+hooks/            hooks.json · lib.sh (shared resolvers) · session-start.sh · pre-compact.sh · task-intent.sh · format-on-edit.sh · done-gate.sh · test-gate.sh · openapi-gate.sh · coverage-claim.sh · estimate-claim.sh · estimate-ledger.sh · agent-contract.sh · trim-output.sh · pre-tool-guard.sh · statusline.sh · tests/all.sh
 workflows/        deep-review-run.js · deep-discovery-run.js · deep-grounding-run.js — the multi-agent orchestration, executed by the runtime
 guidelines/       ai-sdd-process · grounding-protocol · blind-spot-protocol · clarify-protocol · openapi-protocol · laravel-standards · tdd-protocol · writing-standards · working-memory
 docs/             skill-hygiene (author-facing) · specs/
