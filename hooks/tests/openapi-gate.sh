@@ -247,6 +247,69 @@ printf '#!/bin/sh\necho "\$ref \"#/components/schemas/OrderResource\" not found"
 chmod +x "$d/vendor/bin/sail"
 expect "AC29 unresolved ref"         2 "$d"
 
+# --- wave 26: an inference-driven project (dedoc/scramble) has no annotations to look for ---------
+scramble_fixture() { # dir
+  local d="$1"
+  mkdir -p "$d/app/Http/Controllers" "$d/storage/api-docs"
+  cat > "$d/.groundwork.json" <<'JSON'
+{ "runner": "sail", "gates": { "openapi_on_stop": true },
+  "openapi": { "spec_path": "storage/api-docs/api-docs.json" } }
+JSON
+  cat > "$d/composer.json" <<'JSON'
+{ "require": { "laravel/framework": "^12.0", "dedoc/scramble": "^0.12" } }
+JSON
+  printf '<?php\nclass FooController {}\n' > "$d/app/Http/Controllers/FooController.php"
+  printf '{"openapi":"3.1.0","paths":{}}\n' > "$d/storage/api-docs/api-docs.json"
+  ( cd "$d" && git init -q && git config user.email t@t && git config user.name t \
+    && git add -A && git commit -qm init )
+}
+
+# The blind spot this wave closes: before it, this project exited 0 — no l5-swagger, no gate at all.
+d="$ROOT/w26a"; scramble_fixture "$d"; touch_controller "$d"
+expect "W26 scramble w/o export"   2 "$d"
+
+err="$( cd "$d" && bash "$GATE" 2>&1 >/dev/null )"
+case "$err" in
+  *"scramble:export"*) pass=$((pass+1)); printf '  ok   %-28s (names the export)\n' "W26 message fits the tool" ;;
+  *) fail=$((fail+1)); printf '  FAIL %-28s got: %s\n' "W26 message fits the tool" "$err" ;;
+esac
+case "$err" in
+  *"Update the annotations"*) fail=$((fail+1)); printf '  FAIL %-28s tells scramble to write annotations\n' "W26 no annotation advice" ;;
+  *) pass=$((pass+1)); printf '  ok   %-28s (no annotation advice)\n' "W26 no annotation advice" ;;
+esac
+
+# The exported document moved with the code -> the contract is documented; generation is skipped
+# here because no runner is installed in the fixture.
+d="$ROOT/w26b"; scramble_fixture "$d"; touch_controller "$d"
+printf '{"openapi":"3.1.0","paths":{"/api/foo":{"get":{"responses":{"200":{"description":"ok"}}}}}}\n' \
+  > "$d/storage/api-docs/api-docs.json"
+expect "W26 scramble with export"  0 "$d"
+
+# A project carrying both toolchains is an annotation project: annotations are the explicit statement.
+d="$ROOT/w26c"; scramble_fixture "$d"
+cat > "$d/composer.json" <<'JSON'
+{ "require": { "darkaonline/l5-swagger": "^8.6", "dedoc/scramble": "^0.12" } }
+JSON
+( cd "$d" && git add -A && git commit -qm both )
+touch_with_annotation "$d"
+expect "W26 both -> annotations"   0 "$d"
+
+# An explicit generator setting wins over detection.
+d="$ROOT/w26d"; fixture "$d" true
+python3 - "$d" <<'PYY'
+import json,sys
+p=sys.argv[1]+'/.groundwork.json'
+d=json.load(open(p)); d['openapi']={'generator':'inference','spec_path':'docs/api.json'}
+json.dump(d,open(p,'w'))
+PYY
+mkdir -p "$d/docs"; printf '{"openapi":"3.1.0","paths":{}}\n' > "$d/docs/api.json"
+( cd "$d" && git add -A && git commit -qm cfg )
+touch_controller "$d"
+expect "W26 explicit inference"    2 "$d"
+printf '{"openapi":"3.1.0","paths":{"/api/foo":{"get":{"responses":{"200":{"description":"ok"}}}}}}\n' > "$d/docs/api.json"
+expect "W26 explicit spec_path ok" 0 "$d"
+
+
 echo
 echo "  passed: $pass, failed: $fail"
 [ "$fail" -eq 0 ]

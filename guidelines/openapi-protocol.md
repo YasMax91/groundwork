@@ -6,9 +6,27 @@ It must be **current** (never behind the code) and **complete to the last detail
 change — the `openapi` Stop gate enforces this, and the Definition of Done in
 [ai-sdd-process.md](ai-sdd-process.md) requires it.
 
-Toolchain in these projects: `darkaonline/l5-swagger` (or `zircote/swagger-php` directly) — the spec
-is generated from PHP attributes `#[OA\...]` or docblock annotations `@OA\...` on controllers and
-schema classes. Both styles are valid; match whichever the file already uses.
+## Two toolchains, two meanings of "the spec moved with the code"
+
+**Annotation-driven** — `darkaonline/l5-swagger`, or `zircote/swagger-php` directly. The spec lives in
+the code as PHP attributes `#[OA\...]` or docblock annotations `@OA\...` on controllers and schema
+classes. Both styles are valid; match whichever the file already uses. Here the contract moved with the
+change when **an annotation changed**, and everything below applies as written.
+
+**Inference-driven** — `dedoc/scramble`. There are no annotations and there never will be: the document
+is derived from types, form requests and resources. Here the contract moved with the change when **the
+exported document changed** — `artisan scramble:export --path=<openapi.spec_path>`, with the result
+committed. The gate judges this project by that file, not by annotations (`hooks/openapi-gate.sh`).
+
+Two consequences for an inference project, both of which the checklist below still demands:
+
+- An endpoint whose request or response is untyped produces a poor document. Making the types explicit
+  (a typed FormRequest, a typed JsonResource, a backed enum) is how you "write the annotation" here.
+- A status code the document is missing is not fixed by editing the document — it is fixed in the code
+  path the inference reads, or documented via the tool's own attribute.
+
+`openapi.generator` in `.groundwork.json` (`annotation` | `inference`) overrides the detection. A
+project carrying both packages is treated as annotation-driven: annotations are the explicit statement.
 
 ## Never invent — derive every part from real code
 

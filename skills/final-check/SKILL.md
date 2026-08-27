@@ -122,6 +122,21 @@ ${CLAUDE_PLUGIN_ROOT}/hooks/estimate-ledger.sh --record --kind=<one word> --prom
 Skip at L0. Everything from L1 up is worth a row: the corpus is what stops the next estimate from being
 an opinion.
 
+## Is the contract document usable? (projects that document an API)
+
+The Stop gate proves the generator ran without errors. That is not the same as the document being
+consumable by the tools the frontend actually uses — an unresolvable `$ref` or a broken schema passes
+generation and fails everything downstream. Once per task, after the gate is green:
+
+```bash
+npx -y openapi-typescript <openapi.spec_path> -o /tmp/gw-api-check.d.ts
+```
+
+A non-zero exit is a contract defect: fix it here, not after the frontend hits it. **Without node on
+the machine, say so in the handoff** — "проверка потребляемости спеки не выполнялась (нет node)" — and
+do not present the gate's green as if it covered this. It is not in the Stop hook on purpose: a cold
+`npx` takes seconds on every turn, which is a tax the gate should not levy.
+
 ## Task receipt (L2+)
 
 Write `docs/specs/<slug>.receipt.md` next to the spec, from

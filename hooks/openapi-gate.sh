@@ -42,8 +42,33 @@ if [ "$enabled" = "false" ]; then
   exit 0
 elif [ "$enabled" != "true" ]; then
   # Auto-detect the toolchain; silent no-op when the project has none.
-  grep -qE 'darkaonline/l5-swagger|zircote/swagger-php' composer.json 2>/dev/null || exit 0
+  grep -qE 'darkaonline/l5-swagger|zircote/swagger-php|dedoc/scramble' composer.json 2>/dev/null || exit 0
 fi
+
+# --- which kind of toolchain? the two are documented differently, so the gate judges differently ---
+#
+#   annotation-driven (l5-swagger / swagger-php): the spec lives in the code as `@OA\…` attributes,
+#     so "the spec moved with the code" means an annotation changed.
+#   inference-driven (dedoc/scramble): there are no annotations and never will be — the document is
+#     derived from types and requests, so the only evidence is the exported document itself changing.
+#
+# An explicit `openapi.generator` wins. With both toolchains present, annotations win: they are the
+# explicit statement, and a project carrying them is maintaining them.
+flavour="$(jq -r '.openapi.generator // empty' .groundwork.json 2>/dev/null || true)"
+case "$flavour" in
+  annotation|inference) : ;;
+  *)
+    if grep -qE 'darkaonline/l5-swagger|zircote/swagger-php' composer.json 2>/dev/null; then
+      flavour='annotation'
+    elif grep -qE 'dedoc/scramble' composer.json 2>/dev/null; then
+      flavour='inference'
+    else
+      flavour='annotation'
+    fi ;;
+esac
+
+spec_path="$(jq -r '.openapi.spec_path // empty' .groundwork.json 2>/dev/null || true)"
+[ -n "$spec_path" ] || spec_path='storage/api-docs/api-docs.json'
 
 git rev-parse --is-inside-work-tree >/dev/null 2>&1 || exit 0
 
@@ -134,6 +159,15 @@ if [ "$spec_touched" -eq 0 ]; then
   done <<< "$changed"
 fi
 
+# (b2) inference-driven: the exported document at `openapi.spec_path` changed in this diff. There are
+# no annotations to look for, so this is the only positive evidence such a project can produce.
+if [ "$spec_touched" -eq 0 ] && [ "$flavour" = "inference" ]; then
+  while IFS= read -r f; do
+    [ -n "$f" ] || continue
+    case "$f" in "$spec_path"|*"/$spec_path") spec_touched=1; break ;; esac
+  done <<< "$changed"
+fi
+
 # (c) a static spec document changed (projects that hand-maintain the YAML/JSON)
 if [ "$spec_touched" -eq 0 ]; then
   # A hand-maintained document counts only if it actually has content — an empty file named
@@ -164,9 +198,17 @@ if [ "$spec_touched" -eq 0 ]; then
     echo "groundwork openapi-gate: the API contract surface changed but the OpenAPI spec did not — not done yet."
     echo "Changed contract files:"
     printf '%s' "$touched" | sed 's/^/  /'
-    echo "Update the annotations for every touched endpoint — each response code the endpoint can return"
-    echo "(incl. 401/403/404/422), the request body from the FormRequest rules, and the response schema from"
-    echo "the JsonResource. See guidelines/openapi-protocol.md."
+    if [ "$flavour" = "inference" ]; then
+      echo "This project derives its document from the code (dedoc/scramble): regenerate it and commit the"
+      echo "result, so the contract moves with the change — e.g. 'artisan scramble:export --path=${spec_path}'."
+      echo "If the export produced no diff, the types the document is inferred from did not change; make the"
+      echo "contract explicit (typed request/resource) instead of leaving the endpoint undocumented."
+    else
+      echo "Update the annotations for every touched endpoint — each response code the endpoint can return"
+      echo "(incl. 401/403/404/422), the request body from the FormRequest rules, and the response schema from"
+      echo "the JsonResource."
+    fi
+    echo "See guidelines/openapi-protocol.md."
     echo "If this change provably does not touch the contract (pure internal refactor), record"
     echo "'- OpenAPI: n/a — <reason>' in .claude/groundwork/task-state.md. (disable with gates.openapi_on_stop=false)"
   } >&2
@@ -178,7 +220,14 @@ gen="$(jq -r '.commands.openapi_generate // empty' .groundwork.json 2>/dev/null 
 gen_overridden=1
 # Runner-aware default: on a `runner: host` project this resolves to a reachable host command,
 # so the "does the spec still generate cleanly?" half actually runs instead of silently skipping.
-[ -n "$gen" ] || { gen="$(gw_cmd artisan l5-swagger:generate)"; gen_overridden=0; }
+if [ -z "$gen" ]; then
+  if [ "$flavour" = "inference" ]; then
+    gen="$(gw_cmd artisan scramble:export --path="$spec_path")"
+  else
+    gen="$(gw_cmd artisan l5-swagger:generate)"
+  fi
+  gen_overridden=0
+fi
 
 # Environment problems must not block: skip when the runner is unavailable.
 # An explicit `commands.openapi_generate` override wins: only its own Sail dependency is checked.
