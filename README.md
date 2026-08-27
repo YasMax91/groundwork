@@ -87,7 +87,9 @@ companion plugins and per-project configuration are further down this file.
   the English so the two cannot drift.
 - **Estimates are measured, not felt** — the `estimate` skill answers "how long will this take?" from a
   ledger of **this machine's own agent time**. `estimate-ledger.sh` records the active minutes of every
-  finished task (idle gaps excluded, so a session you walked away from is not counted as work) and
+  finished task (idle gaps excluded, so a session you walked away from is not counted as work) — written
+  by a `Stop` hook the moment the checkpoint is closed with `Mode: Done`, once per task, rather than by
+  the agent remembering a command — and
   backfills a seed corpus from git history in seconds; an estimate quotes the median and the sample size
   it rests on. The unit is the agent's active minutes, human time is always a separate line with its
   owner, and an hour-sized number has to name the slow thing beside it — an external API to establish,
@@ -128,9 +130,27 @@ companion plugins and per-project configuration are further down this file.
   that ships without its annotations is not "done". Every operation is complete to the last detail —
   every reachable status code (success + 401/403/404/409/422), the request body derived from the
   FormRequest rules, the response schema derived from the JsonResource, enums from the real PHP enums —
-  and generation must be clean. The gate is fail-safe (silent without OpenAPI tooling) with a visible
-  escape hatch (`OpenAPI: n/a — <reason>` in the checkpoint). The `openapi-audit` skill repairs
-  pre-existing spec debt across a whole project.
+  and generation must be clean. **Two toolchains, judged differently**: annotation-driven
+  (`l5-swagger` / `swagger-php`) proves the contract moved when an annotation changed; inference-driven
+  (`dedoc/scramble`) has no annotations to look for, so the evidence is the exported document at
+  `openapi.spec_path` changing — and the block message names the export, never annotations the project
+  cannot have. `openapi.generator` (`annotation` | `inference`) overrides the detection. The gate is
+  fail-safe (silent without OpenAPI tooling) with a visible escape hatch (`OpenAPI: n/a — <reason>` in
+  the checkpoint). `final-check` additionally proves the document is *usable* — `openapi-typescript`
+  must consume it, since an unresolvable `$ref` generates cleanly and breaks every client generator.
+  The `openapi-audit` skill repairs pre-existing spec debt across a whole project.
+- **The frontend gets the contract, not a description of it** — `frontend-handoff` copies the generated
+  document to `ai/frontend/openapi/<date>-<slug>.yaml` and commits it, so the frontend generates types
+  from the contract and can serve it as a mock (`npx @stoplight/prism-cli mock <snapshot>`) before the
+  backend is deployed.
+- **What a finished task leaves behind** — at L2+ `final-check` writes `docs/specs/<slug>.receipt.md`
+  next to the spec, in three blocks that cannot be confused: **Measured** (commit SHA, the analyse and
+  suite exit codes, OpenAPI generation status, the ledger's active minutes — each copied from a
+  command's output, and a gate that did not run written as *not run*), **Claimed by the agent** (the
+  AC → status → `file:line` → covering-test table and the conformance verdict — a suite's aggregate exit
+  code cannot say which test closed which criterion), and **Reviewed by**, left empty for a person. The
+  file states in its own last line that an unsigned receipt is not a review. The same AC table goes into
+  the PR body.
 - **TDD** — `tdd-protocol`: test-first (red→green→refactor) for L2+ features and bug fixes; the test
   suite is a Stop gate. The layered split matches the standards — feature tests for the contract,
   unit tests for services/calculations/state transitions. Acceptance criteria are EARS statements with
@@ -151,6 +171,13 @@ companion plugins and per-project configuration are further down this file.
   when you want the orchestration without the gating. Every script returns its own counts — findings
   examined vs confirmed, seeds mapped vs failed, edges found vs verified — so the report carries a
   denominator instead of an unquantified list.
+- **The standards say what is enforced and what is not** — `laravel-standards` opens with the six rules
+  a hook actually holds (each row naming the hook file and its opt-out) and states plainly that the rest
+  of the page — thin controllers, logic in services, transactions, guarded transitions, money as
+  decimal, ULIDs at the edge — is an instruction nothing checks automatically, caught if at all by
+  `conformance-reviewer` and `risk-review`. It also carries the framework baseline: versions come from
+  `composer.lock`, and a project past its bug-fix window (Laravel 12 since 2026-08-13) hears about it
+  once per session from the `SessionStart` hook.
 - **Standards + gates** — `laravel-standards` + hooks: Pint on edit, static analysis and the test
   suite as done-gates, and a `PreToolUse` enforcement guard that denies host Laravel/PHP commands
   (use the runner) and edits to shipped migrations — opt-out per project. Every gate honors the declared

@@ -226,8 +226,10 @@ note stating who put it there** — the agent may propose it, the report shows w
 migration/deployment impact
 documented · **domain contract current** — the project's `AGENTS.md` reflects any entity, invariant,
 permission rule, integration, or term the change introduced · frontend handoff docs in `ai/frontend` created/updated when the change touches the
-frontend-facing surface (run the `frontend-handoff` skill after the gates are green) · final report
-covers changed behavior, files, verification, risks, skipped work.
+frontend-facing surface (run the `frontend-handoff` skill after the gates are green) · **task receipt
+written** — `docs/specs/<slug>.receipt.md`, measured facts (commit, gate exit codes, ledger minutes)
+kept in their own block, apart from what the agent claims about AC coverage, with the reviewer line
+left for a person · final report covers changed behavior, files, verification, risks, skipped work.
 
 After the final implementation and the frontend handoff, **ask whether to commit**; on yes, make a
 single-line commit with no AI attribution (the `frontend-handoff` skill drives this).

@@ -1,7 +1,7 @@
 ---
 name: adversarial-verifier
 description: Independently challenges a claim, finding, or implementation by trying to refute it against real code, official docs, and sandbox results. Use to verify "it works"/"it's done" claims before completion. Defaults to skeptical.
-tools: Read, Grep, Glob, Bash, WebFetch, WebSearch, mcp__laravel-boost, mcp__context7
+tools: Read, Grep, Glob, Bash, WebFetch, WebSearch, mcp__laravel-boost, mcp__context7, mcp__plugin_context7_context7
 effort: high
 ---
 

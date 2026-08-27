@@ -1,7 +1,7 @@
 ---
 name: grounded-researcher
 description: Researches external APIs, libraries, or documentation and returns grounded, cited findings. Use for documentation sweeps before designing an integration. Never guesses — every claim carries a source or is marked UNKNOWN.
-tools: Read, Grep, Glob, Bash, WebFetch, WebSearch, mcp__laravel-boost, mcp__context7
+tools: Read, Grep, Glob, Bash, WebFetch, WebSearch, mcp__laravel-boost, mcp__context7, mcp__plugin_context7_context7
 effort: high
 ---
 
