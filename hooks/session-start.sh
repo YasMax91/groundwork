@@ -30,6 +30,31 @@ add "Groundwork workflow active. Runner: ${runner}. DB engine: ${engine} — cod
 # expected to invoke the skill by hand.
 add "A task described in chat enters through the 'start-task' skill — no command needed from the user: classify, map the blast radius, interview for the decisions that are his, then plan. Interview depth is the clarify protocol's calibration, and from L2 up the first round offers the unbounded interview as a choice."
 
+# --- framework support window ---------------------------------------------------------------
+# A project past its bug-fix date still gets security patches and nothing else: a framework bug found
+# there will not be fixed upstream. Stated once per session, because it belongs in the discovery
+# interview and in the estimate, not in a surprise halfway through an unrelated task.
+#
+# Dates: laravel.com/docs/releases, checked 2026-08-27 (same table as guidelines/laravel-standards.md).
+# Only a KNOWN and PASSED date speaks; an unknown major, an unreadable lock file or a missing jq is
+# silence, never a guess. Refresh both places together.
+if [ -f composer.lock ] && command -v jq >/dev/null 2>&1; then
+  lv="$(jq -r '.packages[]? | select(.name=="laravel/framework") | .version' composer.lock 2>/dev/null | head -1 || true)"
+  [ -n "$lv" ] || lv="$(jq -r '.require."laravel/framework" // empty' composer.json 2>/dev/null || true)"
+  major="$(printf '%s' "$lv" | sed -E 's/^[^0-9]*([0-9]+).*/\1/')"
+  bugfix_end=''
+  case "$major" in
+    10) bugfix_end='2024-08-06' ;;
+    11) bugfix_end='2025-09-03' ;;
+    12) bugfix_end='2026-08-13' ;;
+    13) bugfix_end='2027-09-30' ;;   # "Q3 2027" — the conservative end of that quarter
+  esac
+  today="$(date -u +%Y-%m-%d 2>/dev/null || printf '')"
+  if [ -n "$bugfix_end" ] && [ -n "$today" ] && [ "$today" \> "$bugfix_end" ]; then
+    add "Laravel ${major} left its bug-fix window on ${bugfix_end} (security fixes only; laravel.com/docs/releases). Name it where it matters — discovery, estimates, a framework bug that will not be fixed upstream — and treat an upgrade as its own task, never as a side effect of another one."
+  fi
+fi
+
 # --- git state ---
 if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo '?')"

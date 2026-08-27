@@ -61,5 +61,24 @@ printf '# Task: x\n- Mode: Implementation\n' > "$d/.claude/groundwork/task-state
 if [ -z "$(ctx "$d")" ]; then pass=$((pass+1)); printf '  ok   %-34s\n' "session_context=false opts out"
 else fail=$((fail+1)); printf '  FAIL %-34s expected no output\n' "session_context=false opts out"; fi
 
+# --- wave 27: the framework support window ------------------------------------------------------
+lock() { # dir version
+  mkdir -p "$1"; printf '{ "runner": "sail" }\n' > "$1/.groundwork.json"
+  printf '{"packages":[{"name":"laravel/framework","version":"%s"}]}\n' "$2" > "$1/composer.lock"
+}
+d="$ROOT/eol12"; lock "$d" "v12.31.1"
+has   "L12 is past bug fixes"        "$d" "left its bug-fix window on 2026-08-13"
+d="$ROOT/eol13"; lock "$d" "v13.2.0"
+hasnt "L13 is current, no notice"    "$d" "bug-fix window"
+d="$ROOT/eol-unknown"; lock "$d" "v99.0.0"
+hasnt "unknown major stays silent"   "$d" "bug-fix window"
+d="$ROOT/eol-nolock"; mkdir -p "$d"; printf '{ "runner": "sail" }\n' > "$d/.groundwork.json"
+hasnt "no composer.lock, no guess"   "$d" "bug-fix window"
+d="$ROOT/eol-broken"; mkdir -p "$d"; printf '{ "runner": "sail" }\n' > "$d/.groundwork.json"
+printf 'not json at all\n' > "$d/composer.lock"
+hasnt "unreadable lock stays silent" "$d" "bug-fix window"
+valid_json "output stays valid JSON" "$d"
+
+
 printf '\n  passed: %d, failed: %d\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]

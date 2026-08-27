@@ -1,5 +1,5 @@
 ---
-description: Deep, multi-agent risk review — find risks across every dimension, then adversarially verify each finding before reporting. Use ONLY for L3/L4 diffs, by explicit invocation; drives a Workflow (~15× tokens). Escalates risk-review.
+description: Deep, multi-agent risk review — find risks across every dimension, then adversarially verify each finding before reporting. Use ONLY for L3/L4 diffs, by deliberate escalation from `risk-review` or by the user; drives a Workflow (~15× tokens). Escalates risk-review.
 effort: high
 ---
 

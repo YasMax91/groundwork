@@ -22,6 +22,26 @@ caught, if at all, by review: `agents/conformance-reviewer.md` against the spec'
 and `skills/risk-review`. A rule worth following is worth writing down; claiming a gate it does not have
 is the failure this plugin exists to prevent (`guidelines/ai-sdd-process.md`).
 
+## Framework baseline
+
+**Resolve the versions from the project, never from memory.** `composer.lock` is the authority for what
+is actually installed (`laravel/framework`, `php`), and Boost `application-info` reports it directly.
+Confirm version-specific APIs with Boost `search-docs` against that version.
+
+Support policy, verbatim from [laravel.com/docs/releases](https://laravel.com/docs/releases), checked
+**2026-08-27** — re-read it rather than trusting this copy if the date is far behind:
+
+| Version | PHP | Released | Bug fixes until | Security fixes until |
+|---|---|---|---|---|
+| 11 | 8.2 – 8.4 | 2024-03-12 | 2025-09-03 | **2026-03-12 — ended** |
+| 12 | 8.2 – 8.5 | 2025-02-24 | **2026-08-13 — ended** | 2027-02-24 |
+| 13 | 8.3 – 8.5 | 2026-03-17 | Q3 2027 | 2028-03-17 |
+
+A project outside the bug-fix window still receives security patches until the later date, and nothing
+else: a framework bug found there will not be fixed upstream. That is a fact for the discovery
+interview and a task of its own — never a silent decision taken inside an unrelated change. The
+`SessionStart` hook states it once per session for a project in that position.
+
 ## Architecture
 
 - **Thin controllers**: validated input → service call → resource response → HTTP status. No domain

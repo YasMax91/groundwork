@@ -1,5 +1,5 @@
 ---
-description: Deep, multi-agent grounding of an external API — fan out cited readers across the docs, build a capability matrix, then an adversarial panel verifies every row. Use ONLY for L3/L4 integrations, by explicit invocation; it drives a Workflow (~15× tokens). Escalates ground-integration.
+description: Deep, multi-agent grounding of an external API — fan out cited readers across the docs, build a capability matrix, then an adversarial panel verifies every row. Use ONLY for L3/L4 integrations, by deliberate escalation from `ground-integration` or by the user; it drives a Workflow (~15× tokens). Escalates ground-integration.
 effort: high
 ---
 

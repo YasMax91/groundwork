@@ -1,5 +1,5 @@
 ---
-description: Deep, multi-agent blast-radius discovery — fan out impact-mapper across every seed in parallel, dedup into one map, verify dynamic edges. Use ONLY for L3/L4 changes touching many seeds, by explicit invocation; drives a Workflow (~15× tokens). Escalates start-task discovery.
+description: Deep, multi-agent blast-radius discovery — fan out impact-mapper across every seed in parallel, dedup into one map, verify dynamic edges. Use ONLY for L3/L4 changes touching many seeds, by deliberate escalation from `start-task` discovery or by the user; drives a Workflow (~15× tokens). Escalates start-task discovery.
 effort: high
 ---
 
