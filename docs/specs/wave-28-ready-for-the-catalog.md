@@ -46,9 +46,29 @@ log, not a red build.
 | AC4 | The naming decision rests on a measurement, not a report | met — exact-name collision confirmed by parsing the catalog file |
 | AC5 | Submission completed | **open — human step.** The form is filled in by a person; nothing here submits |
 
-## Open — human steps
+## Open — the one step an agent cannot take
 
-1. Submit under `groundwork-laravel` (the form is at the platform's plugin-submission page).
-2. Wait for review and the catalog's sync before expecting the entry to appear in `/plugin > Discover`.
-3. UNKNOWN, unchanged: whether a plugin shipping 15 shell hooks with a `PreToolUse` deny passes the
-   catalog's safety screening. No precedent was found either way.
+Both submission forms were opened and checked on 2026-08-27:
+
+- **claude.ai** (`/admin-settings/directory/submissions/plugins/new`) answers "You don't have access to
+  organization settings — available on Claude Team and Enterprise plans". Closed for an individual author.
+- **Console** (`platform.claude.com/plugins/submit`) shows a sign-in screen. Authenticating is not
+  something an agent does on someone's behalf, so the form is the author's step, by design and not by
+  omission.
+
+Everything the form asks for is settled, so submitting is copy-and-paste:
+
+| Field | Value |
+|---|---|
+| Repository | `https://github.com/YasMax91/groundwork` |
+| Commit at submission | `5c77619` on `main` (approved plugins are pinned to a SHA; CI bumps the pin on later pushes) |
+| Manifest name | `groundwork` — the catalog entry goes in as **`groundwork-laravel`**, because an exact-name entry `groundwork` already exists (`github.com/etr/groundwork`), verified against the 2282-entry catalog file |
+| Description | `Spec-driven workflow for Laravel backends: grounded discovery and specs before code, an anti-hallucination protocol for external integrations, and hooks that hold the runner, formatting, static analysis, tests and the OpenAPI document.` |
+| Category | `development` |
+| License / homepage | MIT / the repository |
+| Local validation | `claude plugin validate .` → `✔ Validation passed`, `--strict` included |
+| CI | `hooks` workflow green on `ubuntu-latest` and `macos-latest`, 313 cases each |
+
+After approval: the catalog syncs nightly, so an entry does not appear in `/plugin > Discover`
+immediately. UNKNOWN, unchanged: whether a plugin shipping 15 shell hooks with a `PreToolUse` deny
+passes the automated safety screening. No precedent was found either way.
