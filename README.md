@@ -156,7 +156,7 @@ companion plugins and per-project configuration are further down this file.
   (use the runner) and edits to shipped migrations — opt-out per project. Every gate honors the declared
   `runner`: a `runner: host` project runs host commands and is never denied them, and a command that
   cannot run at all (missing binary, undefined script) is reported as an environment problem rather than a
-  red. All hooks are covered by tests — `bash hooks/tests/all.sh` (127 cases, 7 suites).
+  red. All hooks are covered by tests — `bash hooks/tests/all.sh` (286 cases, 15 suites), run on every push by `.github/workflows/ci.yml`.
 - **A gate that did not run says so** — the hooks' skip paths (runner unavailable, test DB busy, generator
   unreachable) exit with a *visible* non-blocking notice instead of a silent success, because a message on
   a zero exit goes to the debug log and reaches nobody. And committing no longer disarms them: the gates

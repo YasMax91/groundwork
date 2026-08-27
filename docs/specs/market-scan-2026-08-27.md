@@ -1,6 +1,9 @@
 # Groundwork — market scan and roadmap (2026-08-27)
 
-Status: **research, nothing implemented**. This document is the decision surface for the next nine waves.
+Status: **E26–E29 implemented** as waves 19–22 (v0.29.0–v0.32.0, 2026-08-27) — see
+[wave-19](wave-19-the-guard-reads-its-input.md), [wave-20](wave-20-standards-stop-overpromising.md),
+[wave-21](wave-21-two-production-defects.md), [wave-22](wave-22-hook-tests-run-themselves.md).
+**E30–E34 are open**; the sequencing below is unchanged, and the cut line has been reached.
 Author: Max Yastremskyi (YasMax91).
 Continues [modernization-research-2026-08.md](modernization-research-2026-08.md) (E10–E25, of which E10,
 E11, E13, E14 shipped in waves 15–18). Item numbering continues that series: **E26–E34**.

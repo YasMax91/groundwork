@@ -12,7 +12,10 @@ v0.24.0 the denominator rule + the warn-only coverage-claim gate + the closing c
 behaviour proven by tests, prose structural. The research sweep behind the remaining backlog is
 [modernization-research-2026-08.md](modernization-research-2026-08.md). The 2026-08-27 market scan
 that continues that series (items E26–E34, waves 19–27) is
-[market-scan-2026-08-27.md](market-scan-2026-08-27.md).
+[market-scan-2026-08-27.md](market-scan-2026-08-27.md). **Waves 19–22** (market scan, 2026-08-27) —
+v0.29.0 the access hook reads its own input · v0.30.0 the standards stop claiming a gate they do not
+have · v0.31.0 afterCommit and webhook redelivery · v0.32.0 the hook suites run in CI; hook behaviour
+proven by tests (286 cases, 15 suites), prose structural.
 Author: Max Yastremskyi (YasMax91)
 
 A prioritized, grounded backlog of improvements to the `groundwork` plugin. The current
