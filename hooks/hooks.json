@@ -103,6 +103,11 @@
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/hooks/estimate-claim.sh",
             "statusMessage": "Groundwork: checking the estimate…"
+          },
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/ledger-record.sh",
+            "statusMessage": "Groundwork: recording what the task took…"
           }
         ]
       }

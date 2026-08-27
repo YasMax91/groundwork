@@ -55,6 +55,7 @@ runs "format-on-edit"  "format-on-edit.sh"  "{\"tool_input\":{\"file_path\":\"$d
 runs "pre-tool-guard"  "pre-tool-guard.sh"  '{"tool_name":"Bash","tool_input":{"command":"ls -la"}}'
 runs "trim-output"     "trim-output.sh"     '{"tool_name":"Bash","tool_input":{"command":"sail artisan test"},"tool_response":"Tests: 2 passed"}'
 runs "pre-compact"     "pre-compact.sh"     '{"trigger":"manual"}'
+runs "ledger-record"   "ledger-record.sh"   '{"hook_event_name":"Stop"}'
 
 # The guard must still enforce its rules from the fallback: host php stays denied under runner:sail.
 mkdir -p "$d/vendor/bin"; printf '#!/bin/sh\nexit 0\n' > "$d/vendor/bin/sail"; chmod +x "$d/vendor/bin/sail"

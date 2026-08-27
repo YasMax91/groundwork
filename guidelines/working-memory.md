@@ -23,7 +23,13 @@ Keep it **terse** — it is re-injected every session, so every line costs. **Cl
 ships**: set `Mode: Done — <what shipped>`, and the `SessionStart` hook stops injecting the body and
 leaves a one-line pointer instead (measured: ~1100 tokens down to ~180 on every session in that
 project). Any of the five working modes keeps the full injection, because a task you are still in is
-exactly what the checkpoint exists to restore. Template:
+exactly what the checkpoint exists to restore.
+
+`Done` is a **terminal marker, not a sixth working mode**: it is deliberately outside the canon in
+`hooks/lib.sh`, which is what makes a finished checkpoint yield no active mode. Two things key on it —
+`SessionStart` stops injecting the body, and the `Stop` hook `hooks/ledger-record.sh` writes this task's
+row to the estimate ledger, once (the dedup key is the task title plus `Started:`, kept in
+`.claude/groundwork/ledger-recorded`). A task never marked `Done` is never measured. Template:
 
 ```markdown
 # Task: <short title>

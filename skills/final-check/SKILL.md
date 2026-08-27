@@ -103,19 +103,41 @@ stated gap. Skip for L0/L1.
 
 ## Record what it actually took
 
-After the gates are green and before the handoff summary, close the measurement window:
+Close the measurement window by closing the task: set `Mode: Done — <what shipped>` in
+`.claude/groundwork/task-state.md`. The `Stop` hook `hooks/ledger-record.sh` sees the terminal marker and
+appends this task's row — active minutes measured from the session transcript, plus level, kind and
+slug — once per task (dedup key: the task title plus `Started:`). Durations and identifiers only; no
+transcript content is written.
+
+A checkpoint with no `Started:` records nothing and says so on stderr. That is a lost measurement, not
+something to fix by inventing a start time.
+
+If a session ends without the marker and the row is missing, record it by hand — this path does not
+dedup, so run it only when `--report` shows the row is absent:
 
 ```bash
 ${CLAUDE_PLUGIN_ROOT}/hooks/estimate-ledger.sh --record --kind=<one word> --promised=<minutes, if one was given>
 ```
 
-It reads `Started:` from the checkpoint, measures the agent's active minutes from this session's
-transcript, and appends one row to the ledger every later estimate is calibrated against. Durations and
-identifiers only — no transcript content is written. A checkpoint without `Started:` records nothing and
-says so; that is a lost measurement, not an error to work around by inventing a start time.
-
 Skip at L0. Everything from L1 up is worth a row: the corpus is what stops the next estimate from being
 an opinion.
+
+## Task receipt (L2+)
+
+Write `docs/specs/<slug>.receipt.md` next to the spec, from
+`${CLAUDE_SKILL_DIR}/../../templates/specs/receipt.md`. It is committed with the work, so it is a file
+the client can open — which is exactly why its two blocks must not blur into one:
+
+- **Measured** — commit SHA, the analyse exit code, the suite exit code, the OpenAPI generation status,
+  and the active minutes from the ledger. Copy each from the command's own output. A gate that did not
+  run is written as *not run*, never left blank and never assumed to have passed.
+- **Claimed by the agent** — the AC → status → `file:line` → covering-test table from the
+  conformance-reviewer, its verdict, and what stayed uncovered. This block is a claim, and its heading
+  says so: the suite's aggregate exit code cannot tell anyone which test closed which criterion.
+- **Reviewed by** — a name and a date, left empty for a person to fill in. An unsigned receipt records
+  what an agent did; it does not turn that into a review.
+
+Skip at L0/L1: a receipt for a one-line fix is ceremony.
 
 ## Handoff summary
 
@@ -169,7 +191,9 @@ files read, no "Conclusion" section, and a failure written in the same plain voi
 
 **When the work goes out as a pull request**, its body is this summary — behavior change, what was
 verified with the observed result, risks, what stayed unverified — not a fresh description written
-from the diff. It comes after the commit (the `frontend-handoff` step below asks for that) and needs
+from the diff. At **L2+** it also carries the receipt's AC table (one row per acceptance-criterion ID:
+status, evidence, covering test), so a reviewer sees the coverage without opening the transcript; an AC
+with no row is a gap in the review, not a formatting detail. It comes after the commit (the `frontend-handoff` step below asks for that) and needs
 its own explicit yes before `gh pr create`; a reviewer reading an invented summary reviews the wrong
 change.
 

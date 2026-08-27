@@ -152,6 +152,56 @@ cat "$ROOT/l1.tsv" | tail -1 | sed 's/\tproj-a\t/\trepo-x\t/' >> "$GW_LEDGER"
 rep="$( cd "$R/repo-x" && bash "$BIN" --report 2>&1 )"
 has "AC6 small task sample flagged" "small sample" "$rep"
 
+# --- wave 24: the engine records the row, once, when the checkpoint says the task shipped ---------
+# A fresh project so the marker file and the checkpoint belong to this case alone.
+D="$ROOT/proj-done"; project "$D"
+DT="$GW_PROJECTS_DIR/$(key "$D")"
+D0=$(( $(date +%s) - 3*86400 ))
+transcript "$DT/s1.jsonl" "$D0" 10 30 >/dev/null
+DSTARTED="$(date -u -r "$D0" +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -d "@$D0" +%Y-%m-%dT%H:%M:%SZ)"
+export GW_LEDGER="$ROOT/l9.tsv"
+
+rows() { [ -f "$GW_LEDGER" ] && grep -c '	task	' "$GW_LEDGER" 2>/dev/null || printf '0'; }
+state() { printf '# Task: Ship the receipt\n- Mode: %s\n- Level: L2\n- Started: %s\n' "$1" "$DSTARTED" \
+  > "$D/.claude/groundwork/task-state.md"; }
+
+state "Implementation"
+( cd "$D" && bash "$BIN" --record-if-done >/dev/null 2>&1 )
+eq "W24 unfinished task, no row" "0" "$(rows)"
+
+state "Done — shipped the receipt"
+( cd "$D" && bash "$BIN" --record-if-done >/dev/null 2>&1 )
+eq "W24 done records once"       "1" "$(rows)"
+
+( cd "$D" && bash "$BIN" --record-if-done >/dev/null 2>&1 )
+( cd "$D" && bash "$BIN" --record-if-done >/dev/null 2>&1 )
+eq "W24 never twice"             "1" "$(rows)"
+
+# The terminal marker is written in several shapes by hand; all of them mean the same thing.
+printf '# Task: Ship the receipt\n- Mode: **DONE** — committed\n- Level: L2\n- Started: %s\n' "$DSTARTED" \
+  > "$D/.claude/groundwork/task-state.md"
+rm -f "$D/.claude/groundwork/ledger-recorded"
+export GW_LEDGER="$ROOT/l10.tsv"
+( cd "$D" && bash "$BIN" --record-if-done >/dev/null 2>&1 )
+eq "W24 emphasised DONE counts"  "1" "$(rows)"
+
+# A new task with the same title is a new key, so its row is not swallowed by the old marker.
+D1=$(( $(date +%s) - 2*86400 ))
+transcript "$DT/s2.jsonl" "$D1" 10 30 >/dev/null
+D1STARTED="$(date -u -r "$D1" +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -d "@$D1" +%Y-%m-%dT%H:%M:%SZ)"
+printf '# Task: Ship the receipt\n- Mode: Done\n- Level: L2\n- Started: %s\n' "$D1STARTED" \
+  > "$D/.claude/groundwork/task-state.md"
+( cd "$D" && bash "$BIN" --record-if-done >/dev/null 2>&1 )
+eq "W24 second task, own row"    "2" "$(rows)"
+
+# The opt-out and the fail-safe paths stay exactly as they are for every other mode.
+printf '{ "runner": "host", "estimates": { "ledger": false } }\n' > "$D/.groundwork.json"
+rm -f "$D/.claude/groundwork/ledger-recorded"
+export GW_LEDGER="$ROOT/l11.tsv"
+( cd "$D" && bash "$BIN" --record-if-done >/dev/null 2>&1 )
+eq "W24 estimates.ledger=false"  "0" "$(rows)"
+
 echo
+
 echo "  passed: $pass, failed: $fail"
 [ "$fail" -eq 0 ]

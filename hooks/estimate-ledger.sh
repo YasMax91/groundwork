@@ -147,7 +147,36 @@ mode_record() { # promised_min kind_override
   [ -n "$active" ] || { printf 'groundwork: no transcript events in the task window — nothing recorded.\n' >&2; return 0; }
 
   append_row "${level:-unknown}" "${kind:-unknown}" "${slug:-unknown}" "$active" "$calendar" "${1:-}" "task" "$BRANCH"
+  GW_RECORDED=1
   printf 'groundwork: recorded %s active min (calendar %s) for %s.\n' "$active" "$calendar" "${slug:-unknown}" >&2
+}
+
+# The engine's own path: record when the checkpoint says the task shipped, and never twice.
+#
+# `Done` is deliberately NOT in the mode canon (hooks/lib.sh) — hooks/session-start.sh relies on a
+# finished checkpoint yielding no canonical mode, which is what stops it re-injecting a shipped task
+# every session. So the terminal marker is matched here, on its own, rather than by widening the canon.
+mode_record_if_done() {
+  local state=".claude/groundwork/task-state.md"
+  [ -f "$state" ] || return 0
+
+  local mode; mode="$(state_field "$state" 'Mode' | awk -F'|' '{print $1}' | awk '{print $1}' \
+    | tr '[:upper:]' '[:lower:]')"
+  [ "$mode" = "done" ] || return 0
+
+  # The key is the task, not the file: a second task with the same title still gets its own row.
+  local started slug key marker
+  started="$(state_field "$state" 'Started')"
+  [ -n "$started" ] || return 0
+  slug="$(slugify "$(state_field "$state" 'Task')")"
+  key="${slug:-unknown}@${started}"
+  marker=".claude/groundwork/ledger-recorded"
+  [ -f "$marker" ] && grep -Fqx "$key" "$marker" 2>/dev/null && return 0
+
+  GW_RECORDED=0
+  mode_record "" ""
+  [ "$GW_RECORDED" = "1" ] || return 0     # nothing was written -> nothing to remember
+  printf '%s\n' "$key" >> "$marker" 2>/dev/null || true
 }
 
 mode_report() { # kind_filter level_filter
@@ -278,13 +307,14 @@ MODE=''; PROMISED=''; KIND=''; LEVEL=''; ROOT=''
 for arg in "$@"; do
   case "$arg" in
     --record|--report|--backfill) MODE="${arg#--}" ;;
+    --record-if-done) MODE='record-if-done' ;;
     --promised=*) PROMISED="${arg#*=}" ;;
     --kind=*)     KIND="${arg#*=}" ;;
     --level=*)    LEVEL="${arg#*=}" ;;
     --root=*)     ROOT="${arg#*=}" ;;
   esac
 done
-[ -n "$MODE" ] || { printf 'usage: estimate-ledger.sh --record|--report|--backfill [--kind=k] [--level=L] [--promised=min] [--root=dir]\n' >&2; exit 0; }
+[ -n "$MODE" ] || { printf 'usage: estimate-ledger.sh --record|--record-if-done|--report|--backfill [--kind=k] [--level=L] [--promised=min] [--root=dir]\n' >&2; exit 0; }
 
 # Inert outside a Groundwork project and under the opt-out — the contract every hook here honours.
 [ -f .groundwork.json ] || exit 0
@@ -301,9 +331,12 @@ PROJECT_NAME="$(basename "$(printf '%s' "$PROJECT_ABS" | sed -E 's#--claude-work
 TRANSCRIPT_DIRS="$(gw_transcript_dirs "$PROJECT_KEY" | tr '\n' ' ')"
 BRANCH="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || printf '')"
 
+GW_RECORDED=0
+
 case "$MODE" in
-  record)   mode_record "$PROMISED" "$KIND" ;;
-  report)   mode_report "$KIND" "$LEVEL" ;;
-  backfill) mode_backfill "$ROOT" ;;
+  record)         mode_record "$PROMISED" "$KIND" ;;
+  record-if-done) mode_record_if_done ;;
+  report)         mode_report "$KIND" "$LEVEL" ;;
+  backfill)       mode_backfill "$ROOT" ;;
 esac
 exit 0

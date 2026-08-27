@@ -12,6 +12,11 @@
 # behave exactly as it did before this library existed.
 
 # Canonical operating modes (guidelines/working-memory.md). Anything else is not a mode.
+#
+# `Done` is deliberately absent. It is a terminal marker, not a working mode, and two behaviours
+# depend on it yielding nothing here: hooks/session-start.sh stops injecting a finished checkpoint's
+# body (v0.19.1), and hooks/pre-tool-guard.sh's discovery lock keys on an active mode only. The
+# terminal marker is matched where it is actually needed — hooks/estimate-ledger.sh --record-if-done.
 GW_MODES='Discovery Spec Plan Implementation Review'
 
 # The configured runner: `sail` (default) or `host`.
