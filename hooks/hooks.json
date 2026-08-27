@@ -98,6 +98,11 @@
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/hooks/coverage-claim.sh",
             "statusMessage": "Groundwork: checking the coverage claim…"
+          },
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/estimate-claim.sh",
+            "statusMessage": "Groundwork: checking the estimate…"
           }
         ]
       }
