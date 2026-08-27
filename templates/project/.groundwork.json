@@ -31,6 +31,9 @@
     "checkpoint": true,
     "impact_cache": true
   },
+  "openapi": {
+    "spec_path": "storage/api-docs/api-docs.json"
+  },
   "docs": {
     "frontend": "ai/frontend"
   },

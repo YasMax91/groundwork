@@ -57,6 +57,20 @@ docs — then go straight to the commit step.
    then degrades from a prohibition into a flagged assumption. Saying nothing about it is the only
    forbidden option: an unmarked invented example is precisely the failure this package exists to prevent.
 
+4. **Contract snapshot** — `ai/frontend/openapi/<YYYY-MM-DD>-<slug>.yaml|json`, the generated OpenAPI
+   document as it stands at handoff, copied from the project's `openapi.spec_path` (`.groundwork.json`)
+   after the generator has run. It is **committed with the work**: the frontend types against it, and a
+   later contract diff needs a base that exists in git. Prose describes the change; this file *is* the
+   contract, and the frontend can serve it as a mock before the backend is deployed:
+
+   ```bash
+   npx -y @stoplight/prism-cli mock ai/frontend/openapi/<YYYY-MM-DD>-<slug>.yaml
+   ```
+
+   A project that documents no API (`openapi.enabled: false`, or no generator) skips this and says so
+   in the handoff doc — the absence is stated, not silent. Without node on the machine, the snapshot is
+   still committed and the mock line is marked as untried.
+
 ## Steps
 
 1. Document the **final** contract, not an intermediate one.
@@ -70,12 +84,16 @@ docs — then go straight to the commit step.
    must account for or the UI breaks — async states (a request that returns before the work is done),
    empty/error/loading states, ordering/idempotency of calls, visibility rules. Flag them proactively
    (per the blind-spot protocol); do not just document the happy-path contract.
-5. Create or update the **runnable request package** for the touched endpoints (doc type 3) with the
+5. Copy the **contract snapshot** (doc type 4) from `openapi.spec_path` into `ai/frontend/openapi/`,
+   dated and slugged, and link it from the handoff doc's header together with the mock command. If the
+   generator did not run in this task, run it first — a snapshot older than the code is a contract that
+   lies.
+6. Create or update the **runnable request package** for the touched endpoints (doc type 3) with the
    examples captured in the live run. **Reachability rule:** document a field or value only if real
    data can produce it end-to-end — a shape the backend cannot actually populate is not a contract; if
    the live run could not produce it, it is not documented as available.
-6. Post a one-line pointer in chat (Russian) telling the user which docs were created/updated.
-7. Run the commit step.
+7. Post a one-line pointer in chat (Russian) telling the user which docs were created/updated.
+8. Run the commit step.
 
 ## Commit step
 

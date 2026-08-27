@@ -5,6 +5,9 @@
 > Справочные доки: `ai/frontend/<area>.md`. Связанный spec: `docs/specs/<file>.md`.
 > Готовые запросы (можно запускать): `ai/frontend/<area>.postman_collection.json` | `ai/frontend/<area>.http`
 > — метод, URL, авторизация, тело по правилам валидации и реальные примеры ответов.
+> Контракт (OpenAPI, машиночитаемый): `ai/frontend/openapi/<YYYY-MM-DD>-<slug>.yaml` — типы генерируйте
+> из него, не из этого текста. Мок до деплоя: `npx -y @stoplight/prism-cli mock ai/frontend/openapi/<YYYY-MM-DD>-<slug>.yaml`
+> (если снимка нет — здесь сказано почему).
 
 ## Зачем это (одним абзацем)
 <что меняется для пользователя и почему>
