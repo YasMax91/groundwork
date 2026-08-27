@@ -24,10 +24,67 @@ command -v gw_mode         >/dev/null 2>&1 || gw_mode() {
     | head -1 | sed -E 's/^[^:]*:[[:space:]]*//' | awk -F'|' '{print $1}' | awk '{print $1}'
 }
 
+# --- JSON access -------------------------------------------------------------------------------
+# This hook's rules are worth nothing if it cannot read its own input. `jq` is the normal path;
+# `python3` (already a dependency of hooks/estimate-ledger.sh, so nothing new is required) is the
+# fallback, so a machine without jq keeps the runner lock and the shipped-migration lock. With
+# neither parser the hook says so on stderr instead of exiting quietly — see the project gate below.
+GW_PARSER=''
+if command -v jq >/dev/null 2>&1; then
+  GW_PARSER='jq'
+elif command -v python3 >/dev/null 2>&1; then
+  GW_PARSER='python3'
+fi
+
+# gw_get <json> <dotted.path> [more paths…] -> the first non-empty scalar, or nothing.
+gw_get() {
+  local json="$1"; shift
+  [ -n "$json" ] || return 0
+  local p v
+  case "$GW_PARSER" in
+    jq)
+      for p in "$@"; do
+        # `// empty` cannot be used here: jq's alternative operator also fires on a literal
+        # `false`, which would turn `gates.enforce_runner: false` into an empty answer and
+        # switch a deliberately disabled gate back on.
+        v="$(printf '%s' "$json" | jq -r ".${p}" 2>/dev/null || true)"
+        [ "$v" = "null" ] && v=''
+        [ -n "$v" ] && { printf '%s' "$v"; return 0; }
+      done
+      ;;
+    python3)
+      printf '%s' "$json" | python3 -c '
+import json, sys
+try:
+    doc = json.load(sys.stdin)
+except Exception:
+    sys.exit(0)
+for path in sys.argv[1:]:
+    node = doc
+    for key in path.split("."):
+        if isinstance(node, dict) and key in node:
+            node = node[key]
+        else:
+            node = None
+            break
+    if node is None or isinstance(node, (dict, list)):
+        continue
+    text = node if isinstance(node, str) else ("true" if node is True else "false" if node is False else str(node))
+    if text:
+        sys.stdout.write(text)
+        break
+' "$@" 2>/dev/null || true
+      ;;
+  esac
+}
+
+# gw_conf <dotted.path> -> the value from .groundwork.json, or nothing.
+gw_conf() { gw_get "$(cat .groundwork.json 2>/dev/null || true)" "$1"; }
+
 input="$(cat 2>/dev/null || true)"
 [ -n "$input" ] || exit 0
 
-tool="$(printf '%s' "$input" | jq -r '.tool_name // empty' 2>/dev/null || true)"
+tool="$(gw_get "$input" 'tool_name')"
 
 deny() { # $1 = reason -> stderr, then block
   printf 'groundwork pre-tool-guard: %s\n' "$1" >&2
@@ -45,7 +102,7 @@ deny() { # $1 = reason -> stderr, then block
 # in exactly those projects.
 case "$tool" in
   Edit|Write)
-    memory="$(printf '%s' "$input" | jq -r '.tool_input.file_path // .tool_input.path // empty' 2>/dev/null || true)"
+    memory="$(gw_get "$input" 'tool_input.file_path' 'tool_input.path')"
     case "$memory" in
       */.claude/groundwork/*|.claude/groundwork/*)
         printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow","permissionDecisionReason":"groundwork workflow memory (checkpoint / impact cache) — written by the plugin itself"}}\n'
@@ -57,16 +114,23 @@ esac
 # Only enforce in a Groundwork-initialized project; never touch a non-Groundwork repo.
 [ -f .groundwork.json ] || exit 0
 
+# A gate that cannot read its input has verified nothing (guidelines/ai-sdd-process.md) — so say it
+# on stderr rather than exiting in silence, which is what this hook did before.
+if [ -z "$GW_PARSER" ]; then
+  printf 'groundwork pre-tool-guard: no jq and no python3 on PATH — the runner lock and the shipped-migration lock did NOT run.\n' >&2
+  exit 0
+fi
+
 case "$tool" in
   Bash)
     # (a) Runner enforcement.
-    [ "$(jq -r '.gates.enforce_runner' .groundwork.json 2>/dev/null)" = "false" ] && exit 0
+    [ "$(gw_conf 'gates.enforce_runner')" = "false" ] && exit 0
 
     # A project that declares `runner: host` runs Laravel/PHP on the host by design —
     # there is nothing to enforce, so this branch is a no-op there.
     [ "$(gw_runner)" = "host" ] && exit 0
 
-    cmd="$(printf '%s' "$input" | jq -r '.tool_input.command // empty' 2>/dev/null || true)"
+    cmd="$(gw_get "$input" 'tool_input.command')"
     [ -n "$cmd" ] || exit 0
 
     # Bootstrap fail-open: if the runner isn't installed yet (fresh clone before
@@ -98,13 +162,13 @@ case "$tool" in
     ;;
 
   Edit|Write)
-    path="$(printf '%s' "$input" | jq -r '.tool_input.file_path // .tool_input.path // empty' 2>/dev/null || true)"
+    path="$(gw_get "$input" 'tool_input.file_path' 'tool_input.path')"
     [ -n "$path" ] || exit 0
 
     # (Workflow-memory paths already returned `allow` above, before the .groundwork.json gate.)
 
     # (b) Shipped-migration lock: deny edits to a git-tracked migration.
-    if [ "$(jq -r '.gates.lock_shipped_migrations' .groundwork.json 2>/dev/null)" != "false" ]; then
+    if [ "$(gw_conf 'gates.lock_shipped_migrations')" != "false" ]; then
       case "$path" in
         *database/migrations/*)
           if git rev-parse --is-inside-work-tree >/dev/null 2>&1 \
@@ -116,7 +180,7 @@ case "$tool" in
     fi
 
     # (c) Discovery edit-lock (OFF by default): no app-code edits while planning.
-    if [ "$(jq -r '.gates.lock_edits_in_discovery' .groundwork.json 2>/dev/null)" = "true" ]; then
+    if [ "$(gw_conf 'gates.lock_edits_in_discovery')" = "true" ]; then
       state=".claude/groundwork/task-state.md"
       if [ -f "$state" ]; then
         # Canonical modes only — a non-canonical value yields nothing, so the lock fails open

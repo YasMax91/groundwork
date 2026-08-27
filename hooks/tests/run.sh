@@ -131,6 +131,56 @@ expect "W11 emphasised mode locks" 2 "$d" "{\"tool_name\":\"Edit\",\"tool_input\
 printf '# Task: x\n- Mode: **COMMITTED**\n' > "$d/.claude/groundwork/task-state.md"
 expect "W11 garbage mode opens"    0 "$d" "{\"tool_name\":\"Edit\",\"tool_input\":{\"file_path\":\"$d/app/Service.php\"}}"
 
+# --- W19: the guard no longer switches itself off when `jq` is missing ---------------------------
+# A PATH holding every tool the guard uses EXCEPT jq (and a second one without python3 either).
+mkbin() { # $1 = dir, $2… = tools to link
+  local dir="$1"; shift; mkdir -p "$dir"; local t src
+  for t in "$@"; do src="$(command -v "$t" 2>/dev/null)" && ln -sf "$src" "$dir/$t"; done
+}
+BASE_TOOLS="bash sh cat sed awk tr grep git dirname mktemp rm mkdir chmod ls uname env"
+# shellcheck disable=SC2086
+mkbin "$ROOT/bin-nojq" $BASE_TOOLS python3
+# shellcheck disable=SC2086
+mkbin "$ROOT/bin-noparser" $BASE_TOOLS
+
+# expect_path <name> <expected-exit> <bin-dir> <fixture-dir> <json-stdin>
+expect_path() {
+  local name="$1" want="$2" bin="$3" dir="$4" json="$5" got
+  ( cd "$dir" && printf '%s' "$json" | PATH="$bin" bash "$GUARD" >/dev/null 2>&1 )
+  got=$?
+  if [ "$got" = "$want" ]; then
+    pass=$((pass+1)); printf '  ok   %-22s (exit %s)\n' "$name" "$got"
+  else
+    fail=$((fail+1)); printf '  FAIL %-22s (want %s, got %s)\n' "$name" "$want" "$got"
+  fi
+}
+
+d="$ROOT/w19"; mkdir -p "$d"; sdd "$d" true true false; fake_sail "$d"
+expect_path "W19 nojq runner_deny"  2 "$ROOT/bin-nojq" "$d" '{"tool_name":"Bash","tool_input":{"command":"php artisan migrate"}}'
+expect_path "W19 nojq sail allowed" 0 "$ROOT/bin-nojq" "$d" '{"tool_name":"Bash","tool_input":{"command":"./vendor/bin/sail artisan test"}}'
+expect_path "W19 nojq toggle off"   0 "$ROOT/bin-nojq" "$ROOT/ac3b" '{"tool_name":"Bash","tool_input":{"command":"php artisan migrate"}}'
+expect_path "W19 nojq migration"    2 "$ROOT/bin-nojq" "$ROOT/ac2" "{\"tool_name\":\"Edit\",\"tool_input\":{\"file_path\":\"$ROOT/ac2/database/migrations/2024_01_01_000000_create_x.php\"}}"
+
+# Neither parser: allow, but never in silence — the operator has to learn the rules did not run.
+err="$( cd "$d" && printf '%s' '{"tool_name":"Bash","tool_input":{"command":"php artisan migrate"}}' \
+        | PATH="$ROOT/bin-noparser" bash "$GUARD" 2>&1 >/dev/null )"
+code=$?
+if [ "$code" = "0" ] && printf '%s' "$err" | grep -q 'did NOT run'; then
+  pass=$((pass+1)); printf '  ok   %-22s (exit 0 + stderr)\n' "W19 no parser speaks"
+else
+  fail=$((fail+1)); printf '  FAIL %-22s (exit %s, stderr: %s)\n' "W19 no parser speaks" "$code" "$err"
+fi
+
+# …and a repository that never asked for Groundwork stays untouched and quiet.
+err="$( cd "$ROOT/ac3a" && printf '%s' '{"tool_name":"Bash","tool_input":{"command":"php artisan migrate"}}' \
+        | PATH="$ROOT/bin-noparser" bash "$GUARD" 2>&1 >/dev/null )"
+if [ -z "$err" ]; then
+  pass=$((pass+1)); printf '  ok   %-22s (silent outside a project)\n' "W19 no parser quiet"
+else
+  fail=$((fail+1)); printf '  FAIL %-22s stderr: %s\n' "W19 no parser quiet" "$err"
+fi
+
+
 echo "-----"
 echo "passed: $pass   failed: $fail"
 [ "$fail" -eq 0 ]

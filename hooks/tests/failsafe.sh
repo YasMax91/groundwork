@@ -53,6 +53,8 @@ runs "task-intent"     "task-intent.sh"     '{"hook_event_name":"UserPromptSubmi
 runs "agent-contract"  "agent-contract.sh"  '{"hook_event_name":"SubagentStop","agent_type":"groundwork:grounded-researcher","last_assistant_message":"no source"}'
 runs "format-on-edit"  "format-on-edit.sh"  "{\"tool_input\":{\"file_path\":\"$d/app/A.php\"}}"
 runs "pre-tool-guard"  "pre-tool-guard.sh"  '{"tool_name":"Bash","tool_input":{"command":"ls -la"}}'
+runs "trim-output"     "trim-output.sh"     '{"tool_name":"Bash","tool_input":{"command":"sail artisan test"},"tool_response":"Tests: 2 passed"}'
+runs "pre-compact"     "pre-compact.sh"     '{"trigger":"manual"}'
 
 # The guard must still enforce its rules from the fallback: host php stays denied under runner:sail.
 mkdir -p "$d/vendor/bin"; printf '#!/bin/sh\nexit 0\n' > "$d/vendor/bin/sail"; chmod +x "$d/vendor/bin/sail"
