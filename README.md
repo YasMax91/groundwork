@@ -1,5 +1,7 @@
 # Groundwork
 
+[![hooks](https://github.com/YasMax91/groundwork/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/YasMax91/groundwork/actions/workflows/ci.yml)
+
 A Claude Code plugin that makes an agent work a Laravel backend the way a senior engineer does:
 find the blast radius before planning, agree on the plan before writing code, prove external-API
 claims against cited docs instead of guessing, and refuse to call anything "done" until the gates —

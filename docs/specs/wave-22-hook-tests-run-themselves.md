@@ -3,7 +3,8 @@
 - Type: plugin self-improvement → **L1** (one new CI file, no plugin code touched).
 - Author: Max Yastremskyi (YasMax91).
 - Source: item E29 in [market-scan-2026-08-27.md](market-scan-2026-08-27.md).
-- Status: **implemented** (2026-08-27), locally proven; the first hosted run is a human step.
+- Status: **implemented and proven on hosted runners** (2026-08-27, run 33100357521): three jobs green —
+  `ubuntu-latest` 313 cases in 19 s, `macos-latest` 313 cases in 38 s, `manifests` in 6 s.
 - Target version: **v0.32.0**.
 
 ## Goal
@@ -23,8 +24,10 @@ repository had no `.github/` directory at all: the 15 suites ran when the author
 - **`manifests`** — parses both manifests and fails if `plugin.json` and the marketplace entry describe
   the plugin differently (that description is the catalog's entire search surface). Then
   `claude plugin validate .` **when the CLI is present**, and an explicit notice that validation did not
-  run when it is not. Whether the CLI exists on GitHub-hosted runners is unverified; a silent pass would
-  be the same defect this plugin exists to catch.
+  run when it is not. **Measured on the first run: the CLI is not on GitHub-hosted runners**, so the
+  fallback fired and printed "plugin validation did NOT run here" — which is the whole point of writing
+  the branch that way. Manifest validation therefore stays a local step; CI proves the JSON parses and
+  the two descriptions match. `jq`, `python3`, `git` and `bash` are all present on both images.
 
 `--strict` is not used: during the market scan's verification it turned an unknown-field warning
 (`icon`, `screenshots`) into a failure, and the catalog's own review pipeline does not require it.
@@ -37,11 +40,12 @@ repository had no `.github/` directory at all: the 15 suites ran when the author
 | AC2 | Every `run:` step of the `manifests` job executes green locally | met — extracted from the parsed YAML and run: `version: 0.31.0`, `descriptions match`, `Validation passed` |
 | AC3 | `bash hooks/tests/all.sh` is green: 15 suites | met — `lib run test-gate gates openapi-gate coverage-claim estimate-ledger estimate-claim task-intent agent-contract statusline session-start trim-output pre-compact failsafe` |
 | AC4 | A deliberate regression turns the suite red | met — removing the `python3` branch from `hooks/pre-tool-guard.sh` failed exactly `W19 nojq runner_deny` and `W19 nojq migration` (`want 2, got 0`, the pre-wave-19 behaviour); restored, 32/32 green |
-| AC5 | The first hosted run is green before a README badge is added | **open — human step.** No badge is added by this wave |
+| AC5 | The first hosted run is green before a README badge is added | met — run 33100357521 green on both images; the badge was added after it, not before |
 
 ## Deliberately not done
 
 - **`claude -p` in CI.** It duplicates the local Stop gates and pays tokens and Actions minutes for an
   answer already obtained.
-- **A README status badge.** A badge for a workflow that has never run on the hosted runners would be a
-  claim without a run — the same defect the plugin gates against. It goes in after the first green run.
+- **A README status badge before the first green run.** A badge for a workflow that has never run on the
+  hosted runners is a claim without a run — the same defect the plugin gates against. It went in after
+  run 33100357521, not before.
