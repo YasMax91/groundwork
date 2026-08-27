@@ -11,11 +11,13 @@ standards · v0.23.0 interview depth; structurally verified. **Wave 14** (author
 v0.24.0 the denominator rule + the warn-only coverage-claim gate + the closing cost of silence; hook
 behaviour proven by tests, prose structural. The research sweep behind the remaining backlog is
 [modernization-research-2026-08.md](modernization-research-2026-08.md). The 2026-08-27 market scan
-that continues that series (items E26–E34, waves 19–27) is
-[market-scan-2026-08-27.md](market-scan-2026-08-27.md). **Waves 19–22** (market scan, 2026-08-27) —
-v0.29.0 the access hook reads its own input · v0.30.0 the standards stop claiming a gate they do not
-have · v0.31.0 afterCommit and webhook redelivery · v0.32.0 the hook suites run in CI; hook behaviour
-proven by tests (286 cases, 15 suites), prose structural.
+that continues that series is [market-scan-2026-08-27.md](market-scan-2026-08-27.md).
+**Waves 19–28 complete** (2026-08-27) — v0.29.0 the access hook reads its own input · v0.30.0 honest
+standards · v0.31.0 afterCommit and webhook redelivery · v0.32.0 the hook suites run in CI · v0.33.0
+the conformance output contract · v0.34.0 the task receipt and the engine-recorded ledger · v0.35.0
+the contract snapshot and mock · v0.36.0 Scramble and document usability · v0.37.0 the framework
+baseline · v0.38.0 catalog readiness. Hook behaviour proven by tests (313 cases, 15 suites); prose
+structural.
 Author: Max Yastremskyi (YasMax91)
 
 A prioritized, grounded backlog of improvements to the `groundwork` plugin. The current

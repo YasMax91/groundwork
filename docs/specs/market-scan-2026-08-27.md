@@ -1,9 +1,14 @@
 # Groundwork — market scan and roadmap (2026-08-27)
 
-Status: **E26–E29 implemented** as waves 19–22 (v0.29.0–v0.32.0, 2026-08-27) — see
-[wave-19](wave-19-the-guard-reads-its-input.md), [wave-20](wave-20-standards-stop-overpromising.md),
-[wave-21](wave-21-two-production-defects.md), [wave-22](wave-22-hook-tests-run-themselves.md).
-**E30–E34 are open**; the sequencing below is unchanged, and the cut line has been reached.
+Status: **E26–E34 implemented**, waves 19–28 (v0.29.0–v0.38.0, 2026-08-27). Waves
+[19](wave-19-the-guard-reads-its-input.md) · [20](wave-20-standards-stop-overpromising.md) ·
+[21](wave-21-two-production-defects.md) · [22](wave-22-hook-tests-run-themselves.md) ·
+[23](wave-23-conformance-output-contract.md) · [24](wave-24-the-receipt.md) ·
+[25](wave-25-the-frontend-gets-the-contract.md) · [26](wave-26-the-gate-sees-scramble.md) ·
+[27](wave-27-the-standards-know-their-version.md) · [28](wave-28-ready-for-the-catalog.md).
+Wave 27 also closed the framework-baseline gap this document listed as falling outside the plan.
+**Open:** the submission form (a human step), the first hosted CI run, and everything under
+*Rejected at the shortlist* — which stays rejected until a measurement changes.
 Author: Max Yastremskyi (YasMax91).
 Continues [modernization-research-2026-08.md](modernization-research-2026-08.md) (E10–E25, of which E10,
 E11, E13, E14 shipped in waves 15–18). Item numbering continues that series: **E26–E34**.
