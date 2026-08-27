@@ -53,6 +53,9 @@ a useful spec beats a perfect document.
   run the unbounded loop yourself per "Unbounded mode" in
   `${CLAUDE_SKILL_DIR}/../../guidelines/clarify-protocol.md`.
 - Update the spec if implementation discovers a material constraint, conflict, or safer approach.
+- **A duration in a spec is a measurement.** If the spec states one, it comes from
+  `${CLAUDE_PLUGIN_ROOT}/hooks/estimate-ledger.sh --report` and carries its median and sample size, per
+  `${CLAUDE_SKILL_DIR}/../estimate/SKILL.md`. Hours need the slow thing named on the same line.
 - Write it per `${CLAUDE_SKILL_DIR}/../../guidelines/writing-standards.md`: every sentence carries a fact
   the reader does not have, no preamble or wrap-up, no section kept alive without content, no hedging
   where a probe would settle it. A spec is a contract — restated background and filler make the binding

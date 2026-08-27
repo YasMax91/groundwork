@@ -101,6 +101,22 @@ riskiest "it works" claim — the same table owns both calibrations. In a fresh 
 and reports only correctness/requirement gaps. Fix any unmet-AC gap, or fold it into the handoff as a
 stated gap. Skip for L0/L1.
 
+## Record what it actually took
+
+After the gates are green and before the handoff summary, close the measurement window:
+
+```bash
+${CLAUDE_PLUGIN_ROOT}/hooks/estimate-ledger.sh --record --kind=<one word> --promised=<minutes, if one was given>
+```
+
+It reads `Started:` from the checkpoint, measures the agent's active minutes from this session's
+transcript, and appends one row to the ledger every later estimate is calibrated against. Durations and
+identifiers only — no transcript content is written. A checkpoint without `Started:` records nothing and
+says so; that is a lost measurement, not an error to work around by inventing a start time.
+
+Skip at L0. Everything from L1 up is worth a row: the corpus is what stops the next estimate from being
+an opinion.
+
 ## Handoff summary
 
 1. Behavior change first (not just files).
@@ -114,6 +130,10 @@ stated gap. Skip for L0/L1.
 6. Anything skipped, deferred, or not run.
 7. Assumptions or CRD/code conflicts.
 8. **What you decided alone** — the closing cost-of-silence list (below).
+9. **Promised against actual** — one line: what the estimate said, what the work took in active agent
+   minutes, and the gap. If no estimate was given, say that instead. This is the only place an estimate
+   is ever falsified; without it the next one inherits the same error with nothing to correct it. Skip
+   at L0.
 
 Never report unqualified "100% done". State what is `verified` vs `assumed`.
 

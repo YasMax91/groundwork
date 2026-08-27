@@ -126,3 +126,11 @@ Stay in **Discovery mode**: inspect and plan only, do not edit files until the p
 - **Plan tests first.** Turn the acceptance criteria into the red list before any code — see
   `${CLAUDE_SKILL_DIR}/../../guidelines/tdd-protocol.md`.
 - For a normal feature or risky change, write a spec with the `spec` skill before implementing.
+- **Any duration stated in the plan goes through the ledger, never through instinct.** Read
+  `${CLAUDE_PLUGIN_ROOT}/hooks/estimate-ledger.sh --report` and quote the median with its sample size;
+  the full rule is `${CLAUDE_SKILL_DIR}/../estimate/SKILL.md` and
+  `${CLAUDE_SKILL_DIR}/../../guidelines/ai-sdd-process.md` §Estimates. Human time is a separate line and
+  is never added into the agent's. From L2 up the number carries its `n`.
+- **Stamp the checkpoint when you create it**: `Started:` in UTC and a one-word `Kind:`, per
+  `${CLAUDE_SKILL_DIR}/../../guidelines/working-memory.md`. `final-check` closes the window; without
+  `Started:` the task is never measured, and the next estimate has one less real number behind it.

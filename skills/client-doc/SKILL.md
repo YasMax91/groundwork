@@ -54,10 +54,14 @@ developer hours are the wrong unit and never appear** — and neither does a man
 unit: work on mechanisms the codebase already has is normally minutes, and publishing it as hours is the
 same error with better manners.
 
-**Calibrate the numbers before writing them down** — read the repo's own commit intervals, estimate the
-delta where the work already exists in history, and sanity-check the total against both. The rules are in
-[`../../guidelines/ai-sdd-process.md`](../../guidelines/ai-sdd-process.md) §Estimates; this section only
-governs how the calibrated numbers are presented to the client.
+**Calibrate the numbers before writing them down** — read the measured ledger
+(`${CLAUDE_PLUGIN_ROOT}/hooks/estimate-ledger.sh --report`), estimate the delta where the work already
+exists in history, and sanity-check the total against both. Producing the calibrated numbers is the
+`estimate` skill ([`../estimate/SKILL.md`](../estimate/SKILL.md)); the rules behind them are in
+[`../../guidelines/ai-sdd-process.md`](../../guidelines/ai-sdd-process.md) §Estimates. **This section
+only governs how those numbers are presented to the client** — and the client sees the number, never the
+median or the sample size behind it. Those belong in the chat summary you post for yourself, so you can
+check the document before sending it.
 
 - **A line per block of functionality, then a total.** A range where the work is genuinely uncertain, a
   single number where it is not — a range whose ends differ by minutes is false precision. Name what

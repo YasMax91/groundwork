@@ -58,9 +58,11 @@ is named on the same line. An estimate that reads like a human work day for a CR
 construction — no calibration rescues it.
 
 The **full format** — a line per block of work, a total, and human time on its own line — belongs to a
-document or an explicit "how long will this take?", and is owned by the **`client-doc`** skill
-([../skills/client-doc/SKILL.md](../skills/client-doc/SKILL.md)). A passing remark about time in
-conversation just needs the right unit, not the whole table.
+document or an explicit "how long will this take?", and is owned by the **`estimate`** skill
+([../skills/estimate/SKILL.md](../skills/estimate/SKILL.md)); its client-facing presentation is owned by
+**`client-doc`** ([../skills/client-doc/SKILL.md](../skills/client-doc/SKILL.md)). A passing remark
+about time in conversation still needs the right unit **and the sample size** — not the whole table, but
+never a bare number either.
 
 **Human time is its own line and is never added to the agent's.** Everything the agent cannot do itself
 belongs there, each with its owner: registering an account with a provider, issuing API keys, configuring
@@ -68,18 +70,30 @@ a webhook in someone else's dashboard, passing a verification, granting access, 
 question, reviewing and accepting the result. Folding these into the development number is exactly how
 twenty minutes of writing code is published as "a day of work".
 
-**Calibrate against this repository's own clock.** Read how long the work here actually took — commit
-timestamps inside one working session, not calendar days:
+**Calibrate against the measured ledger, not against a feeling.** The agent's active minutes are
+recorded per task and per commit window across every Groundwork project on this machine:
 
 ```bash
-git log --format='%ad %s' --date=format:'%Y-%m-%d %H:%M' --since='2 months ago'
+${CLAUDE_PLUGIN_ROOT}/hooks/estimate-ledger.sh --report
 ```
 
-The gap between consecutive commits in a session is the real cost of that slice. Where the log is
-batched or too sparse to read that way, say so and estimate from the delta below rather than inventing a
-coefficient. An older estimate document in the same repo is an **input, not an authority**: its numbers
-were written before the work, and unless someone recorded actual-vs-estimated afterwards, nothing has
-confirmed them. Inheriting its coefficients is how an estimate silently doubles.
+It answers with the sample size, the median and p75, separately for `source=task` (one Groundwork task,
+the right unit) and `source=commit-window` (the backfilled seed, a smaller and noisier unit). **Quote
+the median and the `n` it rests on in the estimate itself.** A number without its denominator is an
+opinion wearing a measurement's clothes. When the ledger is empty, `--backfill` seeds it from git
+history in seconds. The full procedure is the `estimate` skill.
+
+**The coarse fallback, and why it is only a fallback.** With no ledger and no transcripts, the last
+resort is reading commit timestamps inside one session — `git log --date=format:'%Y-%m-%d %H:%M'` — and
+it must be labelled coarse in the answer, because it measures the rhythm at which a human presses
+commit, not the work. Measured on this author's corpus, the calendar span of a session overstates its
+active agent time by roughly **3×** (median span 80–119 min against 23–41 min of active work), and the
+hour-sized gaps it produces will confirm an inflated estimate rather than refute it.
+
+An older estimate document in the same repo is an **input, not an authority**: its numbers were written
+before the work, and unless someone recorded actual-vs-estimated afterwards, nothing has confirmed
+them. Inheriting its coefficients is how an estimate silently doubles. `final-check` now records the
+actual against the promise, so this stops being unfalsifiable.
 
 **Know what actually costs the time.** Writing code is not the dominant cost — migrations, models, form
 requests, resources, tests and OpenAPI are minutes. Three things are:
@@ -98,8 +112,8 @@ codebase already does elsewhere: the estimate covers adapting it, not inventing 
 wait on the human steps already listed — each named, so the reader can see which of them is actually the
 long pole. Never pad the development number to cover that wait.
 
-**Sanity-check before publishing.** Compare the total against the measured commit intervals and against
-the delta actually being written. If it implies this repo ships far less per session than its own log
+**Sanity-check before publishing.** Compare the total against the ledger's median for this project and
+against the delta actually being written. If it implies this repo ships far less per session than its own log
 shows, the estimate is wrong — rework it rather than publish a padded number. Padding is not caution: it
 costs the client money and it costs the schedule its credibility. An estimate the author cannot defend
 against the repo's own history is not an estimate.
