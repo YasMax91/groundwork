@@ -41,7 +41,9 @@ verifies every finding before reporting (only confirmed risks survive).
   new query patterns; casts/factories/resources/tests aligned; rollback risk documented.
 - **External integrations** — behind clients/services; capability claims are grounded (see the
   grounding protocol); errors/retries handled and tested with fakes.
-- **Queues / scheduler / cache** — side effects behind jobs/events; cache is not the source of truth;
+- **Queues / scheduler / cache** — side effects behind jobs/events; a dispatch or event inside
+  `DB::transaction` without `->afterCommit()` (or `after_commit` on the connection) — the job races
+  the commit and reads a row that is not there yet; cache is not the source of truth;
   deployment accounts for cache/config rebuild.
 - **N+1 / performance** — relationships eager-loaded intentionally on list endpoints.
 - **Vulnerability classes the gates do not model** — when the diff touches authentication, RBAC, file

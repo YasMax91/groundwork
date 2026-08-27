@@ -21,7 +21,9 @@ Only proceed if the spec/plan was **explicitly approved in this conversation**. 
   - validation + request authorization in **FormRequest**
   - business logic in **services**, not controllers/models/resources
   - response shape in **JsonResource**
-  - **transactions** around multi-step domain writes
+  - **transactions** around multi-step domain writes — and a job or event dispatched inside one goes
+    out via `->afterCommit()` (or `after_commit` on the queue connection), never bare: a worker can
+    pick the job up before the transaction commits and read a row that does not exist yet
   - external calls behind **clients/services**
 - Use **enums** for states, **decimal/int cents** for money, **guarded transitions** for workflow
   state, and **DB-level constraints** for integrity.

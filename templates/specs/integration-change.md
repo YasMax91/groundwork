@@ -32,11 +32,19 @@ Stable IDs; append, never renumber. AC1 is the executable proof.
       → test: tests/Feature/<X>Test.php::test_error_path
 - [ ] **AC3** WHEN the same request is retried THE SYSTEM SHALL remain idempotent.
       → test: tests/Feature/<X>Test.php::test_idempotency
+- [ ] **AC4** WHEN the provider delivers the same event twice THE SYSTEM SHALL treat the repeat as a
+      no-op, keyed on a unique `(provider, event_id)` record written in the same transaction as the
+      effect. AC3 covers *our* retry of an outgoing call; this covers *their* redelivery of an
+      incoming one — at-least-once is the default contract of every webhook that retries.
+      → test: tests/Feature/<X>Test.php::test_duplicate_event_is_ignored
+      If the provider sends no events at all, keep the line and write
+      `N/A — <provider> has no webhooks/callbacks (evidence: <URL>)`; an unstated assumption here is
+      how the same charge gets recorded twice.
 
 ## Tests (write first — red list)
 
 Faked integration, written before the code; each names its AC ID(s): dispatch · error paths · retries
-· side effects — covers: AC1, AC2, AC3. The executable proof (AC1) is the first red test.
+· side effects · duplicate delivery — covers: AC1, AC2, AC3, AC4. The executable proof (AC1) is the first red test.
 
 ## Blind spots considered
 

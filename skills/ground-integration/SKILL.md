@@ -24,6 +24,16 @@ survived). This single-agent flow stays the default for L0–L2.
 
    Mark anything you cannot confirm as `UNKNOWN — must verify`. Never assume a capability exists
    because similar providers have it.
+
+   Three rows are **mandatory** for every provider, because the answers decide whether the integration
+   can be made safe at all — and none of them is guessable:
+
+   - does the provider accept an **idempotency key** on an outgoing call (header name, scope, TTL)?
+   - is webhook/callback delivery **at-least-once or at-most-once**, and does it retry?
+   - does an event carry a **stable id** that is identical across redeliveries?
+
+   A provider with no webhooks answers row two and three with `N/A — no callbacks`, with the evidence
+   URL. `UNKNOWN` on any of the three blocks coding, same as any other unresolved row.
 4. **Resolve every `UNKNOWN` with the user** before writing code. If a needed capability is not
    supported, surface it and propose the fallback — do not silently work around it.
 5. **Plan the executable proof**: a real sandbox/API call that exercises the path. The integration
