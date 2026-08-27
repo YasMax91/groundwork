@@ -168,10 +168,11 @@ companion plugins and per-project configuration are further down this file.
   `gates.test_lock_wait_seconds` (default 45) it **skips and says so** rather than reporting a red that
   belongs to nobody. Opt out with `gates.test_db_lock: false`. The complementary practice the plugin
   cannot enforce — one git worktree per parallel session — is documented in `working-memory`.
-- **No prompt for its own bookkeeping** — the checkpoint and the impact cache under  are
-  auto-approved by the plugin's  hook, narrowly and only for that path. A settings rule cannot
-  do this:  rules are accepted but never matched, and a first-time checkpoint is created by
-  Write. Your own / rules still win over it.
+- **No prompt for its own bookkeeping** — the checkpoint and the impact cache under
+  `.claude/groundwork/` are auto-approved by the plugin's `PreToolUse` hook, narrowly and only for that
+  path. A settings rule cannot do this: `Write(path)` rules are accepted but never matched, and a
+  first-time checkpoint is created by `Write`, not `Edit`. Your own `deny` / `ask` rules still win
+  over it.
 - **Working memory** — `working-memory` guideline + a `SessionStart` hook that cheaply re-injects
   project state (runner, DB engine, branch, uncommitted files, active spec, the task checkpoint) so
   the agent does not re-read the same files, and a `PreCompact` hook that marks the checkpoint as the

@@ -8,6 +8,7 @@
     {
       "name": "groundwork",
       "source": "./",
+      "category": "development",
       "description": "Spec-driven workflow for Laravel backends: grounded discovery and specs before code, an anti-hallucination protocol for external integrations, and hooks that hold the runner, formatting, static analysis, tests and the OpenAPI document."
     },
     {
