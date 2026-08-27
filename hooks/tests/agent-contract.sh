@@ -60,6 +60,20 @@ allows "verifier: CONFIRMED"               "$d" "$V" "CONFIRMED — OrderService
 allows "verifier: REFUTED"                 "$d" "$V" "REFUTED — no authorization check exists on the write path."
 allows "verifier: UNCERTAIN"               "$d" "$V" "UNCERTAIN — the evidence available does not settle it."
 
+# --- the conformance reviewer must return a table AND a verdict (wave 23) ---
+C="groundwork:conformance-reviewer"
+TABLE="| AC1 | met | app/Services/OrderService.php:88 |
+| AC2 | unmet | no test covers the forbidden-user path |"
+blocks "conformance: prose, no table"      "$d" "$C" "The diff looks like it does what the spec asked for and I found nothing worrying."
+blocks "conformance: ids but no status"    "$d" "$C" "AC1 and AC2 are addressed in the service. CONFORMS."
+blocks "conformance: table, no verdict"    "$d" "$C" "$TABLE"
+allows "conformance: table + CONFORMS"     "$d" "$C" "$TABLE
+Verdict: CONFORMS"
+allows "conformance: table + GAPS"         "$d" "$C" "$TABLE
+Verdict: GAPS — AC2"
+allows "conformance: INSUFFICIENT"         "$d" "$C" "AC1 unmet — the diff is empty. Verdict: INSUFFICIENT"
+allows "conformance: re-entry never blocks" "$d" "$C" "Nothing structured here at all." "true"
+
 # --- the loop guard: never block the message a block asked for ---
 allows "re-entry never blocks"             "$d" "$R" "Still no source here." "true"
 

@@ -45,5 +45,9 @@ If either is missing, say so and ask for it rather than guessing.
 3. **Verdict** — `CONFORMS` (all criteria met) / `GAPS` (list the AC IDs) / `INSUFFICIENT` (diff or
    criteria missing). Default to `GAPS` / `INSUFFICIENT` when evidence is absent — do not assume coverage.
 
+This shape is checked by the engine (`hooks/agent-contract.sh` on `SubagentStop`): a return with no AC
+row, or with no verdict word, is sent back once to be rewritten. The table is what `final-check` reads
+into the task receipt, so free prose here ends the chain.
+
 You are not the skeptic that checks whether a claim is true (that is the **adversarial-verifier**). You
 check whether the diff matches the spec. Stay in that lane.

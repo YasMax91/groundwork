@@ -33,7 +33,7 @@
     ],
     "SubagentStop": [
       {
-        "matcher": "^groundwork:(grounded-researcher|adversarial-verifier)$",
+        "matcher": "^groundwork:(grounded-researcher|adversarial-verifier|conformance-reviewer)$",
         "hooks": [
           {
             "type": "command",
