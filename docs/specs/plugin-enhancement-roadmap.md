@@ -10,7 +10,9 @@ Wave 9 v0.14.0 · Wave 10 v0.15.0 · Wave 11 v0.16.0 · Wave 12 v0.17.0 (calibra
 standards · v0.23.0 interview depth; structurally verified. **Wave 14** (author feedback, 2026-08-11) —
 v0.24.0 the denominator rule + the warn-only coverage-claim gate + the closing cost of silence; hook
 behaviour proven by tests, prose structural. The research sweep behind the remaining backlog is
-[modernization-research-2026-08.md](modernization-research-2026-08.md).
+[modernization-research-2026-08.md](modernization-research-2026-08.md). The 2026-08-27 market scan
+that continues that series (items E26–E34, waves 19–27) is
+[market-scan-2026-08-27.md](market-scan-2026-08-27.md).
 Author: Max Yastremskyi (YasMax91)
 
 A prioritized, grounded backlog of improvements to the `groundwork` plugin. The current
