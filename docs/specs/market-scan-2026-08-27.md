@@ -7,8 +7,9 @@ Status: **E26–E34 implemented**, waves 19–28 (v0.29.0–v0.38.0, 2026-08-27)
 [25](wave-25-the-frontend-gets-the-contract.md) · [26](wave-26-the-gate-sees-scramble.md) ·
 [27](wave-27-the-standards-know-their-version.md) · [28](wave-28-ready-for-the-catalog.md).
 Wave 27 also closed the framework-baseline gap this document listed as falling outside the plan.
-**Open:** the submission form (a human step), the first hosted CI run, and everything under
-*Rejected at the shortlist* — which stays rejected until a measurement changes.
+The first hosted CI run is green on both images (run 33100357521, 313 cases each), and the README badge
+went in after it. **Open:** the catalog submission, and everything under *Rejected at the shortlist* —
+which stays rejected until a measurement changes.
 Author: Max Yastremskyi (YasMax91).
 Continues [modernization-research-2026-08.md](modernization-research-2026-08.md) (E10–E25, of which E10,
 E11, E13, E14 shipped in waves 15–18). Item numbering continues that series: **E26–E34**.
