@@ -18,6 +18,12 @@ verifies every finding before reporting (only confirmed risks survive).
 
 ## Checklist
 
+- **Architecture boundaries** — the rules in
+  `${CLAUDE_SKILL_DIR}/../../guidelines/laravel-standards.md` that **no hook enforces**: domain logic in
+  a controller or model instead of a service, validation outside a FormRequest, a multi-step write with
+  no transaction, a state change that bypasses its guard, money as `float`, a sequential id exposed at
+  the API edge, a repository layer wrapped around Eloquent. Static analysis and the test gate do not see
+  any of these; this review is where they are caught.
 - **API contract** — renamed/removed/retyped fields, changed enums, pagination shape, error format,
   route names, HTTP methods, or authorization behavior on existing endpoints. Additive is safer;
   breaking changes need explicit approval and OpenAPI updates.

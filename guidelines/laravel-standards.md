@@ -1,8 +1,26 @@
 # Laravel standards (Groundwork)
 
-Curated, opinionated standards for Laravel backends. Stay on the framework's grain; the standards are
-enforced by tool-gates (Pint / Larastan / PHPUnit). Confirm version-specific details with Boost
-`search-docs` for the installed version rather than recalling them.
+Curated, opinionated standards for Laravel backends. Stay on the framework's grain. Confirm
+version-specific details with Boost `search-docs` for the installed version rather than recalling them.
+
+**What the engine holds.** Six rules are enforced by hooks: breaking one is denied outright, or the task
+cannot end.
+
+| Rule | Hook | Opt-out |
+|---|---|---|
+| Laravel/PHP commands go through the runner, not the host | `hooks/pre-tool-guard.sh` | `gates.enforce_runner` |
+| A shipped (git-tracked) migration is never edited | `hooks/pre-tool-guard.sh` | `gates.lock_shipped_migrations` |
+| Formatting runs on every edit | `hooks/format-on-edit.sh` | `gates.format_on_edit` |
+| Static analysis passes before "done" — and a no-op analyser is refused, not counted as clean | `hooks/done-gate.sh` | `gates.analyse_on_stop` + `gates.analyse_skip_reason` |
+| The suite passes before "done"; a suite resolving to SQLite on a project that targets another engine is reported | `hooks/test-gate.sh` | `gates.test_on_stop` |
+| The OpenAPI document moves together with an API change | `hooks/openapi-gate.sh` | `gates.openapi_on_stop` |
+
+**Everything else on this page is an instruction to the agent, and nothing checks it automatically** —
+thin controllers, logic in `app/Services`, transactions around multi-step writes, guarded transitions,
+money as decimal or integer cents, ULIDs at the edge, DB-level integrity, the anti-patterns. They are
+caught, if at all, by review: `agents/conformance-reviewer.md` against the spec's acceptance criteria,
+and `skills/risk-review`. A rule worth following is worth writing down; claiming a gate it does not have
+is the failure this plugin exists to prevent (`guidelines/ai-sdd-process.md`).
 
 ## Architecture
 
@@ -66,7 +84,9 @@ enforced by tool-gates (Pint / Larastan / PHPUnit). Confirm version-specific det
   (`gates.analyse_on_stop: false` **plus** `gates.analyse_skip_reason`) rather than pointing
   `commands.analyse` at `echo` or `true`: a no-op exits 0, which had the gate reporting a clean
   analysis for a project that had none. The gate refuses a no-op command outright.
-- **Tests**: PHPUnit (`./vendor/bin/sail artisan test`) — feature tests for API/validation/
+- **Tests**: the project's own runner — Pest when `pestphp/pest` is in `composer.json`, PHPUnit
+  otherwise; both run through `artisan test` (`./vendor/bin/sail artisan test`), which is what the gate
+  invokes. Feature tests for API/validation/
   authorization/response shape; unit tests for services and calculations; a regression test for
   every bug fix. Write them **test-first** for L2+ features and bug fixes — see
   [tdd-protocol.md](tdd-protocol.md).

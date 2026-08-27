@@ -16,7 +16,8 @@ Only proceed if the spec/plan was **explicitly approved in this conversation**. 
 - **Implementation is single-threaded** — work one TDD slice at a time; do not spawn parallel coding
   agents. Fan-out is for Discovery and Verification only (see "Fan-out by level" in the process doc).
 - Follow the approved spec's acceptance criteria; keep changes scoped to the task.
-- Respect architecture boundaries (see the Laravel standards):
+- Respect architecture boundaries (`${CLAUDE_SKILL_DIR}/../../guidelines/laravel-standards.md` — the
+  table there says which of these a hook actually enforces and which are on you):
   - validation + request authorization in **FormRequest**
   - business logic in **services**, not controllers/models/resources
   - response shape in **JsonResource**
