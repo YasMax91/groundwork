@@ -19,14 +19,17 @@ Verified defects, each one already forbidden by a rule that nothing enforced:
 | `env()` in application code | `crm-wigs-back` ×3, `fam-sync` ×2 | Returns `null` after `config:cache` — works locally, silently not in production |
 | A broadcast event dispatched inside a transaction without `ShouldDispatchAfterCommit` | `fam-sync`, `TaskDeleted` | Two sibling events in the same codebase have it; this one does not, and `after_commit` is `false` |
 | Money as `double` | `crm-wigs-back`, `wigs.totalPrice`, `payments.amount` | The standards' oldest rule, in a payments table |
-| A suite on in-memory SQLite while the project targets MySQL | `maxsterling-back`, `next-lvl-backend-wt-resend`, `fam-sync` | The standards call this a false green; the gate had been warning about it, unread |
+| A suite on in-memory SQLite while the project targets MySQL | `next-lvl-backend-wt-resend`, `fam-sync` | The standards call this a false green; the gate had been warning about it, unread |
 | `Model::preventLazyLoading()` enabled | nowhere — 0 of 11 projects | An N+1 does not fail; it ships |
 
 Equally important, what the first version of the audit **wrongly** flagged, and why the checks below are
 shaped to stay quiet on it: ten of eleven "dispatch inside a transaction" hits in `fam-sync` were events
 implementing `ShouldDispatchAfterCommit` (the grep looked for a literal `afterCommit`); the raw-SQL hits
-in three projects interpolate column names the method builds itself, not user input; and "35 controllers
-with no `authorize()`" was authorization living in route middleware — 31 of 39 groups carry `can:`.
+in three projects interpolate column names the method builds itself, not user input; "35 controllers
+with no `authorize()`" was authorization living in route middleware — 31 of 39 groups carry `can:`; and
+`maxsterling-back` was counted as a SQLite offender by a regex that matched its own commented-out lines
+(`<!-- <env name="DB_CONNECTION" value="sqlite"/> -->`). The gate below skips commented lines for exactly
+that reason, and the count of real offenders is two, not three.
 
 ## Design
 
