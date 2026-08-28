@@ -55,6 +55,14 @@ if [ -f composer.lock ] && command -v jq >/dev/null 2>&1; then
   fi
 fi
 
+# --- does an N+1 fail here at all? ---------------------------------------------------------------
+# The standards ask for Model::preventLazyLoading() outside production, so a lazy load throws in tests
+# instead of shipping as a slow endpoint. Measured across this author's projects: enabled in none of
+# them. Said once per session, never blocking — turning it on changes test outcomes and is a decision.
+if [ -d app/Providers ] && ! grep -rqs "preventLazyLoading" app/Providers 2>/dev/null; then
+  add "Model::preventLazyLoading() is not enabled in app/Providers — an N+1 will not fail here, it will ship as a slow endpoint. Enable it for non-production environments (guidelines/laravel-standards.md) when you are ready for the tests it will newly fail."
+fi
+
 # --- git state ---
 if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo '?')"

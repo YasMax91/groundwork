@@ -101,6 +101,11 @@
           },
           {
             "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/defect-scan.sh",
+            "statusMessage": "Groundwork: scanning for defect classes…"
+          },
+          {
+            "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/hooks/estimate-claim.sh",
             "statusMessage": "Groundwork: checking the estimate…"
           },

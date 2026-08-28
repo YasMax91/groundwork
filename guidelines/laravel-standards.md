@@ -14,6 +14,13 @@ cannot end.
 | Static analysis passes before "done" — and a no-op analyser is refused, not counted as clean | `hooks/done-gate.sh` | `gates.analyse_on_stop` + `gates.analyse_skip_reason` |
 | The suite passes before "done"; a suite resolving to SQLite on a project that targets another engine is reported | `hooks/test-gate.sh` | `gates.test_on_stop` |
 | The OpenAPI document moves together with an API change | `hooks/openapi-gate.sh` | `gates.openapi_on_stop` |
+| `env()` is never read outside `config/`, and money is never `float`/`double` in a migration | `hooks/defect-scan.sh` | `gates.defect_scan` |
+| A suite that resolves to SQLite on a project targeting another engine is refused, not run | `hooks/test-gate.sh` | `gates.sqlite_tests_reason` (a stated reason downgrades it to a notice) |
+
+Three further defect classes are **reported, not blocked**, by `hooks/defect-scan.sh`, because each one
+has a legitimate shape: an irreversible side effect (mail, a notification, an outbound HTTP call) inside
+a transaction; a queued or broadcast event dispatched inside a transaction without
+`ShouldDispatchAfterCommit`; a job with no `$tries`, `$backoff`, `retryUntil` or `failed()`.
 
 **Everything else on this page is an instruction to the agent, and nothing checks it automatically** —
 thin controllers, logic in `app/Services`, transactions around multi-step writes, guarded transitions,

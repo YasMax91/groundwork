@@ -52,18 +52,30 @@ else
   gw_runner_ready || { echo "groundwork test-gate: runner unavailable — gate NOT run (nothing was verified)." >&2; exit 1; }
 fi
 
-# Warn (do not block) when the suite resolves to SQLite while the project targets a real engine.
-# A green on SQLite is a false green for engine-specific defects (migrations, FKs, JSON, enum, LIKE).
+# A suite that resolves to SQLite on a project targeting another engine does not produce a weaker
+# green — it produces a false one, for exactly the defects the engine decides (migrations, FKs, JSON,
+# enum, LIKE, decimal). Measured on this author's own repositories: three of eleven projects declared
+# MySQL and ran their suite on in-memory SQLite, and the warning this used to print had been sitting
+# there unread. So it refuses, and the opt-out has to state a reason — the same shape as
+# `gates.analyse_on_stop` + `gates.analyse_skip_reason`.
 declared='mysql'
 [ -f .groundwork.json ] && declared="$(jq -r '.database.default // "mysql"' .groundwork.json 2>/dev/null || echo mysql)"
 if [ "$declared" != "sqlite" ]; then
   for f in phpunit.xml phpunit.xml.dist .env.testing; do
     [ -f "$f" ] || continue
-    matches="$(grep -Ei 'value="(sqlite|:memory:)"|^[[:space:]]*DB_CONNECTION[[:space:]]*=[[:space:]]*sqlite' "$f" 2>/dev/null | grep -v '<!--' || true)"
-    if [ -n "$matches" ]; then
-      echo "groundwork test-gate: WARNING — tests resolve to SQLite (in $f) but this project targets '$declared'. A green on SQLite is a false green for engine-specific defects; run the suite on $declared." >&2
+    matches="$(grep -Ei 'name="DB_(CONNECTION|DATABASE)"[^>]*value="(sqlite|:memory:)"|^[[:space:]]*DB_CONNECTION[[:space:]]*=[[:space:]]*sqlite' "$f" 2>/dev/null | grep -v '<!--' || true)"
+    [ -n "$matches" ] || continue
+    reason="$(jq -r '.gates.sqlite_tests_reason // empty' .groundwork.json 2>/dev/null || true)"
+    if [ -n "$reason" ]; then
+      echo "groundwork test-gate: the suite runs on SQLite while this project targets '${declared}' — accepted reason: ${reason}. Engine-specific defects are NOT covered by this run." >&2
       break
     fi
+    {
+      echo "groundwork test-gate: the suite resolves to SQLite (in ${f}) but this project targets '${declared}' — this run would be a false green, so it was not made."
+      echo "Point the tests at ${declared} (DB_CONNECTION/DB_DATABASE in ${f}), or state why SQLite is acceptable here in .groundwork.json gates.sqlite_tests_reason."
+      echo "(disable the whole gate with gates.test_on_stop=false)"
+    } >&2
+    exit 2
   done
 fi
 

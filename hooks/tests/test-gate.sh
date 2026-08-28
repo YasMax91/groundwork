@@ -119,6 +119,31 @@ d="$ROOT/t9"; mkdir -p "$d"; printf '{ "runner": "host" }\n' > "$d/.groundwork.j
   && printf 'x\n' > a.txt && git add -A && git commit -qm init )
 expect "no php change no-op"       0 "$d"
 
+# --- wave 30: a suite on SQLite while the project targets another engine is a false green ----------
+d="$ROOT/w30a"; fixture "$d" '{ "runner": "host", "database": { "default": "mysql" }, "commands": { "test": "./ok.sh" } }'; stub "$d/ok.sh" 0
+printf '<?xml version="1.0"?>\n<phpunit><php><env name="DB_CONNECTION" value="sqlite"/><env name="DB_DATABASE" value=":memory:"/></php></phpunit>\n' > "$d/phpunit.xml"
+expect "sqlite suite refused"       2 "$d"
+
+out="$( cd "$d" && bash "$GATE" 2>&1 >/dev/null )"
+if printf '%s' "$out" | grep -q "sqlite_tests_reason" && printf '%s' "$out" | grep -q "false green"; then
+  pass=$((pass+1)); printf '  ok   %-30s\n' "refusal names the way out"
+else
+  fail=$((fail+1)); printf '  FAIL %-30s got: %s\n' "refusal names the way out" "$(printf '%s' "$out" | head -1)"
+fi
+
+d="$ROOT/w30b"; fixture "$d" '{ "runner": "host", "database": { "default": "mysql" }, "gates": { "sqlite_tests_reason": "legacy suite, engine parity tracked in #412" }, "commands": { "test": "./ok.sh" } }'; stub "$d/ok.sh" 0
+printf '<?xml version="1.0"?>\n<phpunit><php><env name="DB_CONNECTION" value="sqlite"/></php></phpunit>\n' > "$d/phpunit.xml"
+expect "stated reason lets it run"  0 "$d"
+
+d="$ROOT/w30c"; fixture "$d" '{ "runner": "host", "database": { "default": "sqlite" }, "commands": { "test": "./ok.sh" } }'; stub "$d/ok.sh" 0
+printf '<?xml version="1.0"?>\n<phpunit><php><env name="DB_CONNECTION" value="sqlite"/></php></phpunit>\n' > "$d/phpunit.xml"
+expect "declared sqlite is fine"    0 "$d"
+
+d="$ROOT/w30d"; fixture "$d" '{ "runner": "host", "database": { "default": "mysql" }, "commands": { "test": "./ok.sh" } }'; stub "$d/ok.sh" 0
+printf '<?xml version="1.0"?>\n<phpunit><php><env name="DB_CONNECTION" value="mysql"/><env name="DB_DATABASE" value="testing"/></php></phpunit>\n' > "$d/phpunit.xml"
+expect "mysql suite unaffected"     0 "$d"
+
+
 echo
 echo "  passed: $pass, failed: $fail"
 [ "$fail" -eq 0 ]

@@ -8,7 +8,7 @@ set -uo pipefail
 DIR="$(cd "$(dirname "$0")" && pwd)"
 failed=0
 
-for suite in lib run test-gate gates openapi-gate coverage-claim estimate-ledger estimate-claim task-intent agent-contract statusline session-start trim-output pre-compact failsafe; do
+for suite in lib run test-gate gates openapi-gate coverage-claim estimate-ledger estimate-claim task-intent agent-contract statusline session-start trim-output pre-compact defect-scan failsafe; do
   f="$DIR/${suite}.sh"
   [ -f "$f" ] || { printf '\n== %s: MISSING (%s)\n' "$suite" "$f"; failed=$((failed+1)); continue; }
   printf '\n== %s\n' "$suite"
