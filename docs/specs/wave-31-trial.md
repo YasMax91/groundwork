@@ -12,67 +12,17 @@ and would produce a friction reading that says nothing about the gate being desi
 
 Two or three tasks are enough. Prefer one L2 and one L3 over three of the same shape.
 
-## What the agent does
+## Where the operational copy lives
 
-Run these alongside the normal Groundwork flow, not instead of it. `start-task` and `spec` are
-unchanged; the ledger is written after the plan is approved and before `implement-approved`.
+The runnable protocol and the log are **outside this repository**, so no branch or checkout state can
+hide them from an agent working in a Laravel project:
 
-1. **After plan approval, before any code.** Record the plan size: how many slices, how many
-   acceptance criteria the spec carries.
-2. **Write `GATES.md`** from `~/.claude/skills/unlazy/templates/gates-leaf.md` — one gate per slice,
-   id `G<n>`, the gate title stating the observable outcome. For each slice with a `red test:`
-   pointer, the gate is runnable:
+- `~/.claude/wave-31.md` — the full protocol the agent follows (self-contained).
+- `~/.claude/wave-31-log.md` — the log rows.
+- `~/.claude/skills/wave-31-trial/SKILL.md` — makes "обкатка wave-31" enough to start it.
 
-   ```markdown
-   - [ ] G2: an expired promo code is refused with 422
-     CHECK: ./vendor/bin/sail artisan test --filter=PromoCodeExpiry
-     EXPECT: OK
-     EVIDENCE: pending
-   ```
-
-   A slice no command can decide is a manual gate — no `CHECK:`, no `EXPECT:`. **Count these.**
-   `EXPECT:` for a phpunit run needs care: `OK`, `passed` and `0` are the vocabulary failure output
-   also uses, which is what the linter's `weak-expect` rule is for. Prefer a distinctive substring
-   from the passing summary and let the exit code do the deciding.
-3. **Lint it** and record every finding verbatim:
-
-   ```
-   node ~/.claude/skills/unlazy/scripts/gate-lint.mjs GATES.md
-   ```
-
-4. **Implement** through `implement-approved` as usual. Do not edit `GATES.md` while implementing —
-   a ledger rewritten to match what was built measures nothing. If a gate turns out to be impossible,
-   add `ABANDON: G<n> <reason>` rather than deleting it, and say so in the log row.
-5. **Before `final-check`, verify:**
-
-   ```
-   node ~/.claude/skills/unlazy/scripts/gate-check.mjs --approve GATES.md
-   node ~/.claude/skills/unlazy/scripts/gate-check.mjs --reverify GATES.md
-   ```
-
-   The agent approving its own checks removes the trust boundary `unlazy` built approvals for. That
-   is acceptable here and only here: the ledger was written this session, the commands are the
-   project's own test runner, and the trial measures omission, not supply-chain risk. Never carry
-   this habit to an inherited ledger.
-6. **Classify every unmet gate.** For each one, check whether `git diff --name-only` contains any
-   file belonging to that slice. A gate whose slice has **no code and no test in the diff** is a
-   **blind miss**: nothing in `analyse`, `test` or `openapi` had anything to fail on, so the seven
-   Stop gates would have passed the task with that slice unbuilt. That count is the trial's whole
-   point.
-7. **Append one row to the log below**, then report the row in chat in Russian.
-
-## What the user does
-
-Read the row, and add one sentence of friction in the last column — whether the ledger helped, got in
-the way, or was invisible. That judgement is not the agent's to make.
-
-## Log
-
-One row per task. Append only; never rewrite a row.
-
-| Date | Task | L | Slices | Gates | Runnable | Manual | Lint findings | Unmet at reverify | **Blind misses** | Abandoned | Friction (user) |
-|---|---|---|---|---|---|---|---|---|---|---|---|
-| | | | | | | | | | | | |
+The ledger itself is written to `.claude/groundwork/gates-<slug>.md`, already git-ignored in every
+onboarded project.
 
 ### Reading the log
 
