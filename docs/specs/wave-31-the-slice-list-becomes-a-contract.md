@@ -1,216 +1,204 @@
-# Spec: Wave 31 — the slice list becomes a contract (v0.41.0)
+# Spec: Wave 31 — a closed slice must name what proves it (v0.41.0)
 
-- Type: plugin self-improvement → **L3** (a new blocking Stop gate, a checkpoint format extension, an
-  oracle linter, changes to four skills and two guidelines).
+- Type: plugin self-improvement → **L2** (one blocking Stop gate that executes nothing, a checkpoint
+  grammar, changes to three skills and one guideline).
 - Author: Max Yastremskyi (YasMax91).
-- Source: agents closing tasks with slices unbuilt while every Stop gate stayed green. Design input
-  read from `Leonxlnx/unlazy` (MIT, commit `1667149`, 2026-09-03) — the acceptance-ledger mechanics,
-  not its Depth Tree.
-- Status: **planned**.
-- Target version: **v0.41.0**.
+- Source: agents closing tasks with slices unbuilt while every Stop gate stayed green. Redirected
+  2026-09-14 by a trial and an audit — see **What the measurement changed** below. Design input read
+  from `Leonxlnx/unlazy` (MIT, commit `1667149`): the abandon protocol and the progress guard.
+- Status: **planned**. Supersedes the first draft of this spec (commit `e2565f6`), which anchored on
+  `red test:` pointers that the corpus does not contain.
+- Target version: **v0.41.0**. The executing gate moves to wave-32.
 
 ## What leaks today
 
 The seven Stop hooks check the **repository**. Nothing checks **the task**.
 
-`hooks/done-gate.sh`, `hooks/test-gate.sh` and `hooks/openapi-gate.sh` resolve their command from
-`.groundwork.json`, filter changed paths, and pass or refuse on what the tree contains. None of them
-reads `.claude/groundwork/task-state.md`, so none of them knows how many slices the approved plan had.
-A task planned as five slices and built as three produces: changed PHP that formats, analyses and
-tests clean; an OpenAPI document matching the endpoints that do exist; a checkpoint whose remaining
-`- [ ]` lines the agent wrote itself. Every gate is green and two slices are missing.
+`done-gate.sh`, `test-gate.sh` and `openapi-gate.sh` resolve a command from `.groundwork.json`, filter
+changed paths, and pass or refuse on what the tree contains. None reads
+`.claude/groundwork/task-state.md`, so none knows how many slices the approved plan had. A task
+planned as five slices and built as three produces changed PHP that formats, analyses and tests clean,
+an OpenAPI document matching the endpoints that exist, and a checkpoint whose remaining `- [ ]` lines
+the agent wrote itself.
 
-The three mechanisms that should catch it do not:
+`conformance-reviewer` is an LLM judging a diff against AC text: no exit code, and it reads what was
+written rather than what was omitted. `gates.coverage_claim` is warn-only and matches hedging words —
+it fires on "выборочно" and stays silent on a confident report of three slices as five.
 
-| Mechanism | Why it misses this |
+## What the measurement changed
+
+The first draft of this spec assumed the checkpoint already carried a dereferenceable pointer, because
+`guidelines/working-memory.md` prescribes
+`- [ ] <slice> — red test: <path> — status: red|green`. An audit of every checkpoint on the author's
+machine on 2026-09-14 — **37 files, 11 projects, 80 slice lines, 71 marked `[x]`** — found:
+
+| | |
 |---|---|
-| `## Plan (slices)` in `task-state.md` | Prose. `working-memory.md` asks the agent to flip `[ ]`→`[x]` and `red`→`green` honestly. No hook parses those lines; nothing compares the box to a test result |
-| `conformance-reviewer` | An LLM judging a diff against AC text. No exit code, and it reads what was written, not what was omitted — an AC with no code and no test is the case it is weakest on |
-| `gates.coverage_claim` | Warn-only, and it matches hedging words in the final message. It fires on "выборочно"; it stays silent on a confident report of three slices as five |
+| Closed slices carrying a `tests/*.php` pointer | **10 of 71** |
+| …whose named file is missing | 0 of 10 |
+| Closed slices using the canonical `red test:` label | **3 of 71** |
+| Closed slices carrying no test pointer at all | **61** |
 
-The checkpoint already carries what a runnable gate needs. The current slice line is
-`- [ ] <slice> — red test: <path> — status: red|green`, and `skills/spec/SKILL.md` step 4 gives every
-acceptance criterion a stable ID and a `→ test:` pointer. The pointer exists. Nothing dereferences it.
+The prescribed format is not what projects write. What they write points at **acceptance criteria**:
+
+```
+- [x] Slice 4 — `Characteristic::ordered()` scope + `characteristics.blade.php:7` → AC9 **green**.
+- [x] **AC5 verified by mutation**: forcing `COLLATE utf8mb4_bin` fails exactly
+- [x] S1: `app/Models/Traits/OrdersByTranslatedColumn.php` — `scopeOrderByTranslated`
+- [x] commit — 5f8320a
+```
+
+Three consequences, each of which moved a decision:
+
+1. **An executing gate has almost nothing to execute.** Phase 2 of the first draft would have had
+   material for 14% of this corpus. Execution moves to wave-32, after pointers exist.
+2. **The anchor is the AC id, not the test path.** Projects already reference `AC9`, `AC5`. The gate
+   binds to what they write.
+3. **`## Plan (slices)` is a work journal**, carrying commits, docs and live checks as rows beside
+   slices. The parser must expect rows that are not slices and must not fail on them.
+
+A parallel trial — one L4 task in `otaje`, 11 slices, a per-slice runnable ledger written before the
+code — returned 11 gates, 10 runnable, 0 unmet, 0 blind misses. It is recorded in
+`~/.claude/wave-31-log.md` and it is **not** evidence that the discipline works: the agent authoring
+the ledger was the agent writing the code, and it knew all eleven checks in advance. A zero under
+observation does not separate "the ledger prevented omission" from "this task would have been clean
+anyway". The audit above is the load-bearing measurement; the trial is context.
 
 ## Design
 
-### `hooks/slice-gate.sh` (Stop) — the box is set by the gate, not by the agent
+### `hooks/slice-gate.sh` (Stop) — executes nothing, reads everything
 
-Two phases, chosen by the checkpoint's `Mode:` (resolved through `gw_mode` in `hooks/lib.sh`, which
-already returns nothing for the terminal `Done` marker — this gate matches `Done` directly, the way
-`estimate-ledger.sh --record-if-done` does).
+A closed slice must name what proves it. The gate parses `.claude/groundwork/task-state.md` and the
+spec named by its `Spec:` line. It runs no test, no analyser, no HTTP call: one file read plus one
+spec read, cheap enough for every Stop, with no runner and no approval boundary.
 
-**Phase 1 — structure, on every Stop. Parses, never executes.**
+**A row is a slice** when it matches `- [ ]` / `- [x]` / `- [~]` inside the `## Plan` section. Rows
+that name only a commit hash, a document path, or a live check are journal rows: the gate counts them,
+never parses them as slices, and never refuses on them. The audit found these in the majority of real
+checkpoints, so tolerating them is a requirement, not a kindness.
 
-Refuses on: a slice marked `[x]` with no check and no `manual:`; a malformed slice line; a duplicate
-slice name; an `abandoned:` with a blank reason. Costs one file read, so it can run on every Stop
-without a runner.
-
-**Phase 2 — execution, only when `Mode: Done`.** Every runnable check is executed, including slices
-already `[x]`. A slice is met only when its process exits `0`. The gate never reads `status: green`
-as evidence — it re-derives the result, which is why no evidence digest is needed: there is no stored
-proof to forge. This is `unlazy`'s `--reverify` semantics with its `--status` mode as phase 1.
-
-Executing only at `Done` is deliberate. `test-gate.sh` already runs the suite on changed PHP at every
-Stop; re-running per-slice filters alongside it would double the wait on every turn for a signal that
-only matters at handoff.
-
-### Checkpoint format — extended, backward compatible
+**A slice marked `[x]` must carry one of three proofs:**
 
 ```markdown
-## Plan (slices)
-- [x] promo code applies to cart total (AC1, AC2) — red test: tests/Feature/PromoCartTest.php — status: green
-- [ ] expired code is refused (AC3) — check: test --filter=PromoCodeExpiry — status: red
-- [ ] admin list shows redemption count (AC4) — check: http:GET /admin/promo-codes -> 200 — status: red
-- [ ] wording of the refusal message (AC5) — manual: product owner reads the 422 body — status: pending
-- [~] bulk import (AC6) — abandoned: the CSV schema is not agreed; handed off in the summary
+- [x] expired code is refused (AC3) — test: tests/Feature/PromoCodeExpiryTest.php
+- [x] refusal wording (AC5) — manual: product owner read the 422 body on staging 2026-09-14
+- [~] bulk import (AC6) — abandoned: CSV schema not agreed; handed off in the summary
 ```
 
-- **`red test: <path>` keeps working unchanged** — it is read as `check: test <path>`. Every existing
-  checkpoint in the eleven onboarded projects stays valid. This is the migration path; no rewrite.
-- **`(ACn, ACm)`** — optional, and what makes deletion detectable (below).
-- **`manual: <what a person must look at>`** — the gate counts it, names it in the summary, and never
-  executes it. `unlazy`'s manual gate, kept because a wording decision has no command.
-- **`[~] … abandoned: <reason>`** — a slice that cannot be built. The gate prints `HANDOFF REQUIRED`
-  and **exits 1**: the task can be reported, but never as complete. A blank reason is malformed.
+- **`test: <path>`** — the file must exist. Whether it passes is wave-32's question; whether it exists
+  is answerable now and separates a slice with a test from a slice with a claim.
+- **`manual: <what a person observed>`** — accepted, counted, and named in the summary. The text must
+  be non-empty and must not merely restate the slice title; a manual proof that says "verified" proves
+  nothing and is refused.
+- **`abandoned: <reason>`** — `HANDOFF REQUIRED`, **exit 1**. The task can be reported, never as
+  complete. A blank reason is malformed.
 
-### Check forms — whitelist by default, shell by explicit project consent
+A `[x]` with none of the three is refused, naming the slice. That single rule is what the audit says is
+missing: 61 of 71 closed slices named nothing at all.
 
-`CHECK:` in `unlazy` is arbitrary shell, which is why it needs `~/.unlazy/approved`, binding to shell,
-`PATH`, platform and timeout, and a `SECURITY.md`. Groundwork's hooks run commands from
-`.groundwork.json`, not from text an agent writes. Keeping that property costs one whitelist:
+**`(ACn)` and the reconciliation.** At `Mode: Done`, when `Spec:` names a file, the gate collects that
+spec's `ACn` ids and subtracts the ids claimed by slices. An AC neither claimed nor named in an
+abandonment is reported by id, and the gate refuses. This is what answers deletion: removing a slice no
+longer removes the obligation, because the obligation lives in the approved spec.
 
-| Form | Resolves to | Default |
-|---|---|---|
-| `test <path>` / `test --filter=X` | `gw_cmd artisan test …`, honouring `commands.test` | on |
-| `analyse` | `gw_cmd composer analyse`, honouring `commands.analyse` | on |
-| `format:test` | `gw_cmd composer format:test` | on |
-| `openapi` | `commands.openapi_generate`, clean generation | on |
-| `http:<METHOD> <path> -> <status>` | a real request against the running app | on |
-| `shell:<command>` | executed as written | **off** |
+Slices with no `(ACn)` reconcile nothing — one warning naming the count, no refusal. That keeps L1
+inline specs and every pre-v0.41.0 checkpoint working.
 
-`shell:` runs only when `.groundwork.json` sets `gates.slice_ledger_shell: true` **and** the exact
-command string appears in `gates.slice_ledger_allowed[]`. Consent lives in a tracked file that passes
-through review, not in a home directory.
+**Backward compatibility.** `— red test: <path> — status: green` is read as `test: <path>`. The ten
+checkpoints using it stay valid; `status:` is parsed and ignored, because the gate derives nothing from
+a word the agent typed.
 
-**The hole this opens, named:** an agent can edit `.groundwork.json` and approve its own command.
-`hooks/pre-tool-guard.sh` already denies edits by path and already reads the checkpoint mode; adding
-`.groundwork.json` to its denied set while a task mode is active closes it, and that is AC9 below.
-Without AC9, `shell:` is a gate the subject of the gate can rewrite.
+### Oracle lint — static, no execution
 
-### Deletion is caught by reconciling against the spec
+Two rules survive from the first draft, both answerable by reading the test file:
 
-A gate over a list the agent maintains cannot see a line that was removed. The reconciliation is what
-sees it: at `Mode: Done`, when the checkpoint's `Spec:` names a file, the gate collects the `ACn` IDs
-from that spec and subtracts the IDs claimed by the slices. Any AC that is neither claimed by a slice
-nor named in an `abandoned:` reason is reported by ID, and the gate refuses.
-
-This is `unlazy`'s `PLAN.md` inventory check. It is the mechanism that answers "they skip items on
-purpose": removing the slice no longer removes the obligation, because the obligation is anchored in
-the approved spec.
-
-Slices with no `(ACn)` suffix reconcile nothing — the gate warns once naming the count, and does not
-refuse. That keeps L1 inline specs and pre-v0.41.0 checkpoints working.
-
-### Oracle lint — a check that cannot fail is not a check
-
-`done-gate.sh` already refuses a declared no-op in `commands.analyse` (`echo`, `true`, `:`, `printf`
-as the first word). The same class exists one level down, in the test a slice points at.
-`gate-lint.mjs` in `unlazy` carries seven rules; four survive translation to a PHP suite, and they run
-inside phase 1:
-
-| Rule | Refuses / warns on |
+| Rule | Refuses on |
 |---|---|
-| `no-assertion` | The named test file or filter contains no assertion — **refuse** |
-| `tautological-assert` | `assertTrue(true)`, `assertEquals(1, 1)`, or a body that is only `markTestSkipped`/`markTestIncomplete` — **refuse** |
-| `unmeasured-number` | A number in the AC text that appears in no assertion of its test — **warn** |
-| `mostly-manual` | More than half the slices are `manual:` at L2+ — **warn** |
+| `no-assertion` | The named test file contains no assertion |
+| `tautological-assert` | `assertTrue(true)`, `assertEquals(1, 1)`, or a body that is only `markTestSkipped` / `markTestIncomplete` |
 
-`weak-expect` and `path-read-as-regex` do not translate: this gate reads exit codes, not stdout, so
-there is no expectation string to weaken.
+Two rules are dropped, each for a measured reason:
+
+- **`unmeasured-number`** — the trial produced a false positive on the gate title "tells the **Block-2**
+  team…", reading an identifier as a measurable quantity. A lint that misfires on a project's own
+  vocabulary trains its user to ignore it.
+- **`mostly-manual`** — dead on arrival as a warning. On the audited corpus it would fire on nearly
+  every task. Replaced by the stricter requirement above: a manual proof must say what a person
+  observed.
 
 ### Not wedging the session
 
-This is the eighth Stop hook and the fourth that can refuse. It carries a progress guard modelled on
-`unlazy`'s: the gate records the set of met slice IDs in `.claude/groundwork/slice-guard`, and after
-**three consecutive refusals with that set unchanged** it releases with an explicit notice naming what
-is still unmet. A gate that can strand a session gets uninstalled; one that says "I am letting go, and
-here is what stays unproven" does not. The `stop_hook_active` re-entry check from
-`hooks/coverage-claim.sh` is reused verbatim.
+The eighth Stop hook, and the fourth that can refuse. The guard from `unlazy`: the gate records the set
+of proven slice ids in `.claude/groundwork/slice-guard`, and after **three consecutive refusals with
+that set unchanged** it releases with a notice naming what is still unproven. The `stop_hook_active`
+re-entry check from `hooks/coverage-claim.sh` is reused verbatim.
 
-### Scope by level, and the opt-out
+### Scope, opt-out, and the dependency
 
-L0/L1 have no spec and often no slice list — the gate is silent. L2+ is where the plan exists and
-where `conformance-reviewer` already runs; the calibration follows the fan-out table in
+L0/L1 are silent — no spec, often no slice list. L2+ follows the fan-out table in
 `guidelines/ai-sdd-process.md` rather than restating it.
 
 Opt-out is `gates.slice_ledger: false` plus `gates.slice_ledger_skip_reason`, the shape
-`analyse_skip_reason` established: turning it off is a project's decision, leaving the Definition of
-Done promising a check nobody runs is not.
+`analyse_skip_reason` established.
 
-**The dependency worth stating:** this gate reads the checkpoint, so `memory.checkpoint: false`
-disables it structurally. In that configuration it prints one line saying the ledger cannot be checked
-and exits 0 — the failure mode from the PHP-only gates, where a gate returned before reading its own
-command and a silent pass read exactly like a real one, is not repeated.
+The gate reads the checkpoint, so `memory.checkpoint: false` disables it structurally. In that
+configuration it prints one line saying the slice ledger cannot be checked and exits 0 — the failure
+mode of the PHP-only gates, where a silent pass read exactly like a real one, is not repeated.
 
 ## Acceptance criteria
 
 | # | Criterion | Proof |
 |---|---|---|
-| AC1 | A slice marked `[x]` whose test fails is refused at `Mode: Done`, naming the slice | `slice-gate.sh` case: green box, failing filter |
-| AC2 | A slice marked `[x]` with neither check nor `manual:` is refused in phase 1, on any Stop | 2 cases: no attribute; `manual:` present and accepted |
-| AC3 | An existing `red test: <path>` line is read as `check: test <path>` and is not malformed | 2 cases: a v0.40.0 checkpoint verbatim; the same with `--filter=` |
-| AC4 | `[~] … abandoned: <reason>` prints `HANDOFF REQUIRED` and exits 1; a blank reason is malformed | 2 cases |
-| AC5 | An `ACn` in the spec claimed by no slice and named in no abandonment is refused by ID | 3 cases: missing AC; AC claimed by a slice; AC named in an abandonment |
-| AC6 | Slices with no `(ACn)` suffix warn once and do not refuse | 1 case |
-| AC7 | `shell:` does not execute without both `gates.slice_ledger_shell` and a matching allowlist entry | 3 cases: both absent; toggle only; toggle + exact match executes |
-| AC8 | `no-assertion` and `tautological-assert` refuse; `unmeasured-number` and `mostly-manual` warn | 4 cases |
-| AC9 | `pre-tool-guard.sh` denies editing `.groundwork.json` while a task mode is active | 2 cases: active mode denies; no checkpoint allows |
-| AC10 | The guard releases after three refusals with the met set unchanged, and resets when a slice is met | 2 cases |
-| AC11 | Phase 2 runs only at `Mode: Done`; an intermediate Stop executes nothing | 2 cases, asserted by a check command that writes a marker file |
-| AC12 | The gate is inert with no `.groundwork.json`, no checkpoint, no jq, under its opt-out, at L0/L1, and under `memory.checkpoint: false` — and the last one says so | 6 cases |
-| AC13 | The whole suite stays green | `hooks/tests/all.sh`, 335 existing + ~28 new |
+| AC1 | A slice marked `[x]` carrying none of `test:` / `manual:` / `abandoned:` is refused, naming the slice | 1 case |
+| AC2 | `test: <path>` whose file is absent is refused; present passes; whether it passes is not checked | 3 cases, the third asserted by a deliberately failing test that the gate accepts |
+| AC3 | `manual:` with substantive text passes; empty, or a restatement of the slice title, is refused | 3 cases |
+| AC4 | `abandoned: <reason>` prints `HANDOFF REQUIRED` and exits 1; a blank reason is malformed | 2 cases |
+| AC5 | A journal row (commit hash, doc path, live check) is counted and never refused on | 3 cases drawn verbatim from the audited corpus |
+| AC6 | An `ACn` in the spec claimed by no slice and named in no abandonment is refused by id at `Mode: Done` | 3 cases |
+| AC7 | Slices with no `(ACn)` warn once and do not refuse | 1 case |
+| AC8 | `— red test: <path> — status: green` is read as `test: <path>`; `status:` changes nothing | 2 cases, one a v0.40.0 checkpoint verbatim |
+| AC9 | `no-assertion` and `tautological-assert` refuse | 4 cases |
+| AC10 | The guard releases after three refusals with the proven set unchanged, and resets when a slice gains a proof | 2 cases |
+| AC11 | The gate executes nothing — no test, no analyser, no HTTP | 1 case, asserted by a `test:` file that writes a marker when run |
+| AC12 | Inert with no `.groundwork.json`, no checkpoint, no jq, under opt-out, at L0/L1, and under `memory.checkpoint: false` — and the last one says so | 6 cases |
+| AC13 | The whole suite stays green | `hooks/tests/all.sh`, 335 existing + ~30 new |
 
 ## Files
 
 - new: `hooks/slice-gate.sh`, `hooks/tests/slice-gate.sh`
-- changed: `hooks/hooks.json` (Stop, after `openapi-gate`, before `coverage-claim`);
-  `hooks/pre-tool-guard.sh` + `hooks/tests/run.sh` (AC9); `hooks/tests/all.sh` (suite list)
-- changed: `guidelines/working-memory.md` (slice grammar), `guidelines/ai-sdd-process.md` (the gate in
-  the Definition of Done)
-- changed: `skills/start-task` (write `(ACn)` when drafting slices), `skills/implement-approved`
-  (stop writing `status: green` by hand — the gate sets it), `skills/spec` (AC IDs are what the
-  reconciliation subtracts), `skills/final-check` (the ledger summary joins the handoff)
+- changed: `hooks/hooks.json` (Stop, after `openapi-gate`); `hooks/tests/all.sh` (suite list)
+- changed: `guidelines/working-memory.md` — the slice grammar, replacing a format the corpus shows is
+  not written
+- changed: `skills/start-task` (write `(ACn)` when drafting slices), `skills/implement-approved` (name
+  the proof when closing a slice), `skills/final-check` (the ledger summary joins the handoff)
 - changed: `README.md`, `.claude-plugin/plugin.json` → `0.41.0`
 
 ## Deliberately not done
 
-- **Proving red→green.** The plugin asks for a failing test before the code and cannot verify it after
-  the fact without re-running history. A gate that inferred it from a timestamp or a commit would
-  produce a number that looks measured and is not — the reason `estimate-ledger.sh` refuses to infer
-  `Started:` from an mtime.
-- **The Depth Tree.** `unlazy`'s own `references/method.md` states that the v1 claim about depth
-  multiplying effort is not reproducible from the repository's artifacts, and that agents treated depth
-  as a thoroughness cue. L0–L4 and the `deep-*` workflow skills already occupy that role here.
+- **Executing the checks.** Moved to wave-32, on the audit's evidence: 10 of 71 closed slices carry a
+  pointer worth executing. Building the executor first would have shipped a gate with nothing to run.
+  Wave-32 becomes worth writing when new checkpoints show the pointer rate rising — measurable by
+  re-running the same audit.
+- **Arbitrary `shell:` checks and their approval layer.** Nothing executes here, so the question does
+  not arise. It returns with wave-32, together with AC9 of the first draft (denying edits to
+  `.groundwork.json` while a task mode is active), which only matters once a command can run.
+- **Proving red→green.** Unverifiable after the fact without re-running history. A gate inferring it
+  from a timestamp would produce a number that looks measured and is not — the reason
+  `estimate-ledger.sh` refuses to infer `Started:` from an mtime.
+- **The Depth Tree.** `unlazy`'s own `references/method.md` states the v1 claim about depth multiplying
+  effort is not reproducible from its artifacts. L0–L4 and the `deep-*` skills hold that role here.
 - **Orchestration, `OWNS:`, leases, dispatch waves.** `deep-discovery`, `deep-grounding` and
-  `deep-review` already fan out through the Workflow tool. A second coordination model would compete
-  with them.
-- **An evidence digest.** `unlazy` binds a SHA-256 of the parsed check definition into its evidence
-  because it stores proof between runs. Phase 2 re-executes instead of storing, so a stale record
-  cannot exist. Its own documentation calls the digest structural drift detection, not tamper proof.
-- **Blocking on the `unmeasured-number` and `mostly-manual` lints.** Both are lexical heuristics over
-  prose. `coverage_claim` shipped warn-only in v0.24.0 for the same reason, and its log is what a later
-  wave would read before turning either one blocking.
+  `deep-review` already fan out through the Workflow tool.
+- **An evidence digest.** It binds stored proof to a definition; this gate stores no proof.
 
 ## Estimate
 
-**~90–120 active agent minutes**, in one sitting.
+**~50–70 active agent minutes**, in one sitting.
 
 The ledger holds 24 recorded tasks, median 32 active minutes, p75 80 (`estimate-ledger.sh --report`,
-all projects, 2026-09-14). This wave sits above p75 and the number leans on that tail, not on the
-median: two hook bodies, a format extension with a backward-compatibility path, ~28 test cases, and
-edits across four skills and two guidelines. No row in the corpus is a plugin wave with two hooks, so
-the sample supporting this particular shape is thin.
+all projects, 2026-09-14). This sits between them: one hook that only parses, ~30 test cases, and edits
+across three skills and one guideline. Dropping execution removed the runner-dependent cases, the
+approval surface and the `pre-tool-guard` change — roughly half the first draft's 90–120.
 
-Human time, not included above: approving this spec; deciding whether `shell:` ships in v0.41.0 or
-waits; running the trial that tells whether the ledger discipline holds on real L2/L3 tasks.
+Human time, not included: approving this spec; re-running the checkpoint audit later to decide whether
+wave-32 has become worth writing.
