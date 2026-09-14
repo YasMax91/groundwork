@@ -96,6 +96,11 @@
           },
           {
             "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/slice-gate.sh",
+            "statusMessage": "Groundwork: checking the slice ledger…"
+          },
+          {
+            "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/hooks/coverage-claim.sh",
             "statusMessage": "Groundwork: checking the coverage claim…"
           },

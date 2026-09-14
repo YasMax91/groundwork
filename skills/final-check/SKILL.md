@@ -166,8 +166,12 @@ Skip at L0/L1: a receipt for a one-line fix is ceremony.
 5. Risks, deployment notes, migrations, cache/config/queue/scheduler impact, API-contract changes.
 6. Anything skipped, deferred, or not run.
 7. Assumptions or CRD/code conflicts.
-8. **What you decided alone** — the closing cost-of-silence list (below).
-9. **Promised against actual** — one line: what the estimate said, what the work took in active agent
+8. **The slice ledger** — one line: how many slices closed with a test, how many with a manual proof,
+   how many abandoned, and every abandonment named. An abandoned slice makes the task reportable, never
+   complete, so it is stated here rather than left in the checkpoint. Skip at L0/L1, where the gate is
+   silent.
+9. **What you decided alone** — the closing cost-of-silence list (below).
+10. **Promised against actual** — one line: what the estimate said, what the work took in active agent
    minutes, and the gap. If no estimate was given, say that instead. This is the only place an estimate
    is ever falsified; without it the next one inherits the same error with nothing to correct it. Skip
    at L0.

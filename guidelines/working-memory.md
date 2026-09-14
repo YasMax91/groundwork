@@ -44,8 +44,10 @@ row to the estimate ledger, once (the dedup key is the task title plus `Started:
 - Updated: <YYYY-MM-DD>
 
 ## Plan (slices)
-- [ ] <slice> — red test: <path> — status: red|green
-- [x] <done slice>
+- [ ] <slice> (AC1, AC2) — test: <path>
+- [x] <closed slice> (AC3) — test: tests/Feature/<Name>Test.php
+- [x] <closed slice> (AC4) — manual: <what a person observed, where, when>
+- [~] <impossible slice> (AC5) — abandoned: <reason, and where it was handed off>
 
 ## Decisions
 - <decision> — <option the user chose> — <YYYY-MM-DD>
@@ -58,11 +60,31 @@ row to the estimate ledger, once (the dedup key is the task title plus `Started:
 - <blocking item, or "none">
 ```
 
+**A closed slice names what proves it.** `[x]` carries one of three, and the `slice-gate` Stop hook
+refuses the handoff when it carries none:
+
+- **`test: <path>`** — the file must exist. Whether it passes is on you; whether it is there is checked.
+- **`manual: <what a person observed>`** — for an outcome no command can decide. "verified" is not an
+  observation; "product owner read the 422 body on staging 2026-09-14" is.
+- **`abandoned: <reason>`** — for a slice that turned out impossible. Keep the row, never delete it:
+  the gate reports `HANDOFF REQUIRED` and the task stays reportable but not complete. Deleting the row
+  is how an obligation disappears without anyone deciding to drop it.
+
+**`(ACn)` binds the slice to the spec.** At `Mode: Done` the gate subtracts the AC ids the slices claim
+from the ids the spec carries, and refuses on the difference — so removing a slice no longer removes
+the obligation. Slices with no `(ACn)` reconcile nothing and earn one notice.
+
+Rows that record a commit, a document or a live check are journal entries, not slices: the gate counts
+them and never refuses on them.
+
+The v0.40.0 form `— red test: <path> — status: green` still parses as `test: <path>`. `status:` is read
+and ignored — the gate derives nothing from a word the agent typed about its own work.
+
 **Write what is true, not what the slice was aiming at.** The `SessionStart` hook re-injects this file
 verbatim, so an overstatement is not a note — it is the next session's premise. "Asserted on
-`POST /orders`; `PATCH /orders/{id}` not covered" beats "asserted on both endpoints"; a slice is `green`
-only when its test passes **now**; `verified` requires the evidence to exist, everything else is `assumed`.
-A checkpoint that rounds coverage up is how work gets declared done twice and finished once.
+`POST /orders`; `PATCH /orders/{id}` not covered" beats "asserted on both endpoints"; `verified` requires
+the evidence to exist, everything else is `assumed`. A checkpoint that rounds coverage up is how work
+gets declared done twice and finished once.
 
 `Started:` and `Kind:` exist for the **estimate ledger**. `final-check` closes the window and records
 how long the task actually took, in the agent's active minutes, so later estimates rest on measurement
@@ -83,10 +105,11 @@ Never write `n/a` to silence the gate on a real contract change — see
 Who writes it:
 
 - **start-task** — create/overwrite it once the plan is drafted (mode, level, spec path, slice list
-  as the red list, assumptions, open approvals), and record every interview answer under
+  as the red list **with each slice's `(ACn)`**, assumptions, open approvals), and record every interview answer under
   `## Decisions`. Read that section before asking anything — a decision the user already made is never
   re-asked, whatever the transcript lost (see [clarify-protocol.md](clarify-protocol.md)).
-- **implement-approved** — update it as each slice goes red→green; flip `[ ]`→`[x]` and `red`→`green`.
+- **implement-approved** — update it as each slice goes red→green: flip `[ ]`→`[x]` and name the proof
+  (`test:` / `manual:` / `abandoned:`) in the same edit. A box ticked without one is refused at Stop.
 - **final-check** — on a clean handoff, mark the task done so the next session starts fresh. **Deleting
   the file is only safe once the change is committed** (or if it never touched the contract surface): the
   `openapi` Stop gate reads the `OpenAPI:` line from here against the *uncommitted* working tree, so an

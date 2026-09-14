@@ -111,7 +111,7 @@ Stay in **Discovery mode**: inspect and plan only, do not edit files until the p
    the plain-language form the clarify protocol specifies. If the list is empty, say so; that is a claim
    that the frontier really was empty, not a formality to skip. Then continue to the plan.
 9. **Write the task checkpoint** to `.claude/groundwork/task-state.md` — mode, level, spec path, the
-   slice/red list, the decisions just settled, assumptions, open approvals — so the work survives a
+   slice/red list **with each slice's `(ACn)`**, the decisions just settled, assumptions, open approvals — so the work survives a
    restart or compaction (the `SessionStart` hook re-injects it automatically, no re-reading). This
    bookkeeping file under `.claude/groundwork/` is workflow memory, not a code edit, so it is allowed in
    Discovery. Format: `${CLAUDE_SKILL_DIR}/../../guidelines/working-memory.md`.
@@ -124,7 +124,9 @@ Stay in **Discovery mode**: inspect and plan only, do not edit files until the p
 - Do not invent business rules — derive them from CRD, code, or an explicit user decision.
 - Label every claim as `verified` (with evidence) or `assumed`. Never use unqualified "done".
 - **Plan tests first.** Turn the acceptance criteria into the red list before any code — see
-  `${CLAUDE_SKILL_DIR}/../../guidelines/tdd-protocol.md`.
+  `${CLAUDE_SKILL_DIR}/../../guidelines/tdd-protocol.md`. Carry each criterion's id onto its slice as
+  `(AC1, AC2)`: at `Mode: Done` the `slice-gate` hook subtracts the claimed ids from the spec's and
+  refuses on the difference, so a slice quietly dropped later is a slice the gate still asks about.
 - For a normal feature or risky change, write a spec with the `spec` skill before implementing.
 - **Any duration stated in the plan goes through the ledger, never through instinct.** Read
   `${CLAUDE_PLUGIN_ROOT}/hooks/estimate-ledger.sh --report` and quote the median with its sample size;

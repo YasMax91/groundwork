@@ -40,10 +40,14 @@ Only proceed if the spec/plan was **explicitly approved in this conversation**. 
 - Drive the work with **focused tests written first** — behavior, validation, authorization, response
   shape, workflow transitions, money, migrations, and any fixed bug (failing regression test before
   the fix).
-- **Keep the checkpoint current** — as each slice goes red→green, flip `[ ]`→`[x]` and `red`→`green`
-  in `.claude/groundwork/task-state.md` (see `${CLAUDE_SKILL_DIR}/../../guidelines/working-memory.md`).
-  It is what survives a restart or compaction, so the next session resumes mid-task instead of
-  re-deriving the plan.
+- **Keep the checkpoint current, and name the proof in the same edit** — as each slice goes red→green,
+  flip `[ ]`→`[x]` and add one of `test: <path>` / `manual: <what a person observed>` /
+  `abandoned: <reason>` in `.claude/groundwork/task-state.md` (see
+  `${CLAUDE_SKILL_DIR}/../../guidelines/working-memory.md`). The `slice-gate` Stop hook refuses a
+  ticked box that names none, and refuses a `test:` whose file is absent or whose assertions cannot
+  fail. A slice that turns out impossible keeps its row and becomes `abandoned:` — deleting it is how
+  an obligation disappears with nobody deciding to drop it. The checkpoint is what survives a restart
+  or compaction, so the next session resumes mid-task instead of re-deriving the plan.
 - **A new sub-request is a scope change — re-check the blast radius before building it.** When the user
   adds work inside the active task ("и ещё поправь X", "while you're there…"), name the sub-request's
   seeds (files, models, tables, symbols) and compare them with the `SEEDS:` header of the cached impact

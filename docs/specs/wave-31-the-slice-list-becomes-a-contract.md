@@ -6,7 +6,8 @@
 - Source: agents closing tasks with slices unbuilt while every Stop gate stayed green. Redirected
   2026-09-14 by a trial and an audit — see **What the measurement changed** below. Design input read
   from `Leonxlnx/unlazy` (MIT, commit `1667149`): the abandon protocol and the progress guard.
-- Status: **planned**. Supersedes the first draft of this spec (commit `e2565f6`), which anchored on
+- Status: **implemented** (2026-09-14). Proven by tests: `slice-gate.sh` 44 cases (new), 379 across 17
+  suites, all green. Supersedes the first draft of this spec (commit `e2565f6`), which anchored on
   `red test:` pointers that the corpus does not contain.
 - Target version: **v0.41.0**. The executing gate moves to wave-32.
 
@@ -145,23 +146,57 @@ The gate reads the checkpoint, so `memory.checkpoint: false` disables it structu
 configuration it prints one line saying the slice ledger cannot be checked and exits 0 — the failure
 mode of the PHP-only gates, where a silent pass read exactly like a real one, is not repeated.
 
+## What building it changed
+
+Running the gate over all 36 real checkpoints before committing it produced three corrections the
+spec had not anticipated. Each is now a test case drawn from the row that exposed it.
+
+**Slices are multi-line, and the proof usually sits on a continuation.** The real shape is
+
+```
+- [x] S0 dependency + cloud disk + per-APP_ENV bucket prefix —
+      red test: tests/Feature/Content/CloudImageDiskConfigTest — status: green (7 cases)
+```
+
+Reading only the checkbox line refused precisely the slices that *had* named their evidence. The
+parser now joins a slice with its continuations before judging it.
+
+**The label is syntax; naming the proof is the substance.** The corpus writes `red test:`, `red tests:`
+(several, comma-separated, with `(N)` counters), `red:`, and a bare path with no label at all. Class
+names appear as often as paths, and paths often without `.php`. All of these resolve — a slice that
+points at a real test file has met the rule. Two of 36 checkpoints were refused for naming their
+evidence in a shape the parser did not know, which is a false refusal on finished work.
+
+**A checkpoint written before this grammar must be told, not refused** (AC14). Two of eleven projects
+had a live `task-state.md` whose closed slices named nothing, and would have blocked their first Stop
+after the upgrade on work finished under the old rules. When a checkpoint uses no part of the grammar
+— no `(ACn)`, no proof label anywhere — the gate emits one explanatory notice and exits 0. One slice
+speaking the new format arms it for all of them, so the migration ends by itself.
+
+After these, the corpus lands at 29 silent, 2 notice, 5 refused of 36. All five refusals are slices
+naming a *code* file or prose instead of a test — the class this gate exists for — and all five live
+in finished `.done` checkpoints the gate never reads in practice. No live `task-state.md` is refused.
+
 ## Acceptance criteria
 
-| # | Criterion | Proof |
+| # | Criterion | Result |
 |---|---|---|
-| AC1 | A slice marked `[x]` carrying none of `test:` / `manual:` / `abandoned:` is refused, naming the slice | 1 case |
-| AC2 | `test: <path>` whose file is absent is refused; present passes; whether it passes is not checked | 3 cases, the third asserted by a deliberately failing test that the gate accepts |
-| AC3 | `manual:` with substantive text passes; empty, or a restatement of the slice title, is refused | 3 cases |
-| AC4 | `abandoned: <reason>` prints `HANDOFF REQUIRED` and exits 1; a blank reason is malformed | 2 cases |
-| AC5 | A journal row (commit hash, doc path, live check) is counted and never refused on | 3 cases drawn verbatim from the audited corpus |
-| AC6 | An `ACn` in the spec claimed by no slice and named in no abandonment is refused by id at `Mode: Done` | 3 cases |
-| AC7 | Slices with no `(ACn)` warn once and do not refuse | 1 case |
-| AC8 | `— red test: <path> — status: green` is read as `test: <path>`; `status:` changes nothing | 2 cases, one a v0.40.0 checkpoint verbatim |
-| AC9 | `no-assertion` and `tautological-assert` refuse | 4 cases |
-| AC10 | The guard releases after three refusals with the proven set unchanged, and resets when a slice gains a proof | 2 cases |
-| AC11 | The gate executes nothing — no test, no analyser, no HTTP | 1 case, asserted by a `test:` file that writes a marker when run |
-| AC12 | Inert with no `.groundwork.json`, no checkpoint, no jq, under opt-out, at L0/L1, and under `memory.checkpoint: false` — and the last one says so | 6 cases |
-| AC13 | The whole suite stays green | `hooks/tests/all.sh`, 335 existing + ~30 new |
+| AC1 | A slice marked `[x]` carrying none of `test:` / `manual:` / `abandoned:` is refused, naming the slice | met — 1 case |
+| AC2 | `test: <path>` whose file is absent is refused; present passes; whether it passes is not checked | met — 3 cases, the third a deliberately failing test the gate accepts |
+| AC3 | `manual:` with substantive text passes; empty, or a restatement of the slice title, is refused | met — 3 cases |
+| AC4 | `abandoned: <reason>` prints `HANDOFF REQUIRED` and exits 1; a blank reason is malformed | met — 2 cases |
+| AC5 | A journal row (commit hash, doc path, live check) is counted and never refused on | met — 3 cases, verbatim from the audited corpus |
+| AC6 | An `ACn` in the spec claimed by no slice and named in no abandonment is refused by id at `Mode: Done` | met — 3 cases |
+| AC7 | Slices with no `(ACn)` warn once and do not refuse | met — 1 case |
+| AC8 | `— red test: <path> — status: green` is read as `test: <path>`; `status:` changes nothing | met — 2 cases, one a v0.40.0 checkpoint verbatim |
+| AC9 | `no-assertion` and `tautological-assert` refuse | met — 4 cases |
+| AC10 | The guard releases after three refusals with the proven set unchanged, and resets when a slice gains a proof | met — 2 cases |
+| AC11 | The gate executes nothing — no test, no analyser, no HTTP | met — 1 case, a PATH trap that records any command run |
+| AC12 | Inert with no `.groundwork.json`, no checkpoint, no jq, under opt-out, at L0/L1, and under `memory.checkpoint: false` — and the last one says so | met — 6 cases |
+| AC14 | A checkpoint using no part of the grammar is told, not refused; one new-format slice arms the gate | met — 3 cases |
+| AC15 | The shapes the corpus writes all parse: a continuation line, plural `tests:`, class names, extensionless paths, a label-less path, `red:`, and prose that is not a test name | met — 6 cases, each taken from a real checkpoint |
+| AC16 | An ordinary notice does not wear the abandonment's `HANDOFF REQUIRED` header | met — 1 case (`grep -c` prints "0", and `[ -n "0" ]` is true) |
+| AC13 | The whole suite stays green | met — 379 cases, 17 suites |
 
 ## Files
 
@@ -193,7 +228,10 @@ mode of the PHP-only gates, where a silent pass read exactly like a real one, is
 
 ## Estimate
 
-**~50–70 active agent minutes**, in one sitting.
+**~50–70 active agent minutes** was the estimate; the work ran in one sitting and the corpus run
+above accounts for most of the difference between the spec as written and the spec as built. No ledger
+row exists for it: this repository is not itself onboarded to Groundwork, so `estimate-ledger.sh` has
+nothing to record against and the number stays an estimate, not a measurement.
 
 The ledger holds 24 recorded tasks, median 32 active minutes, p75 80 (`estimate-ledger.sh --report`,
 all projects, 2026-09-14). This sits between them: one hook that only parses, ~30 test cases, and edits

@@ -185,7 +185,19 @@ companion plugins and per-project configuration are further down this file.
   (use the runner) and edits to shipped migrations — opt-out per project. Every gate honors the declared
   `runner`: a `runner: host` project runs host commands and is never denied them, and a command that
   cannot run at all (missing binary, undefined script) is reported as an environment problem rather than a
-  red. All hooks are covered by tests — `bash hooks/tests/all.sh` (313 cases, 15 suites), run on every push by `.github/workflows/ci.yml`.
+  red. All hooks are covered by tests — `bash hooks/tests/all.sh` (379 cases, 17 suites), run on every push by `.github/workflows/ci.yml`.
+- **A closed slice names what proves it** — the other Stop gates read the repository; `slice-gate` reads
+  the task. A slice ticked `[x]` in the checkpoint carries `test: <path>` (the file must exist), or
+  `manual: <what a person observed>` ("verified" is not an observation), or `abandoned: <reason>` — which
+  makes the task reportable and never complete, so an impossible slice is handed off instead of quietly
+  deleted. At `Mode: Done` it subtracts the `(ACn)` ids the slices claim from the ones the spec carries
+  and refuses on the difference: removing a slice no longer removes the obligation. It **executes
+  nothing** — two file reads, no runner — and it refuses a test file whose assertions cannot fail
+  (`assertTrue(true)`, no assertion at all). Rows recording a commit, a document or a live check are
+  journal entries and are never refused on. A checkpoint written before this grammar — no `(ACn)` and no
+  proof label anywhere — gets one explanatory notice instead of a refusal, and the gate arms itself the
+  moment one slice speaks the new format, so an upgrade never blocks finished work. Opt out with
+  `gates.slice_ledger: false`.
 - **A gate that did not run says so** — the hooks' skip paths (runner unavailable, test DB busy, generator
   unreachable) exit with a *visible* non-blocking notice instead of a silent success, because a message on
   a zero exit goes to the debug log and reaches nobody. And committing no longer disarms them: the gates
@@ -391,7 +403,7 @@ code and tests; never SQLite). Gate commands are derived from `runner` and only 
 project genuinely runs them differently — the shipped template leaves `commands` empty for that reason,
 since a pinned command would override the runner. It can still override the gate commands (`format`,
 `analyse`, `test`) and
-toggles (`format_on_edit`, `analyse_on_stop`, `test_on_stop`, `openapi_on_stop`, plus the `PreToolUse` enforcement
+toggles (`format_on_edit`, `analyse_on_stop`, `test_on_stop`, `openapi_on_stop`, `slice_ledger`, plus the `PreToolUse` enforcement
 toggles `enforce_runner` and `lock_shipped_migrations` — default **on** — and `lock_edits_in_discovery`
 — default **off**). `runner` is honored by every gate: set `"runner": "host"` and the gates drop the Sail
 prefix (`php artisan …`, `./vendor/bin/pint`) and stop denying host commands. `test_db_lock` (default
@@ -471,7 +483,7 @@ once with `claude --debug` in your project before enabling.
 pack/             groundwork-pack — dependency-only bundle (this plugin + companion plugins)
 skills/           start-task · spec · implement-approved · risk-review · final-check · estimate · ground-integration · frontend-handoff · client-doc · openapi-audit · grill · init · deep-grounding · deep-discovery · deep-review
 agents/           impact-mapper · blind-spot-mapper · grounded-researcher · adversarial-verifier · conformance-reviewer
-hooks/            hooks.json · lib.sh (shared resolvers) · session-start.sh · pre-compact.sh · task-intent.sh · format-on-edit.sh · done-gate.sh · test-gate.sh · openapi-gate.sh · coverage-claim.sh · estimate-claim.sh · estimate-ledger.sh · agent-contract.sh · trim-output.sh · pre-tool-guard.sh · statusline.sh · tests/all.sh
+hooks/            hooks.json · lib.sh (shared resolvers) · session-start.sh · pre-compact.sh · task-intent.sh · format-on-edit.sh · done-gate.sh · test-gate.sh · openapi-gate.sh · slice-gate.sh · coverage-claim.sh · defect-scan.sh · estimate-claim.sh · estimate-ledger.sh · ledger-record.sh · agent-contract.sh · trim-output.sh · pre-tool-guard.sh · statusline.sh · tests/all.sh
 workflows/        deep-review-run.js · deep-discovery-run.js · deep-grounding-run.js — the multi-agent orchestration, executed by the runtime
 guidelines/       ai-sdd-process · grounding-protocol · blind-spot-protocol · clarify-protocol · openapi-protocol · laravel-standards · tdd-protocol · writing-standards · working-memory
 docs/             skill-hygiene (author-facing) · specs/
