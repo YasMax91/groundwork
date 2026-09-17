@@ -63,7 +63,11 @@ changed="$(gw_changed_paths "$docs_dir")"
 # What counts as frontend-facing. Deliberately wide: a miss is silent and reaches the frontend as a
 # broken contract, while a false trigger costs one waiver line. `gates.handoff_surface` replaces this
 # list for a project shaped differently.
-DEFAULT_SURFACE='^routes/.*\.php$|^app/Http/|^app/Enums/|^app/Policies/|^app/Models/|^app/Services/|^database/migrations/'
+# Everything the application is made of. A narrower list reads better and misses more: the meaning
+# of a field can change from a trait, a config value or a job, without the resource that exposes it
+# being touched at all — that is the failure that reaches the frontend as a contract which compiles
+# and lies. A false trigger costs one waiver line; a miss costs the frontend a day.
+DEFAULT_SURFACE='^app/|^routes/|^config/|^database/migrations/|^lang/'
 surface="$(jq -r '.gates.handoff_surface // empty' .groundwork.json 2>/dev/null || true)"
 [ -z "$surface" ] && surface="$DEFAULT_SURFACE"
 
@@ -71,7 +75,7 @@ surface="$(jq -r '.gates.handoff_surface // empty' .groundwork.json 2>/dev/null 
 # `gates.handoff_surface_exclude` carves out what this project's frontend genuinely cannot see — a
 # server-rendered admin panel, say, where the storefront is the only API consumer. Carve out only
 # what is provably invisible: a model, a resource or a migration behind that panel is still in.
-DEFAULT_EXCLUDE='^routes/console\.php$|^routes/docs-portal\.php$'
+DEFAULT_EXCLUDE='^routes/console\.php$|^routes/docs-portal\.php$|^config/docs_portal\.php$|^app/Http/Controllers/DocsPortalController\.php$|^app/Http/Middleware/VerifyDocsPortalToken\.php$|^app/Support/DocsPortal/'
 exclude="$(jq -r '.gates.handoff_surface_exclude // empty' .groundwork.json 2>/dev/null || true)"
 [ -n "$exclude" ] && exclude="${DEFAULT_EXCLUDE}|${exclude}" || exclude="$DEFAULT_EXCLUDE"
 

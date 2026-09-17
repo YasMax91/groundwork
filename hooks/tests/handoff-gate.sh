@@ -172,6 +172,36 @@ expect "excluded admin controller" 0 "$S"
 mkdir -p "$S/app/Models"; printf '<?php\nclass Product {}\n' > "$S/app/Models/Product.php"
 expect "model behind that panel" 2 "$S"
 
+# 19. The meaning of a field can change from a trait or a config value without the resource that
+#     exposes it being touched — those are inside the surface too.
+T="$ROOT/indirect"; fixture "$T"
+mkdir -p "$T/app/Support" "$T/config"
+printf '<?php\ntrait ExposesPrice {}\n' > "$T/app/Support/ExposesPrice.php"
+expect "a trait under app/Support" 2 "$T"
+V="$ROOT/config-change"; fixture "$V"
+mkdir -p "$V/config"; printf '<?php\nreturn ["locales" => ["uk"]];\n' > "$V/config/market.php"
+expect "a config value" 2 "$V"
+
+# 20. Without jq the gate must fail safe — still gating, not silently open. A project that cannot
+#     read its own config is exactly where an unnoticed omission would go unnoticed twice.
+W="$ROOT/nojq"; fixture "$W"
+printf '<?php\nclass FooController { public function x() {} }\n' > "$W/app/Http/Controllers/FooController.php"
+nojq="$ROOT/nojq-bin"; mkdir -p "$nojq"
+got=$( cd "$W" && PATH="$nojq:/usr/bin:/bin" bash "$GATE" >/dev/null 2>&1; echo $? )
+if [ "$got" = "2" ]; then
+  pass=$((pass+1)); printf '  ok   %-42s (exit 2)\n' "no jq: still gates"
+else
+  fail=$((fail+1)); printf '  FAIL %-42s (want 2, got %s)\n' "no jq: still gates" "$got"
+fi
+
+# 21. The portal is not a contract the frontend reads — installing or retuning it must not demand
+#     a handoff about itself.
+X="$ROOT/portal-itself"; fixture "$X"
+mkdir -p "$X/config" "$X/app/Support/DocsPortal"
+printf '<?php\nreturn ["areas" => []];\n' > "$X/config/docs_portal.php"
+printf '<?php\nclass DocsIndex {}\n' > "$X/app/Support/DocsPortal/DocsIndex.php"
+expect "the portal's own files" 0 "$X"
+
 echo "-----"
 echo "passed: $pass   failed: $fail"
 [ "$fail" -eq 0 ]
