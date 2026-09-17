@@ -85,4 +85,13 @@ Use Boost and the codebase as the source of truth, and label every section:
    `gates.analyse_on_stop: false` **together with** `gates.analyse_skip_reason` naming why. Without the
    reason the gate reports every Stop with changed PHP as unanalysed — a stated skip is honest, a
    silent one is the failure this step exists to prevent.
-9. Present everything for review, highlighting only the `[assumed]` and `[needs you]` items.
+9. **Offer the frontend documentation portal.** If this backend has a frontend the team hands docs
+   to, install it — `groundwork:install-portal` does the whole thing. It is a token-gated page on
+   development and staging that serves `docs/ai/frontend` to a reader with no account here: the
+   per-feature documents, the dated deltas under them, the runnable request packages, and an
+   `index.json` his agent can read. Without it `frontend-handoff` still writes the documents, but
+   they reach the frontend only by someone remembering to attach the right file.
+
+   Skip it for a service with no frontend consumer — a queue worker, a media microservice called
+   machine-to-machine — and say that you skipped it and why.
+10. Present everything for review, highlighting only the `[assumed]` and `[needs you]` items.

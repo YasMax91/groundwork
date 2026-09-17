@@ -76,7 +76,9 @@ docs — then go straight to the commit step.
 Every document under `docs/ai/frontend/` opens with a front-matter block. It is not decoration: the
 project's documentation portal (`/dev/docs/<token>` on development and staging) builds its whole
 grouping from it, so a document without the block is invisible to the reader it was written for, and
-a grouping kept anywhere else would drift away from the files.
+a grouping kept anywhere else would drift away from the files. A project without the portal yet gets
+it from `groundwork:install-portal`; stamp the front-matter either way, so the documents are ready
+the day it is installed.
 
 A handoff:
 

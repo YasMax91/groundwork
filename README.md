@@ -124,10 +124,15 @@ companion plugins and per-project configuration are further down this file.
 - **Frontend handoff** — after the final implementation and green gates, the `frontend-handoff` skill
   writes documentation for the frontend developer under `docs/ai/frontend/` (a living reference doc per
   area + a dated handoff delta) — what to build, when, how, why, where, and the API contract, in
-  Russian, no frontend code — plus a **runnable request package** (a Postman collection or a `.http`/curl
+  Ukrainian, no frontend code — plus a **runnable request package** (a Postman collection or a `.http`/curl
   file) with the auth header, bodies derived from the `FormRequest` rules, and real example responses
   captured in the live run, so the frontend runs the contract instead of retyping it. Then asks whether
   to commit (single line, no AI attribution).
+- **The frontend reads it himself** — `install-portal` puts a token-gated page on development and
+  staging that serves `docs/ai/frontend` to a reader with no account in the backend: sections, features,
+  the dated deltas under each, downloads for the `.http` packages and OpenAPI snapshots, and an
+  `index.json` his agent can follow. It holds no index of its own — the grouping is the front-matter
+  each document carries, read on every request, so it cannot drift away from the files.
 - **OpenAPI as contract** — `openapi-protocol` + a blocking `openapi` Stop gate: an endpoint change
   that ships without its annotations is not "done". Every operation is complete to the last detail —
   every reachable status code (success + 401/403/404/409/422), the request body derived from the
@@ -481,7 +486,7 @@ once with `claude --debug` in your project before enabling.
 ```
 .claude-plugin/   plugin.json · marketplace.json
 pack/             groundwork-pack — dependency-only bundle (this plugin + companion plugins)
-skills/           start-task · spec · implement-approved · risk-review · final-check · estimate · ground-integration · frontend-handoff · client-doc · openapi-audit · grill · init · deep-grounding · deep-discovery · deep-review
+skills/           start-task · spec · implement-approved · risk-review · final-check · estimate · ground-integration · frontend-handoff · install-portal · client-doc · openapi-audit · grill · init · deep-grounding · deep-discovery · deep-review
 agents/           impact-mapper · blind-spot-mapper · grounded-researcher · adversarial-verifier · conformance-reviewer
 hooks/            hooks.json · lib.sh (shared resolvers) · session-start.sh · pre-compact.sh · task-intent.sh · format-on-edit.sh · done-gate.sh · test-gate.sh · openapi-gate.sh · slice-gate.sh · coverage-claim.sh · defect-scan.sh · estimate-claim.sh · estimate-ledger.sh · ledger-record.sh · agent-contract.sh · trim-output.sh · pre-tool-guard.sh · statusline.sh · tests/all.sh
 workflows/        deep-review-run.js · deep-discovery-run.js · deep-grounding-run.js — the multi-agent orchestration, executed by the runtime
