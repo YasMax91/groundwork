@@ -156,6 +156,11 @@ Skip at L0/L1: a receipt for a one-line fix is ceremony.
 
 ## Handoff summary
 
+Written for the person who paid for the work, per
+`${CLAUDE_SKILL_DIR}/../../guidelines/plain-language.md`: what changed for a user of the product in his
+words first, every heading in his words (never "cost of silence", never "slice ledger"), identifiers
+after the meaning, and the **ask line** last — what he does now, «ничего — работаю дальше» included.
+
 1. Behavior change first (not just files).
 2. Key files changed and why.
 3. What was verified, with the exact commands run **and the live run** — the red→green order (test
@@ -188,6 +193,9 @@ item as its own line, and an out-of-scope note says **who** put it out of scope.
 sentence at L1, fractions from L2) in `${CLAUDE_SKILL_DIR}/../../guidelines/ai-sdd-process.md`.
 
 ## The closing cost of silence
+
+In chat this block is headed in the reader's words — «что я решил за тебя» — not by the name it has
+here (`${CLAUDE_SKILL_DIR}/../../guidelines/plain-language.md`).
 
 Before the plan, `start-task` listed what you decided for the user. This is the second half: **every
 decision you took without asking since the plan was approved** — one line each, plain language first:

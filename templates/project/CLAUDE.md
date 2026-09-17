@@ -14,6 +14,10 @@ to an endpoint ships with its annotations updated **in the same change**, comple
 (every reachable response code, the request body from the FormRequest, the response schema from the
 JsonResource). The `openapi` Stop gate enforces this.
 
+Write to the user the way `plain-language.md` in the plugin prescribes: the meaning in everyday words
+first and the identifiers (field names, codes, endpoints) after it, none of the plugin's own
+vocabulary, a brief before any question, and a last line saying what he does now.
+
 Communicate with the user in Russian by default. Keep all repository artifacts (code, names,
 comments, tests, docs, specs, API/validation messages, OpenAPI text) in English unless explicitly
 requested otherwise.

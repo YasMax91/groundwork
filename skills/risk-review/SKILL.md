@@ -66,3 +66,8 @@ verifies every finding before reporting (only confirmed risks survive).
 
 End with: confirmed risks (ranked) · required approvals · missing or after-the-fact tests ·
 suggested fixes.
+
+The findings go to the owner, not only to a developer: each risk leads with what it costs him if it
+ships — money, an access rule, a broken screen, a client who sees the wrong number — and carries the
+`file:line` after that, per `${CLAUDE_SKILL_DIR}/../../guidelines/plain-language.md`. Close on the ask
+line: which risks need his decision, and which you are fixing without one.

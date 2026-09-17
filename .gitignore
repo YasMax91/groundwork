@@ -1,3 +1,6 @@
 .DS_Store
 *.log
 .idea/
+GATES.md
+.unlazy/
+.unlazy-hook-state.json

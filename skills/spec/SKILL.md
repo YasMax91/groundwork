@@ -40,7 +40,10 @@ a useful spec beats a perfect document.
    in this spec or deliberately deferred with the reason; pull from the Discovery blind-spot pass /
    `blind-spot-mapper` output. Material only; "none" is valid.
 8. **Hand off with a Russian summary (выжимка).** After the spec file is saved, post a short Russian
-   digest to chat so the user grasps the essentials without reading the full English document — cover
+   digest to chat so the user grasps the essentials without reading the full English document. The
+   digest is chat, so it follows `${CLAUDE_SKILL_DIR}/../../guidelines/plain-language.md` — no EARS, no
+   AC ids without the sentence they stand for, no section heading in the plugin's vocabulary, and the
+   ask line last. Cover
    что строим (goal), что входит в MVP и что отложено, ключевые технические решения и компромиссы,
    главные риски/допущения, и как будем проверять (acceptance + тесты). Include the spec file path.
 

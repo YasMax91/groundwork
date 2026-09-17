@@ -31,8 +31,9 @@ That last category is the one the user cannot request, so run it explicitly: wha
 as known — a business rule, a provider's terms, a financial or legal consequence, what the client will
 do with the result — and which of those has the user never confirmed in this project, leaving the agent
 to supply it silently? Name the assumption and who is currently making it. Verify each candidate against the real code before raising it — an
-unqualified guess is noise. Explain each one under the plain-language rule in
-`guidelines/clarify-protocol.md` — the consequence in everyday words first, the term after it.
+unqualified guess is noise. Explain each one under `guidelines/plain-language.md` — the consequence in
+everyday words first, the term after it, and none of the plugin's own vocabulary in the wording the
+user will end up reading.
 
 ## Report only what matters (required calibration)
 

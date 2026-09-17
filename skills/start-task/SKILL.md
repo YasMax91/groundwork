@@ -52,8 +52,10 @@ Stay in **Discovery mode**: inspect and plan only, do not edit files until the p
 6. **If the task touches an external API**, run the `ground-integration` skill before designing.
 7. **Produce the first response in this structure** (no code yet). **Open in plain language** — two or
    three sentences on what this means for the client and for the business — *before* any technical
-   section; identifiers come after the meaning, never instead of it (the layered rule in
-   `${CLAUDE_SKILL_DIR}/../../guidelines/clarify-protocol.md`). Then:
+   section; identifiers come after the meaning, never instead of it
+   (`${CLAUDE_SKILL_DIR}/../../guidelines/plain-language.md`). **Write every heading below in the
+   reader's words, not the plugin's** — «что ещё это заденет», never "blast radius"; that file fixes
+   the spelling of each internal term. Then:
    current understanding · classification · files/docs to inspect · connections / blast radius ·
    business/CRD areas affected · draft spec · acceptance criteria · **approaches** (2–3 candidate ways to
    solve the task, the recommended one first with its reason and what it forecloses — see step 7a) ·
@@ -67,8 +69,9 @@ Stay in **Discovery mode**: inspect and plan only, do not edit files until the p
    to the task, recommended one first, each with its reason and what choosing it forecloses. This is plan
    altitude — *how we solve this* — not the per-question options of the interview, and it comes **before**
    the questions so the user picks between shapes of a solution instead of ratifying the one you already
-   chose. Plain language (the layered rule in
-   `${CLAUDE_SKILL_DIR}/../../guidelines/clarify-protocol.md`).
+   chose. Plain language (`${CLAUDE_SKILL_DIR}/../../guidelines/plain-language.md`), and it opens with
+   the same brief the interview uses: what you established yourself, and what each shape changes in the
+   working product.
    - **When one path is plainly right, say exactly that in one line** — "one sensible approach, here it
      is, because X". A fabricated alternative is noise, not diligence.
    - **L0/L1** skip · **L2** one line per approach · **L3/L4** the block, and it **feeds the ADR** when
@@ -94,8 +97,11 @@ Stay in **Discovery mode**: inspect and plan only, do not edit files until the p
      "When the interrogation is mandatory" in
      `${CLAUDE_SKILL_DIR}/../../guidelines/clarify-protocol.md`).
 
-8. **Interview for the decisions that are the user's.** Run the clarify rounds per
-   `${CLAUDE_SKILL_DIR}/../../guidelines/clarify-protocol.md`: ask the frontier in one
+8. **Interview for the decisions that are the user's.** **Write the brief first** — two to five plain
+   sentences before the `AskUserQuestion` call: what you established yourself, why this decision is his
+   (money · access · what a client sees · a trade-off he lives with), and what changes in the working
+   product under each answer (`${CLAUDE_SKILL_DIR}/../../guidelines/plain-language.md`). Then run the
+   clarify rounds per `${CLAUDE_SKILL_DIR}/../../guidelines/clarify-protocol.md`: ask the frontier in one
    `AskUserQuestion` call (≤4 questions, each led by your recommendation and its consequence, each in
   plain language — no term the owner must translate first), let each
    answer push the frontier outward, and stop when it is empty. Scaled by level — **L0/L1** at most one
@@ -106,9 +112,11 @@ Stay in **Discovery mode**: inspect and plan only, do not edit files until the p
    calibration admits one; when it does not, it is recorded as an explicit assumption instead — never
    silently dropped (see the blind-spot protocol). Look up every fact yourself; never spend a question on one.
 
-8a. **State the cost of silence before the plan.** List every decision you took on the user's behalf —
-   what was assumed · why you chose it · what it costs if it is wrong · the one line that changes it — in
-   the plain-language form the clarify protocol specifies. If the list is empty, say so; that is a claim
+8a. **State what you decided for him before the plan.** List every decision you took on the user's
+   behalf — what was assumed · why you chose it · what it costs if it is wrong · the one line that
+   changes it — in the plain-language form
+   (`${CLAUDE_SKILL_DIR}/../../guidelines/plain-language.md`); the block is headed in his words («что я
+   решил за тебя»), never "cost of silence". If the list is empty, say so; that is a claim
    that the frontier really was empty, not a formality to skip. Then continue to the plan.
 9. **Write the task checkpoint** to `.claude/groundwork/task-state.md` — mode, level, spec path, the
    slice/red list **with each slice's `(ACn)`**, the decisions just settled, assumptions, open approvals — so the work survives a
@@ -121,6 +129,10 @@ Stay in **Discovery mode**: inspect and plan only, do not edit files until the p
 
 - **Clarify before you plan.** Facts are yours to find, decisions are the user's to make — see
   `${CLAUDE_SKILL_DIR}/../../guidelines/clarify-protocol.md`.
+- **End every turn on the ask line.** One last line saying what the reader does now — answer these
+  questions · approve the plan · run this on your machine · nothing, I continue
+  (`${CLAUDE_SKILL_DIR}/../../guidelines/plain-language.md`). It is due on a turn that ends mid-work
+  too: that is where he most often cannot tell whether he is being waited on.
 - Do not invent business rules — derive them from CRD, code, or an explicit user decision.
 - Label every claim as `verified` (with evidence) or `assumed`. Never use unqualified "done".
 - **Plan tests first.** Turn the acceptance criteria into the red list before any code — see

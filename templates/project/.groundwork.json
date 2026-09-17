@@ -12,6 +12,7 @@
     "handoff_on_stop": true,
     "coverage_claim": true,
     "estimate_claim": true,
+    "plain_language": true,
     "task_intent": true,
     "agent_contract": true,
     "trim_tool_output": false,

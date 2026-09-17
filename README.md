@@ -71,12 +71,15 @@ companion plugins and per-project configuration are further down this file.
   still decided for you is listed before the plan as the **cost of silence**: what was assumed, what it
   costs if wrong, and the one line that changes it. The `grill` skill runs the same interview standalone
   — to stress-test a plan, a decision, or an idea that never becomes code.
-- **Plain language first** — every text where *you* decide (the discovery report, each interview
-  question and option, the blind-spot block) opens with the lived consequence in everyday words and keeps
-  the code, field name, or status number after it: "клиент нажимает «Оплатить» и видит ошибку, деньги не
-  списываются (внутренний код 2406)". A layer, not a simplification — nothing technical is deleted, it
-  just stops being the opening. Defined once in `clarify-protocol`; engineering summaries stay
-  engineering prose.
+- **Plain language first** — every text you read in chat opens with the lived consequence in everyday
+  words and keeps the code, field name, or status number after it: "клиент нажимает «Оплатить» и видит
+  ошибку, деньги не списываются (внутренний код 2406)". A layer, not a simplification — nothing
+  technical is deleted, it just stops being the opening. Three things come with it: a **brief** before
+  any question (what the agent established itself, why this decision is yours, what changes under each
+  answer), a closing **ask line** naming what you do now — «ничего, работаю дальше» included — and a
+  table that keeps the plugin's own vocabulary out of chat, so "blast radius" arrives as «что ещё это
+  заденет» and the task level never arrives as "L2" at all. Defined once in `plain-language`, watched by
+  a warn-only gate; documents written for developers stay engineering prose.
 - **Client document** — the `client-doc` skill writes for a client who does not know what a test or an
   endpoint is: the problem, what he will be able to do, what is in and out of scope, what is needed from
   him. Deliberately without tests, acceptance criteria, endpoints, schema, or architecture — if those are
@@ -250,9 +253,10 @@ flowchart TD
         D2 --> D3[Walk the 7 blind-spot categories]
     end
 
-    D3 --> R1[First response opens in plain language<br/>then 14 sections]
+    D3 --> R1[First response opens in plain language<br/>then 15 sections, each headed in your words]
     R1 --> R2[2–3 candidate approaches<br/>recommended one first]
-    R2 --> R4[Interview: AskUserQuestion rounds<br/>≤4 questions, recommendation first<br/>L2 offers the unbounded interview as a choice]
+    R2 --> R3[Brief before the question<br/>what I found · why it is your call · what each answer changes]
+    R3 --> R4[Interview: AskUserQuestion rounds<br/>≤4 questions, recommendation first<br/>L2 offers the unbounded interview as a choice]
     R4 --> R5{Frontier still refilling at the cap?}
     R5 -->|yes| G[Offer the unbounded interview · never start it]
     G --> R4
@@ -480,6 +484,15 @@ assumptions about the business domain, a provider's terms, a financial or legal 
 the client will do with the result — which is what "I did not realise it worked that way" looks like
 before it becomes a production incident.
 
+`gates.plain_language` (default **on**) is the second gate that reads wording rather than the
+repository, and the first that reads it on your behalf. After an `AskUserQuestion` it checks the
+question, the chips and every option for the plugin's own vocabulary — "blast radius", "cost of
+silence", "красный список", a bare "L2" — and hands the model the chat spelling through
+`additionalContext`, which costs nothing because the question has already been asked. At Stop it reads
+the last message for the same vocabulary and for a missing ask line, and **warns without blocking**,
+logging to `.claude/groundwork/plain-language.log`. Your project's own words — a field name, an error
+code, an endpoint — are not on its list: those belong in chat, after the meaning.
+
 `gates.trim_tool_output` (default **off**) enables a fail-safe `PostToolUse` trimmer that collapses
 passing-test / clean-analysis spam from noisy commands to save context. It never trims when any
 failure indicator is present and does nothing if it cannot positively locate the tool output, so a
@@ -493,9 +506,9 @@ once with `claude --debug` in your project before enabling.
 pack/             groundwork-pack — dependency-only bundle (this plugin + companion plugins)
 skills/           start-task · spec · implement-approved · risk-review · final-check · estimate · ground-integration · frontend-handoff · install-portal · client-doc · openapi-audit · grill · init · deep-grounding · deep-discovery · deep-review
 agents/           impact-mapper · blind-spot-mapper · grounded-researcher · adversarial-verifier · conformance-reviewer
-hooks/            hooks.json · lib.sh (shared resolvers) · session-start.sh · pre-compact.sh · task-intent.sh · format-on-edit.sh · done-gate.sh · test-gate.sh · openapi-gate.sh · slice-gate.sh · coverage-claim.sh · defect-scan.sh · estimate-claim.sh · estimate-ledger.sh · ledger-record.sh · agent-contract.sh · trim-output.sh · pre-tool-guard.sh · statusline.sh · tests/all.sh
+hooks/            hooks.json · lib.sh (shared resolvers) · session-start.sh · pre-compact.sh · task-intent.sh · format-on-edit.sh · done-gate.sh · test-gate.sh · openapi-gate.sh · slice-gate.sh · coverage-claim.sh · plain-language.sh · defect-scan.sh · estimate-claim.sh · estimate-ledger.sh · ledger-record.sh · agent-contract.sh · trim-output.sh · pre-tool-guard.sh · statusline.sh · tests/all.sh
 workflows/        deep-review-run.js · deep-discovery-run.js · deep-grounding-run.js — the multi-agent orchestration, executed by the runtime
-guidelines/       ai-sdd-process · grounding-protocol · blind-spot-protocol · clarify-protocol · openapi-protocol · laravel-standards · tdd-protocol · writing-standards · working-memory
+guidelines/       ai-sdd-process · grounding-protocol · blind-spot-protocol · clarify-protocol · plain-language · openapi-protocol · laravel-standards · tdd-protocol · writing-standards · working-memory
 docs/             skill-hygiene (author-facing) · specs/
 templates/        project/ · specs/ · frontend/ (feature · handoff — both pointing at the runnable request package) · client-doc.md · adr.md
 ```

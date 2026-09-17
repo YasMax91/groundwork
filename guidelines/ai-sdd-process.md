@@ -248,4 +248,5 @@ passing test? · gates run or skip-reason stated? · exercised live against the 
 depth (or stated what stayed unverified + repro)? · **L2+:** every consumer of a touched shape verified,
 denormalized values present on real data? · a user-reported defect's sibling class enumerated, with each
 sibling fixed in scope or offered as a slice? · blind spots surfaced (or none)? · risks/assumptions
-documented?
+documented? · **written for the owner** — no plugin vocabulary in what he reads, identifiers after the
+meaning, and the last line saying what he does now ([plain-language.md](plain-language.md))?

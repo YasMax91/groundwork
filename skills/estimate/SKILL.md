@@ -45,6 +45,10 @@ apply — and it is labelled coarse in the answer.
 4. **A date only if asked**, as the agent's time plus the named human waits — never the development
    number padded to cover the waiting.
 
+The answer is read by the person paying for the work: what he gets and by when, in his words, then the
+numbers and their sample size (`${CLAUDE_SKILL_DIR}/../../guidelines/plain-language.md`). When the
+estimate ends the turn, it closes on the ask line — usually «от тебя — сказать, делаем или нет».
+
 ## When the sample is too small
 
 Say so, in one line, and name what you fell back to. `n = 3` is not a median; presenting it as one

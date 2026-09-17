@@ -75,6 +75,11 @@ Only proceed if the spec/plan was **explicitly approved in this conversation**. 
 
 ## Before finishing
 
+Every turn you end while building closes on the **ask line** — what the reader does now, and «ничего —
+работаю дальше» is the usual answer mid-build
+(`${CLAUDE_SKILL_DIR}/../../guidelines/plain-language.md`). A turn that ends silently makes him guess
+whether the work is waiting on him.
+
 1. Run the `final-check` skill (format + static analysis + the green test gate + Definition of Done).
    Report the red→green order for the behavior you changed.
 2. Once the gates are green, run the **`frontend-handoff`** skill — it documents the **final**

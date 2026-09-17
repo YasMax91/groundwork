@@ -29,6 +29,9 @@ add "Groundwork workflow active. Runner: ${runner}. DB engine: ${engine} — cod
 # A task typed as plain prose is still a task: name the entry point, since the user is not
 # expected to invoke the skill by hand.
 add "A task described in chat enters through the 'start-task' skill — no command needed from the user: classify, map the blast radius, interview for the decisions that are his, then plan. Interview depth is the clarify protocol's calibration, and from L2 up the first round offers the unbounded interview as a choice."
+# Chat is the one surface the owner reads, and the plugin's own vocabulary is the thing he cannot
+# parse. One line, every session: the rule costs less here than the rewrite it prevents.
+add "Chat is read by the product's owner, not an engineer: meaning in everyday words first, the project's own identifiers (field names, codes, endpoints) after it, the plugin's vocabulary never — «what else this touches», not 'blast radius'; no bare 'L2'. Every turn ends on one line saying what he does now, and «ничего — работаю дальше» is a valid value. A question carries a brief before it: what you established yourself, why the decision is his, what each answer changes. Rule: guidelines/plain-language.md."
 
 # --- framework support window ---------------------------------------------------------------
 # A project past its bug-fix date still gets security patches and nothing else: a framework bug found

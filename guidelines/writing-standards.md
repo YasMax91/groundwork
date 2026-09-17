@@ -17,7 +17,10 @@ survives — five sentences is a complete document if five sentences say everyth
 ## What is cut
 
 - **Preambles and wrap-ups.** No "this document describes", no closing paragraph that restates the
-  opening. The first sentence is already content; the last one is too.
+  opening. The first sentence is already content; the last one is too. Two things in chat are not
+  preambles and are never cut under this line: the **brief** before a question and the closing **ask
+  line** ([plain-language.md](plain-language.md)) — each of their sentences carries a fact the reader
+  did not have, which is this file's own test.
 - **Restating what was just said.** A fact lives in exactly one place. Everywhere else links to it.
   Repetition in three sections is not emphasis, it is three places to go stale.
 - **Filler vocabulary.** `it is important to note` · `in today's fast-paced world` · `robust` ·

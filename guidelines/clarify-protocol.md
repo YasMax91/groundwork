@@ -35,25 +35,15 @@ consequence rather than in taste.
 
 ## Plain language first — the layered rule
 
-The reader is the product's **owner, not its engineer**. A question he cannot parse is not a question, and
-a report he has to decode is your work handed back to him. So every text where the user *decides* leads
-with the lived consequence in everyday words and carries the technical identifier **after** it.
+Defined in [plain-language.md](plain-language.md): meaning in everyday words first, the identifier
+after it, the technical layer never deleted. That file also carries what the interview needs beyond the
+sentence — the **brief** that precedes a question (what you established yourself · why this decision is
+his · what changes under each answer), the closing **ask line**, and the table of internal terms that
+never reach chat.
 
-- **Lead with what a person experiences or loses.** "Клиент нажимает «Оплатить», видит ошибку, деньги не
-  списываются (внутренний код 2406, лимит второго уровня)" — not the code first with the meaning left
-  implied.
-- **Never delete the technical layer.** Codes, field names, and status numbers are how the work gets
-  done; they move after the meaning, in parentheses or on the next line. This is a layer, not a
-  simplification.
-- **The test before sending:** could someone who has never opened this codebase tell what he is deciding
-  and what it costs him? If not, rewrite. An option distinguishable only by a code, a field name, or an
-  internal term fails it.
-- **Where it binds:** the `AskUserQuestion` question text, option labels, and option descriptions · the
-  first-response discovery report · the blind-spot block
-  ([blind-spot-protocol.md](blind-spot-protocol.md)) · a client document, wholly (the `client-doc` skill).
-
-Scoped to decision surfaces: a `final-check` handoff summary, an OpenAPI note, or a spec stays in
-engineering prose.
+It binds every part of a round: the question text, the option labels and descriptions, the approaches
+block, the blind-spot block, and the cost-of-silence list. Engineering documents — a spec, an OpenAPI
+note, the receipt — stay outside it.
 
 ## Mechanics — one `AskUserQuestion` call per round
 
@@ -68,8 +58,12 @@ engineering prose.
   other.
 - 2–4 options per question, each a concrete outcome ("queue it, deliver by e-mail") rather than a
   restated question. Keep the header under 12 characters — it renders as a chip.
-- **Every question, label, and description obeys the plain-language rule above** — the owner should never
-  have to translate a term before he can choose.
+- **Every question, label, and description obeys [plain-language.md](plain-language.md)** — the owner
+  should never have to translate a term before he can choose.
+- **The round opens with the brief.** Before the `AskUserQuestion` call: what you established yourself,
+  why this decision is his, what changes in the product under each answer. Four good options under no
+  explanation are four coin flips — the full rule, and what separates a brief from the preamble
+  `writing-standards.md` cuts, is in [plain-language.md](plain-language.md).
 - **Subagents never ask.** A subagent cannot prompt the user; when one surfaces a decision, carry it
   into your next round yourself.
 - **Check `## Decisions` in `.claude/groundwork/task-state.md` first**, then write every answer back to it
@@ -154,7 +148,7 @@ was assumed · why the agent chose it · what it costs if it is wrong · one lin
 not the risks section — risks are what might happen to the work; this is what the agent decided *for* the
 user without asking.
 
-The list is a decision surface, so it obeys the plain-language rule: "orders older than a year stay out
+The list is a decision surface, so it obeys [plain-language.md](plain-language.md): "orders older than a year stay out
 of the export (if that is wrong, the client's yearly report is short and he finds out from his
 accountant)", not "assumed `created_at >= now()->subYear()` filter". An empty list is stated as empty,
 which is itself a claim: it says the frontier really was empty.
