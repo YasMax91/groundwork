@@ -1,5 +1,5 @@
 ---
-description: Write a client-facing document for a non-technical client — the outcome, what is in and out of scope, an estimate in the agent's real build time, and what is needed from them (with their own time on a separate line). English canonical file plus a Russian mirror under docs/client/. Not a substitute for an implementation spec.
+description: Write a client-facing document for a non-technical client — the outcome, what is in and out of scope, an estimate in the agent's real build time, and what is needed from them (with their own time on a separate line). English canonical file plus a Russian mirror under docs/ai/client/. Not a substitute for an implementation spec.
 ---
 
 # Client document
@@ -8,7 +8,7 @@ The reader is a **client who does not know what a test, an endpoint, or a migrat
 whether this work is worth paying for and what he gets. Write for him.
 
 **This is not a spec.** The `spec` skill produces the technical contract for the bot and the developer —
-`docs/specs/`, EARS acceptance criteria, a red-test list, request/response shapes. It is the right
+`docs/ai/specs/`, EARS acceptance criteria, a red-test list, request/response shapes. It is the right
 artifact for building and the wrong one for a client. Bending one into the other is the exact failure
 this skill exists to prevent.
 
@@ -80,8 +80,8 @@ check the document before sending it.
 
 Two files, same content, produced in the **same pass, without being asked**:
 
-- `docs/client/<slug>.en.md` — **canonical.** This is the file the client receives.
-- `docs/client/<slug>.ru.md` — a **full Russian mirror**, so the author can read and check the whole
+- `docs/ai/client/<slug>.en.md` — **canonical.** This is the file the client receives.
+- `docs/ai/client/<slug>.ru.md` — a **full Russian mirror**, so the author can read and check the whole
   document before sending it.
 
 **Edits land in English; the mirror is regenerated from it.** Never edit the Russian file on its own —
@@ -102,6 +102,6 @@ English-artifact rule.
 2. Fill the template in plain language, prose first.
 3. Estimate per the rule above — the AI's real time by block, a total, and everything that needs a
    person in its own section.
-4. Write `docs/client/<slug>.en.md`, then generate `docs/client/<slug>.ru.md` from it.
+4. Write `docs/ai/client/<slug>.en.md`, then generate `docs/ai/client/<slug>.ru.md` from it.
 5. Post a short Russian pointer in chat — which files, and the one-line gist.
 6. **Ask whether to commit** (single line, no AI attribution). Never commit without an explicit yes.

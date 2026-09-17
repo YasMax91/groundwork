@@ -38,7 +38,7 @@ row to the estimate ledger, once (the dedup key is the task title plus `Started:
 - Level: L0..L4
 - Kind: <one word: crud | integration | migration | bugfix | contract | rbac | ...>
 - Started: <YYYY-MM-DDTHH:MM:SSZ — set once, when the checkpoint is created>
-- Spec: docs/specs/<file>.md | (none yet)
+- Spec: docs/ai/specs/<file>.md | (none yet)
 - Impact map: .claude/groundwork/impact/<slug>.md | (n/a)
 - OpenAPI: <endpoints this task documents> | n/a — <why the contract is untouched>
 - Updated: <YYYY-MM-DD>

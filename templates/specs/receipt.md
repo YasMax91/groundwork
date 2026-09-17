@@ -1,6 +1,6 @@
 # Receipt: <task title>
 
-- Spec: `docs/specs/<slug>.md` · Level: `<L0..L4>` · Branch: `<branch>` · Date: `<YYYY-MM-DD>`
+- Spec: `docs/ai/specs/<slug>.md` · Level: `<L0..L4>` · Branch: `<branch>` · Date: `<YYYY-MM-DD>`
 
 ## Measured
 

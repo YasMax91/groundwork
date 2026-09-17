@@ -139,7 +139,7 @@ do not present the gate's green as if it covered this. It is not in the Stop hoo
 
 ## Task receipt (L2+)
 
-Write `docs/specs/<slug>.receipt.md` next to the spec, from
+Write `docs/ai/specs/<slug>.receipt.md` next to the spec, from
 `${CLAUDE_SKILL_DIR}/../../templates/specs/receipt.md`. It is committed with the work, so it is a file
 the client can open — which is exactly why its two blocks must not blur into one:
 
@@ -255,5 +255,5 @@ If the gates are green and the change touched the frontend-facing surface, run t
 internal**, there is no handoff to run, so **ask about committing here** rather than leaving the work
 uncommitted and the question unasked. Never commit without an explicit yes.
 
-The handoff skill documents the final contract for the frontend developer in `ai/frontend/`, then offers
+The handoff skill documents the final contract for the frontend developer in `docs/ai/frontend/`, then offers
 to commit.

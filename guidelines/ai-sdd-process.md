@@ -18,7 +18,7 @@ scope the edit tightly, never the investigation.
   the expert in), per [blind-spot-protocol.md](blind-spot-protocol.md). Then **interview** the user for
   the decisions only they can make — facts are yours to find — per
   [clarify-protocol.md](clarify-protocol.md). No edits.
-- **Spec** — create/update a spec under `docs/specs/`. No production code.
+- **Spec** — create/update a spec under `docs/ai/specs/`. No production code.
 - **Plan** — propose steps, list changed files, tests, verification, deployment impact. No edits
   until approved.
 - **Implementation** — test-first (red→green→refactor): write the failing test, implement to green,
@@ -175,7 +175,7 @@ external integration behavior · behavior not supported by CRD/code/explicit use
 broad refactor/formatting/file deletion.
 
 For a **cross-cutting, durable** decision among these (new dependency, new architectural layer,
-workflow-state model), capture an ADR in `docs/adr/NNNN-<slug>.md` (from `templates/adr.md`) — ≥2
+workflow-state model), capture an ADR in `docs/ai/adr/NNNN-<slug>.md` (from `templates/adr.md`) — ≥2
 considered options + the chosen one + why. Feature-local trade-offs stay in the spec.
 
 ## Definition of Done — scaled by level
@@ -225,9 +225,9 @@ with denormalized/derived values present on real data, or the consumer noted out
 note stating who put it there** — the agent may propose it, the report shows whether the user agreed ·
 migration/deployment impact
 documented · **domain contract current** — the project's `AGENTS.md` reflects any entity, invariant,
-permission rule, integration, or term the change introduced · frontend handoff docs in `ai/frontend` created/updated when the change touches the
+permission rule, integration, or term the change introduced · frontend handoff docs in `docs/ai/frontend` created/updated when the change touches the
 frontend-facing surface (run the `frontend-handoff` skill after the gates are green) · **task receipt
-written** — `docs/specs/<slug>.receipt.md`, measured facts (commit, gate exit codes, ledger minutes)
+written** — `docs/ai/specs/<slug>.receipt.md`, measured facts (commit, gate exit codes, ledger minutes)
 kept in their own block, apart from what the agent claims about AC coverage, with the reviewer line
 left for a person · final report covers changed behavior, files, verification, risks, skipped work.
 

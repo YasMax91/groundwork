@@ -78,6 +78,6 @@ Only proceed if the spec/plan was **explicitly approved in this conversation**. 
 1. Run the `final-check` skill (format + static analysis + the green test gate + Definition of Done).
    Report the red→green order for the behavior you changed.
 2. Once the gates are green, run the **`frontend-handoff`** skill — it documents the **final**
-   frontend-facing contract for the frontend developer in `ai/frontend/` (create the reference doc
+   frontend-facing contract for the frontend developer in `docs/ai/frontend/` (create the reference doc
    for new functionality, update the affected ones for a change, and always add a dated handoff doc),
    then asks whether to commit. Skip only if the change has no frontend-facing impact (say so).

@@ -46,7 +46,7 @@ companion plugins and per-project configuration are further down this file.
   L0–L4) — the full blast radius before planning, so changes stay scoped without missing a consumer.
   Two review gates: `adversarial-verifier` (is the "it works" claim true?) and `conformance-reviewer`
   (does the diff satisfy the spec's acceptance criteria?). A converge re-check and ADR capture
-  (`docs/adr/`) close out cross-cutting L3/L4 work.
+  (`docs/ai/adr/`) close out cross-cutting L3/L4 work.
 - **Approaches before questions** — the first response shows the agent's 2–3 candidate ways to solve the
   task, recommended one first, with the reason and what it forecloses, *before* the interview — so you
   choose between shapes of a solution instead of ratifying one. When a single path is plainly right it
@@ -122,7 +122,7 @@ companion plugins and per-project configuration are further down this file.
   to you.
 - **Scaled to the task** — the full Definition of Done is the **L2+** one. An L0 typo gets the automatic gates and nothing else; an L1 bug fix gets the gates, a fail-first regression test, and a live exercise of the one thing fixed — not a sweep of every consumer. What scales down is breadth, never proof: "state what stayed unverified" and "never report green tests as works-live" hold at every level.
 - **Frontend handoff** — after the final implementation and green gates, the `frontend-handoff` skill
-  writes documentation for the frontend developer under `ai/frontend/` (a living reference doc per
+  writes documentation for the frontend developer under `docs/ai/frontend/` (a living reference doc per
   area + a dated handoff delta) — what to build, when, how, why, where, and the API contract, in
   Russian, no frontend code — plus a **runnable request package** (a Postman collection or a `.http`/curl
   file) with the auth header, bodies derived from the `FormRequest` rules, and real example responses
@@ -142,10 +142,10 @@ companion plugins and per-project configuration are further down this file.
   must consume it, since an unresolvable `$ref` generates cleanly and breaks every client generator.
   The `openapi-audit` skill repairs pre-existing spec debt across a whole project.
 - **The frontend gets the contract, not a description of it** — `frontend-handoff` copies the generated
-  document to `ai/frontend/openapi/<date>-<slug>.yaml` and commits it, so the frontend generates types
+  document to `docs/ai/frontend/openapi/<date>-<slug>.yaml` and commits it, so the frontend generates types
   from the contract and can serve it as a mock (`npx @stoplight/prism-cli mock <snapshot>`) before the
   backend is deployed.
-- **What a finished task leaves behind** — at L2+ `final-check` writes `docs/specs/<slug>.receipt.md`
+- **What a finished task leaves behind** — at L2+ `final-check` writes `docs/ai/specs/<slug>.receipt.md`
   next to the spec, in three blocks that cannot be confused: **Measured** (commit SHA, the analyse and
   suite exit codes, OpenAPI generation status, the ledger's active minutes — each copied from a
   command's output, and a gate that did not run written as *not run*), **Claimed by the agent** (the

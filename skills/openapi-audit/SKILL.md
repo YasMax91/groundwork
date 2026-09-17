@@ -64,5 +64,5 @@ depends on) go to the user as a question — not into the spec as a guess.
 - Confirm generation is clean and the spec covers every API route (re-run step 1 to prove it).
 - Note in the handoff which areas were repaired and which were deliberately left.
 - If the change touched the frontend-facing contract, the `frontend-handoff` docs must reflect the
-  same shapes — the spec and `ai/frontend/` cannot disagree.
+  same shapes — the spec and `docs/ai/frontend/` cannot disagree.
 - Ask before committing (single-line message, no AI attribution).

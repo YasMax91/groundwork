@@ -1,9 +1,9 @@
 # <Feature / work> — what it is and what you get
 
 > Document for the client. Plain language, no development detail.
-> Canonical file (this is what the client receives): `docs/client/<slug>.en.md`.
-> Russian mirror for the author: `docs/client/<slug>.ru.md` — regenerated from this file, never edited
-> on its own. Related spec (internal, not for the client): `docs/specs/<file>.md`.
+> Canonical file (this is what the client receives): `docs/ai/client/<slug>.en.md`.
+> Russian mirror for the author: `docs/ai/client/<slug>.ru.md` — regenerated from this file, never edited
+> on its own. Related spec (internal, not for the client): `docs/ai/specs/<file>.md`.
 
 ## The problem this solves
 

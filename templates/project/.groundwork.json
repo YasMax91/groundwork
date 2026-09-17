@@ -35,7 +35,10 @@
     "spec_path": "storage/api-docs/api-docs.json"
   },
   "docs": {
-    "frontend": "ai/frontend"
+    "frontend": "docs/ai/frontend",
+    "specs": "docs/ai/specs",
+    "adr": "docs/ai/adr",
+    "client": "docs/ai/client"
   },
   "ui": {
     "statusline": false,

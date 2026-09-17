@@ -92,7 +92,14 @@ if [ -f "$state" ]; then
 fi
 
 # --- most recent spec (by mtime) ---
-spec="$(find docs/specs -type f -name '*.md' 2>/dev/null -exec ls -t {} + 2>/dev/null | head -1 || true)"
+# The specs directory is configurable, because a project may keep its whole AI documentation tree
+# under docs/ai/. Projects that never moved it keep the historical default.
+spec_dir="docs/specs"
+if [ -f .groundwork.json ] && command -v jq >/dev/null 2>&1; then
+  configured="$(jq -r '.docs.specs // empty' .groundwork.json 2>/dev/null || true)"
+  [ -n "$configured" ] && [ -d "$configured" ] && spec_dir="$configured"
+fi
+spec="$(find "$spec_dir" -type f -name '*.md' 2>/dev/null -exec ls -t {} + 2>/dev/null | head -1 || true)"
 [ -n "$spec" ] && add "Most recent spec: ${spec}"
 
 # --- status banner + session title (Wave 5; honor ui.status_messages) ---

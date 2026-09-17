@@ -1,6 +1,6 @@
 # Writing standards (Groundwork) — documents, estimates, reports
 
-Applies to everything written for a human reader: `docs/client/`, `docs/specs/`, ADRs, the `ai/frontend`
+Applies to everything written for a human reader: `docs/ai/client/`, `docs/ai/specs/`, ADRs, the `docs/ai/frontend`
 handoff, estimates, and the final report of a task. It governs prose, not code — the code rules live in
 [laravel-standards.md](laravel-standards.md).
 

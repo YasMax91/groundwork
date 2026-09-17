@@ -1,10 +1,10 @@
 ---
-description: Create or update an implementation spec under docs/specs/ for a backend feature, bug fix, API/contract change, migration, or risky domain change. Use after discovery, before implementation.
+description: Create or update an implementation spec under docs/ai/specs/ for a backend feature, bug fix, API/contract change, migration, or risky domain change. Use after discovery, before implementation.
 ---
 
 # Write/update a spec
 
-Specs live in the project's `docs/specs/`. Keep them short, concrete, and implementation-oriented —
+Specs live in the project's `docs/ai/specs/`. Keep them short, concrete, and implementation-oriented —
 a useful spec beats a perfect document.
 
 ## Steps
@@ -25,7 +25,7 @@ a useful spec beats a perfect document.
 5. **Record the technical approach and tradeoffs** — if the CRD intent is right but a different
    technical shape is safer, document why. For a **cross-cutting, durable** L3/L4 decision (new
    dependency, new architectural layer, workflow-state model), also write an ADR to
-   `docs/adr/NNNN-<slug>.md` from `${CLAUDE_SKILL_DIR}/../../templates/adr.md` (≥2 options + chosen +
+   `docs/ai/adr/NNNN-<slug>.md` from `${CLAUDE_SKILL_DIR}/../../templates/adr.md` (≥2 options + chosen +
    why); keep feature-local trade-offs here in the spec.
 6. **Specify the OpenAPI delta when the task touches an endpoint** — for a new or changed route, the
    spec states which operations gain or change, and what each one documents: request body (from the
