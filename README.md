@@ -128,6 +128,11 @@ companion plugins and per-project configuration are further down this file.
   file) with the auth header, bodies derived from the `FormRequest` rules, and real example responses
   captured in the live run, so the frontend runs the contract instead of retyping it. Then asks whether
   to commit (single line, no AI attribution).
+- **The handoff is gated, not requested** — a Stop gate blocks "done" when the frontend-facing
+  surface changed and no document under `docs.frontend` changed with it, naming the files. Committing
+  does not disarm it, and one handoff does not cover the next change on the same branch. A change the
+  frontend genuinely cannot see is waived per file, with the reason recorded — so the omission is
+  always a decision someone made, never something that quietly did not happen.
 - **The frontend reads it himself** — `install-portal` puts a token-gated page on development and
   staging that serves `docs/ai/frontend` to a reader with no account in the backend: sections, features,
   the dated deltas under each, downloads for the `.http` packages and OpenAPI snapshots, and an

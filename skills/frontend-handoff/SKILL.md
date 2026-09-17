@@ -26,6 +26,23 @@ to build the UI against this backend and the design.
   the document covers, no restating the same rule in three sections, no filler adjectives. The reader is
   building from this — every sentence is either the contract or a decision he has to make.
 
+## The gate behind this skill
+
+This used to be instruction only: the skill said to write the handoff, and nothing checked. A task
+that ended without it left the frontend reading a contract that no longer matched the backend, and
+nothing anywhere said so.
+
+`handoff-gate.sh` now runs on Stop. When the frontend-facing surface changed — routes, controllers,
+form requests, resources, enums, policies, models, services, migrations — and no document under
+`docs.frontend` changed with it, the gate blocks and names the files. Its window is the working tree
+plus every commit since the work was last accounted for, so committing does not disarm it and one
+handoff does not cover every later change on the same branch.
+
+Two honest ways past it, and no third: write the handoff, or record in
+`.claude/groundwork/handoff-waiver` which files the frontend genuinely cannot see and why. A waiver
+covers only the files it names. `gates.handoff_surface` and `gates.handoff_surface_exclude` shape
+the surface for a project built differently — a server-rendered admin panel, say.
+
 ## When it applies
 
 Only when the change touches the **frontend-facing surface**: endpoints, request/validation rules,

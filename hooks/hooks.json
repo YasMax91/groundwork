@@ -120,6 +120,15 @@
             "statusMessage": "Groundwork: recording what the task took…"
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/handoff-gate.sh",
+            "statusMessage": "Groundwork: checking the frontend handoff…"
+          }
+        ]
       }
     ]
   }

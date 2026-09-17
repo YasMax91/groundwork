@@ -9,6 +9,7 @@
     "analyse_on_stop": true,
     "test_on_stop": true,
     "openapi_on_stop": true,
+    "handoff_on_stop": true,
     "coverage_claim": true,
     "estimate_claim": true,
     "task_intent": true,
