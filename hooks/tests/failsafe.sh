@@ -54,6 +54,7 @@ runs "task-intent"     "task-intent.sh"     '{"hook_event_name":"UserPromptSubmi
 runs "agent-contract"  "agent-contract.sh"  '{"hook_event_name":"SubagentStop","agent_type":"groundwork:grounded-researcher","last_assistant_message":"no source"}'
 runs "format-on-edit"  "format-on-edit.sh"  "{\"tool_input\":{\"file_path\":\"$d/app/A.php\"}}"
 runs "pre-tool-guard"  "pre-tool-guard.sh"  '{"tool_name":"Bash","tool_input":{"command":"ls -la"}}'
+runs "stdin-guard"     "stdin-guard.sh"     '{"tool_name":"Bash","tool_input":{"command":"ls -la"}}'
 runs "trim-output"     "trim-output.sh"     '{"tool_name":"Bash","tool_input":{"command":"sail artisan test"},"tool_response":"Tests: 2 passed"}'
 runs "pre-compact"     "pre-compact.sh"     '{"trigger":"manual"}'
 runs "ledger-record"   "ledger-record.sh"   '{"hook_event_name":"Stop"}'

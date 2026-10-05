@@ -45,6 +45,15 @@
     ],
     "PreToolUse": [
       {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/stdin-guard.sh"
+          }
+        ]
+      },
+      {
         "matcher": "Bash|Edit|Write",
         "hooks": [
           {

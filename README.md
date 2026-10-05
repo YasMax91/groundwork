@@ -195,7 +195,12 @@ companion plugins and per-project configuration are further down this file.
   once per session from the `SessionStart` hook.
 - **Standards + gates** — `laravel-standards` + hooks: Pint on edit, static analysis and the test
   suite as done-gates, and a `PreToolUse` enforcement guard that denies host Laravel/PHP commands
-  (use the runner) and edits to shipped migrations — opt-out per project. Every gate honors the declared
+  (use the runner) and edits to shipped migrations — opt-out per project. A second `PreToolUse` hook,
+  `stdin-guard`, runs every Bash command as `true | ( … )`: a command that reads stdin it was never
+  given (`python3 -` with the heredoc on another command, `cat > f`, `artisan tinker file.php`) ends
+  at once instead of hanging in the background and holding the session open. It applies in every
+  repo; `gates.isolate_stdin: false` turns it off. A `cd` inside a command no longer carries over to
+  the next one. Every gate honors the declared
   `runner`: a `runner: host` project runs host commands and is never denied them, and a command that
   cannot run at all (missing binary, undefined script) is reported as an environment problem rather than a
   red. All hooks are covered by tests — `bash hooks/tests/all.sh` (379 cases, 17 suites), run on every push by `.github/workflows/ci.yml`.
@@ -419,7 +424,7 @@ since a pinned command would override the runner. It can still override the gate
 `analyse`, `test`) and
 toggles (`format_on_edit`, `analyse_on_stop`, `test_on_stop`, `openapi_on_stop`, `slice_ledger`, plus the `PreToolUse` enforcement
 toggles `enforce_runner` and `lock_shipped_migrations` — default **on** — and `lock_edits_in_discovery`
-— default **off**). `runner` is honored by every gate: set `"runner": "host"` and the gates drop the Sail
+— default **off**; `isolate_stdin` — default **on**). `runner` is honored by every gate: set `"runner": "host"` and the gates drop the Sail
 prefix (`php artisan …`, `./vendor/bin/pint`) and stop denying host commands. `test_db_lock` (default
 **on**) and `test_lock_wait_seconds` (default 45) serialise the suite across parallel sessions. A `memory` block toggles the working-memory layer (`session_context`,
 `checkpoint`, `impact_cache` — all default on). Defaults to Sail + MySQL.
@@ -506,7 +511,7 @@ once with `claude --debug` in your project before enabling.
 pack/             groundwork-pack — dependency-only bundle (this plugin + companion plugins)
 skills/           start-task · spec · implement-approved · risk-review · final-check · estimate · ground-integration · frontend-handoff · install-portal · client-doc · openapi-audit · grill · init · deep-grounding · deep-discovery · deep-review
 agents/           impact-mapper · blind-spot-mapper · grounded-researcher · adversarial-verifier · conformance-reviewer
-hooks/            hooks.json · lib.sh (shared resolvers) · session-start.sh · pre-compact.sh · task-intent.sh · format-on-edit.sh · done-gate.sh · test-gate.sh · openapi-gate.sh · slice-gate.sh · coverage-claim.sh · plain-language.sh · defect-scan.sh · estimate-claim.sh · estimate-ledger.sh · ledger-record.sh · agent-contract.sh · trim-output.sh · pre-tool-guard.sh · statusline.sh · tests/all.sh
+hooks/            hooks.json · lib.sh (shared resolvers) · session-start.sh · pre-compact.sh · task-intent.sh · format-on-edit.sh · done-gate.sh · test-gate.sh · openapi-gate.sh · slice-gate.sh · coverage-claim.sh · plain-language.sh · defect-scan.sh · estimate-claim.sh · estimate-ledger.sh · ledger-record.sh · agent-contract.sh · trim-output.sh · pre-tool-guard.sh · stdin-guard.sh · statusline.sh · tests/all.sh
 workflows/        deep-review-run.js · deep-discovery-run.js · deep-grounding-run.js — the multi-agent orchestration, executed by the runtime
 guidelines/       ai-sdd-process · grounding-protocol · blind-spot-protocol · clarify-protocol · plain-language · openapi-protocol · laravel-standards · tdd-protocol · writing-standards · working-memory
 docs/             skill-hygiene (author-facing) · specs/
