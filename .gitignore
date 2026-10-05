@@ -4,3 +4,4 @@
 GATES.md
 .unlazy/
 .unlazy-hook-state.json
+__pycache__/

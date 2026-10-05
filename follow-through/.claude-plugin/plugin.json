@@ -1,0 +1,17 @@
+{
+  "name": "follow-through",
+  "description": "Project-agnostic gates on how an agent ends its turn: no stopping on an announcement, no prose questions, no handing work back, no 'it works' on changed screens without a screenshot, plain outbound texts for clients, and a permission prompt before destructive commands.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Max Yastremskyi (YasMax91)"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/YasMax91/groundwork",
+  "repository": "https://github.com/YasMax91/groundwork",
+  "keywords": [
+    "hooks",
+    "verification",
+    "agent-discipline",
+    "ui-testing"
+  ]
+}

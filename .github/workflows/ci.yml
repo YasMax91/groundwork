@@ -58,6 +58,11 @@ jobs:
           if plugin['description'] != entry['description']:
               sys.exit('plugin.json and marketplace.json describe the plugin differently')
           print('descriptions match')
+          ft = json.load(open('follow-through/.claude-plugin/plugin.json'))
+          ft_entry = next(p for p in market['plugins'] if p['name'] == 'follow-through')
+          print('follow-through version:', ft['version'])
+          if ft['description'] != ft_entry['description']:
+              sys.exit('follow-through: plugin.json and marketplace.json describe the plugin differently')
           PY
 
       # `claude plugin validate` is the same check the catalog's review pipeline runs, so use it when
@@ -67,6 +72,7 @@ jobs:
         run: |
           if command -v claude >/dev/null 2>&1; then
             claude plugin validate .
+            claude plugin validate ./follow-through
           else
             echo "NOTE: the claude CLI is not on this runner — plugin validation did NOT run here."
             echo "The JSON parse above is all that was verified. Run 'claude plugin validate .' locally."

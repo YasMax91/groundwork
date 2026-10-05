@@ -78,8 +78,8 @@ companion plugins and per-project configuration are further down this file.
   any question (what the agent established itself, why this decision is yours, what changes under each
   answer), a closing **ask line** naming what you do now — «ничего, работаю дальше» included — and a
   table that keeps the plugin's own vocabulary out of chat, so "blast radius" arrives as «что ещё это
-  заденет» and the task level never arrives as "L2" at all. Defined once in `plain-language`, watched by
-  a warn-only gate; documents written for developers stay engineering prose.
+  заденет» and the task level never arrives as "L2" at all. Defined once in `plain-language`, held by
+  a blocking Stop gate (one re-entry); documents written for developers stay engineering prose.
 - **Client document** — the `client-doc` skill writes for a client who does not know what a test or an
   endpoint is: the problem, what he will be able to do, what is in and out of scope, what is needed from
   him. Deliberately without tests, acceptance criteria, endpoints, schema, or architecture — if those are
@@ -98,8 +98,10 @@ companion plugins and per-project configuration are further down this file.
   backfills a seed corpus from git history in seconds; an estimate quotes the median and the sample size
   it rests on. The unit is the agent's active minutes, human time is always a separate line with its
   owner, and an hour-sized number has to name the slow thing beside it — an external API to establish,
-  a sandbox probe, a migration over a large table. A warn-only Stop gate (`gates.estimate_claim`)
-  catches the ones that do not. Measured on this author's corpus, calendar span overstates active agent
+  a sandbox probe, a migration over a large table. A blocking Stop gate (`gates.estimate_claim`)
+  catches the ones that do not — in chat, and, through `estimate-docs.py`, in documents under `docs/`
+  and texts for forwarding: no person-days, no "5 days" without a named wait, and a table total that
+  equals the sum of its rows. Measured on this author's corpus, calendar span overstates active agent
   time by roughly 3×, which is why "how long did the last one take?" was never a safe substitute for
   measuring it.
 - **Blind-spot surfacing** — the agent proactively raises what you did not think to ask: unintended
@@ -330,6 +332,37 @@ the working tree plus unpushed commits.
 `init` generates thin, domain-only contracts by grounded discovery (deriving facts from the code,
 Boost, and docs, labelling anything assumed), installs Boost, and drops `.groundwork.json`.
 
+## Any project — `follow-through`
+
+A third plugin in this marketplace, for every repository — Laravel or not, initialised or not. The
+2026-10-05 sweep of 2472 user messages across 25 projects found the costliest complaints are not about
+Laravel at all: the turn that ends on «Беру следующий шаг», the question written as prose, «залогинься и
+пришли скрин», "it works" on a screen nobody looked at, a client text full of «—» and field names, and a
+`migrate:fresh` that wiped a dev database.
+
+```
+/plugin install follow-through@yasmax
+```
+
+| Check | When it fires | What the agent must do |
+| --- | --- | --- |
+| announcement | the turn ends on «Беру X» / "Next I'll…" | do the step now, or name what it waits for |
+| empty reply | "No response requested" after a real message | answer |
+| prose question | the last sentence asks the user, no `AskUserQuestion` this turn | ask through `AskUserQuestion` |
+| hand-back | «залогинься», «пришли скрин», «запусти сам» with no reason | do it, or say why it cannot |
+| language | `CLAUDE.md` requires Russian/Ukrainian and the prose is mostly not | rewrite |
+| outbound text | inside a ```` ```outbound <addressee> ```` fence: «—», lists, identifiers, "AI", > 900 chars, an unsourced "cannot" | rewrite the text for forwarding |
+| UI proof | a view/CSS/JS/component changed, "works" claimed, no browser or simulator screenshot after the edit | look at the screens, or write «UI не проверен: …» |
+| destructive command | `migrate:fresh` off the testing DB, discarding uncommitted git changes, removing Docker volumes, killing workers, editing a gate config | the native permission prompt asks the user |
+
+Stop checks block with one re-entry; the destructive check only ever asks, never allows or denies.
+Every trigger is logged to `~/.claude/follow-through/triggers.log`. Each check is switched off in
+`~/.claude/follow-through.json` or `<project>/.claude/follow-through.json`:
+`{"gates": {"prose_question": false}, "outbound_max": 1200, "chat_language": "off"}`.
+Replayed over the 2064 historical agent turns the sweep covers: announcement 29 triggers, 23 followed
+by «продолжай»/«да» or a complaint; empty reply 32 (15); prose question 204 (90); UI proof 56 (18);
+hand-back 28 (5); language 67 (6, mostly English client texts written outside an outbound fence).
+
 ## Companion plugins — `groundwork-pack`
 
 A second, component-free plugin in this marketplace: its manifest is nothing but a `dependencies`
@@ -473,9 +506,10 @@ holds. "I checked it selectively" satisfies the Definition of Done's "state what
 literally while hiding whether that was eight of nine or one of nine, so a verification claim now takes
 one of three forms — a covered/total fraction against a named enumerable set, that fraction plus the
 listed gap, or a plain "no verification was performed" — and a fraction is never estimated. The Stop
-hook reads `last_assistant_message` for hedges in Russian and English and **warns without blocking**,
-logging every trigger to `.claude/groundwork/coverage-claims.log`; a regex over natural language will
-have false positives, and that log is the evidence that decides whether a later version blocks. It
+hook reads `last_assistant_message` for hedges in Russian and English and **blocks** (`decision: block`, one
+re-entry), logging every trigger to `.claude/groundwork/coverage-claims.log`. Until v0.44.0 it only
+warned, through `systemMessage`, which reaches the user and never the model — so the agent that made the
+claim never heard of it. It
 makes no model call, stays silent when the claim already carries its denominator, and returns nothing
 when `stop_hook_active` is set. The smooth form of the same failure — a confident claim with no hedge
 and no count — is caught by `adversarial-verifier` and `conformance-reviewer` instead.
@@ -508,10 +542,11 @@ once with `claude --debug` in your project before enabling.
 
 ```
 .claude-plugin/   plugin.json · marketplace.json
-pack/             groundwork-pack — dependency-only bundle (this plugin + companion plugins)
+pack/             groundwork-pack — dependency-only bundle (this plugin + follow-through + companion plugins)
+follow-through/   the project-agnostic plugin — hooks/ (stop_gate.py · guard.py · session_start.py · ft.py · tests/)
 skills/           start-task · spec · implement-approved · risk-review · final-check · estimate · ground-integration · frontend-handoff · install-portal · client-doc · openapi-audit · grill · init · deep-grounding · deep-discovery · deep-review
 agents/           impact-mapper · blind-spot-mapper · grounded-researcher · adversarial-verifier · conformance-reviewer
-hooks/            hooks.json · lib.sh (shared resolvers) · session-start.sh · pre-compact.sh · task-intent.sh · format-on-edit.sh · done-gate.sh · test-gate.sh · openapi-gate.sh · slice-gate.sh · coverage-claim.sh · plain-language.sh · defect-scan.sh · estimate-claim.sh · estimate-ledger.sh · ledger-record.sh · agent-contract.sh · trim-output.sh · pre-tool-guard.sh · stdin-guard.sh · statusline.sh · tests/all.sh
+hooks/            hooks.json · lib.sh (shared resolvers) · session-start.sh · pre-compact.sh · task-intent.sh · format-on-edit.sh · done-gate.sh · test-gate.sh · openapi-gate.sh · slice-gate.sh · coverage-claim.sh · plain-language.sh · defect-scan.sh · estimate-claim.sh · estimate-docs.py · estimate-ledger.sh · ledger-record.sh · agent-contract.sh · trim-output.sh · pre-tool-guard.sh · stdin-guard.sh · statusline.sh · tests/all.sh
 workflows/        deep-review-run.js · deep-discovery-run.js · deep-grounding-run.js — the multi-agent orchestration, executed by the runtime
 guidelines/       ai-sdd-process · grounding-protocol · blind-spot-protocol · clarify-protocol · plain-language · openapi-protocol · laravel-standards · tdd-protocol · writing-standards · working-memory
 docs/             skill-hygiene (author-facing) · specs/

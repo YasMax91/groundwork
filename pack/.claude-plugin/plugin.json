@@ -1,16 +1,29 @@
 {
   "name": "groundwork-pack",
-  "description": "One-install bundle: the Groundwork workflow plus the external plugins its steps reach for — PHP code intelligence, package docs, a browser for live verification, and production incidents. MCP/LSP only, so the standing context cost stays near zero.",
-  "version": "1.1.0",
+  "description": "One-install bundle: the Groundwork workflow, the follow-through gates for every project, and the external plugins its steps reach for — PHP code intelligence, package docs, a browser for live verification, and production incidents. MCP/LSP only, so the standing context cost stays near zero.",
+  "version": "1.2.0",
   "author": {
     "name": "Max Yastremskyi (YasMax91)"
   },
   "license": "MIT",
   "dependencies": [
     "groundwork",
-    { "name": "php-lsp", "marketplace": "claude-plugins-official" },
-    { "name": "context7", "marketplace": "claude-plugins-official" },
-    { "name": "playwright", "marketplace": "claude-plugins-official" },
-    { "name": "sentry", "marketplace": "claude-plugins-official" }
+    "follow-through",
+    {
+      "name": "php-lsp",
+      "marketplace": "claude-plugins-official"
+    },
+    {
+      "name": "context7",
+      "marketplace": "claude-plugins-official"
+    },
+    {
+      "name": "playwright",
+      "marketplace": "claude-plugins-official"
+    },
+    {
+      "name": "sentry",
+      "marketplace": "claude-plugins-official"
+    }
   ]
 }

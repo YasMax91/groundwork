@@ -28,6 +28,15 @@ model casts & fillable · factories · seeders · resources · tests.
 Write tests first for any behavior that depends on the new schema (casts, backfill, constraints) —
 see the TDD protocol.
 
+## Source requirements (verbatim — every item of the request, subtasks and notes included)
+
+<!-- Quote each item exactly as the person or the brief wrote it. One row per item; nothing summarised away.
+     The last column is filled during the work. slice-gate blocks "done" while any row has no proof. -->
+
+| ID | Requirement (verbatim) | Source (message time / file:line) | Proof (test, HTTP run, screenshot, or out of scope: <reason agreed>) |
+|---|---|---|---|
+| R1 | | | |
+
 ## Acceptance criteria (EARS — schema-dependent behavior only)
 
 Stable IDs; append, never renumber. Pure DDL with no observable behavior needs none — state that.

@@ -9,10 +9,10 @@
 # with no slow thing named beside it — no external API to establish, no sandbox probe, no migration
 # over a large table, no wait on a person — and no measured median behind it.
 #
-# WARN-ONLY in v0.28.0 (W18-AC12), for the same reason `coverage-claim` was in v0.24.0: a regex over
-# natural language will have false positives, and the log is what decides whether blocking is ever
-# turned on. `additionalContext` is deliberately NOT used — it continues the turn, which is a soft
-# block rather than a warning.
+# BLOCKING since v0.44.0 (GW34-AC1). Warn-only from v0.28.0, through `systemMessage`, which reaches
+# the user and never the model: otaje logged 25 triggers and next-lvl-backend 5 while person-hour
+# complaints continued. The verdict is now `decision: block`, reason fed back to the model, one
+# re-entry. Every trigger is still logged.
 set -uo pipefail
 
 # --- The four lists this gate is made of. Tune them here; the logic below never changes. ---
@@ -77,12 +77,13 @@ log=".claude/groundwork/estimate-claims.log"
 } 2>/dev/null || true
 
 jq -nc --arg marker "$marker" --arg median "$median" '{
-  systemMessage: ("groundwork: «" + $marker + "» — an estimate the size of a human work day with no slow thing named beside it. "
+  decision: "block",
+  reason: ("groundwork: «" + $marker + "» — an estimate the size of a human work day with no slow thing named beside it. "
     + "State the number in the agent'"'"'s active minutes and quote the ledger median with its sample size "
     + "(hooks/estimate-ledger.sh --report), or name what is genuinely slow on the same line — an external API to establish, "
     + "a sandbox probe, a migration over a large table, a wait on a person. Human time is its own line and is never added in."
     + (if $median != "" then "\nMeasured here: " + $median else "" end)
-    + "\nWarning only: nothing is blocked.")
+    + "\nCorrect the estimate before ending the turn.")
 }' 2>/dev/null || true
 
 exit 0

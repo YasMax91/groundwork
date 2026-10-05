@@ -94,4 +94,11 @@ Use Boost and the codebase as the source of truth, and label every section:
 
    Skip it for a service with no frontend consumer — a queue worker, a media microservice called
    machine-to-machine — and say that you skipped it and why.
-10. Present everything for review, highlighting only the `[assumed]` and `[needs you]` items.
+10. **Give the agent its own local login.** When the project has an admin panel or any login-gated
+    screen, add a seeder that creates a local-only admin — guarded by
+    `app()->environment('local', 'testing')`, so it can never run in staging or production — with the
+    test credentials written into the seeder and `.env.example`, and record it in `.groundwork.json`:
+    `"dev_login": { "url": "<login route>", "seeder": "<FQCN>", "credentials": ".env.example" }`.
+    Without it, every UI check ends in «залогинься и пришли скрин» — the complaint the 2026-10-05
+    sweep counted ~55 times. `final-check` signs in with it instead of asking the user.
+11. Present everything for review, highlighting only the `[assumed]` and `[needs you]` items.

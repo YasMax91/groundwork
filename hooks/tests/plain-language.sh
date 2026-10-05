@@ -46,10 +46,10 @@ corrects() { # name dir payload — expects additionalContext back to the model
 
 warns() { # name dir payload — expects a systemMessage to the user
   local out; out="$(run "$2" "$3")"
-  if printf '%s' "$out" | jq -e '.systemMessage // empty' >/dev/null 2>&1; then
-    pass=$((pass+1)); printf '  ok   %-40s [warned]\n' "$1"
+  if printf '%s' "$out" | jq -e '.decision == "block" and (.reason // "") != ""' >/dev/null 2>&1; then
+    pass=$((pass+1)); printf '  ok   %-40s [blocked]\n' "$1"
   else
-    fail=$((fail+1)); printf '  FAIL %-40s want a systemMessage, got "%s"\n' "$1" "$out"
+    fail=$((fail+1)); printf '  FAIL %-40s want a block decision, got "%s"\n' "$1" "$out"
   fi
 }
 
@@ -114,9 +114,9 @@ silent "inert: empty payload"        "$d"  ""
 silent "inert: no assistant message" "$d"  "$(jq -nc '{session_id:"t-1", hook_event_name:"Stop", stop_hook_active:false}')"
 silent "inert: other tool"           "$d"  "$(jq -nc '{session_id:"t-1", hook_event_name:"PostToolUse", tool_name:"Edit", tool_input:{old_string:"blast radius"}}')"
 
-# --- AC9: it never refuses ---
-exits_zero    "exit 0 on a warning"        "$d" "$(stop_payload 'Слайс закрыт.')"
-never_refuses "no blocking field on Stop"  "$d" "$(stop_payload 'Слайс закрыт.')"
+# --- GW34-AC1: Stop blocks through the JSON verdict (exit 0); a question is never refused ---
+exits_zero    "exit 0 on a block"          "$d" "$(stop_payload 'Слайс закрыт.')"
+warns         "Stop verdict is a block"    "$d" "$(stop_payload 'Слайс закрыт.')"
 never_refuses "no blocking field on a question" "$d" "$(ask_payload 'Задача L3 — продолжаем?')"
 
 # --- the log is the evidence for a later wave ---

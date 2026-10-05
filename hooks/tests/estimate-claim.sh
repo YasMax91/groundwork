@@ -35,14 +35,14 @@ exit_of() {
 
 warns() {
   local out; out="$(run "$2" "$3" "${4:-false}")"
-  if printf '%s' "$out" | jq -e '.systemMessage // empty' >/dev/null 2>&1; then
-    pass=$((pass+1)); printf '  ok   %-42s [warned]\n' "$1"
-  else fail=$((fail+1)); printf '  FAIL %-42s want a systemMessage, got "%s"\n' "$1" "$out"; fi
+  if printf '%s' "$out" | jq -e '.decision == "block" and (.reason // "") != ""' >/dev/null 2>&1; then
+    pass=$((pass+1)); printf '  ok   %-42s [blocked]\n' "$1"
+  else fail=$((fail+1)); printf '  FAIL %-42s want a block decision, got "%s"\n' "$1" "$out"; fi
 }
 
 silent() {
   local out; out="$(run "$2" "$3" "${4:-false}")"
-  if printf '%s' "$out" | jq -e '.systemMessage // empty' >/dev/null 2>&1; then
+  if printf '%s' "$out" | jq -e '.decision // empty' >/dev/null 2>&1; then
     fail=$((fail+1)); printf '  FAIL %-42s want silence, got "%s"\n' "$1" "$out"
   else pass=$((pass+1)); printf '  ok   %-42s [silent]\n' "$1"; fi
 }

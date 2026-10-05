@@ -104,12 +104,13 @@ A section heading obeys the same table: «Что ещё это заденет»,
 
 ## The gate
 
-`hooks/plain-language.sh` is warn-only. After an `AskUserQuestion` whose text carries an internal term,
-it returns that term and its chat spelling to the model; at Stop it warns the **user** when the final
-message carries an internal term or has no ask line. It refuses nothing, logs every trigger to
-`.claude/groundwork/plain-language.log`, and is turned off by `gates.plain_language: false`.
+`hooks/plain-language.sh`: after an `AskUserQuestion` whose text carries an internal term, it returns
+that term and its chat spelling to the model; at Stop it **blocks** (one re-entry) when the final message
+carries an internal term or has no ask line, and the reason goes to the model. Warn-only until v0.44.0 —
+the warning reached the user's screen and never the agent. It logs every trigger to
+`.claude/groundwork/plain-language.log` and is turned off by `gates.plain_language: false`.
 
-A warning is not the rule. The rule is this file; the gate catches the cases where it was forgotten.
+The gate is not the rule. The rule is this file; the gate catches the cases where it was forgotten.
 
 ## Anti-patterns
 

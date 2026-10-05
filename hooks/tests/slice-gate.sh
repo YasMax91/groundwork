@@ -108,6 +108,24 @@ d="$ROOT/ac6d"; proj "$d"; mkspec "$d"; goodtest "$d/tests/Feature/HereTest.php"
 state "$d" Implementation L2 '- [x] one (AC1) — test: tests/Feature/HereTest.php'
 expect "AC6 mid-task does not reconcile" "$d" 0
 
+# --- GW34-AC3: every verbatim source requirement needs a proof cell, at Mode: Done ----------------
+mkreq() { printf '# Spec\n\n## Source requirements\n\n| ID | Requirement | Source | Proof |\n|---|---|---|---|\n%s\n\n## Acceptance criteria\n\n| AC1 | a |\n' "$2" > "$1/docs/specs/s.md"; }
+d="$ROOT/r1"; proj "$d"; goodtest "$d/tests/Feature/HereTest.php"
+mkreq "$d" "| R1 | export orders | msg 09:12 | tests/Feature/HereTest.php |
+| R2 | mobile too | msg 09:14 | |
+| R3 | sub-task: filters | brief:12 | - |"
+state "$d" "Done — shipped" L2 '- [x] one (AC1) — test: tests/Feature/HereTest.php'
+expect "GW34 unproven requirements are named" "$d" 2 "R2 R3"
+d="$ROOT/r2"; proj "$d"; goodtest "$d/tests/Feature/HereTest.php"
+mkreq "$d" "| R1 | export orders | msg 09:12 | tests/Feature/HereTest.php |
+| R2 | mobile too | msg 09:14 | out of scope: agreed 09:20, next task |"
+state "$d" "Done — shipped" L2 '- [x] one (AC1) — test: tests/Feature/HereTest.php'
+expect "GW34 every requirement proven" "$d" 0
+d="$ROOT/r3"; proj "$d"; goodtest "$d/tests/Feature/HereTest.php"
+mkreq "$d" "| R1 | export orders | msg 09:12 | |"
+state "$d" Implementation L2 '- [x] one (AC1) — test: tests/Feature/HereTest.php'
+expect "GW34 mid-task does not reconcile" "$d" 0
+
 # --- AC7: no (ACn) anywhere — one notice, no refusal ----------------------------------------------
 d="$ROOT/ac7"; proj "$d"; goodtest "$d/tests/Feature/HereTest.php"
 state "$d" Implementation L2 '- [x] a slice with no criterion — test: tests/Feature/HereTest.php'

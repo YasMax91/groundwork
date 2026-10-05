@@ -263,6 +263,24 @@ if [ "$is_done" -eq 1 ]; then
   fi
 fi
 
+# --- the source requirements, at Mode: Done only (GW34-AC3) ----------------------------------------
+# Acceptance criteria are the agent's restatement of the task; the requirements the person wrote are
+# the task. The 2026-10-05 sweep found ~70 complaints of a subtask, a note at the end of the brief, or
+# an adjacent surface dropped while every AC was green. So the spec quotes each item verbatim as R<n>,
+# and "done" needs a proof cell — or an agreed `out of scope: <reason>` — on every row.
+if [ "$is_done" -eq 1 ] && [ -n "${spec:-}" ] && [ -f "${spec:-}" ]; then
+  unproven="$(awk '
+    /^##[[:space:]]+Source requirements/ { on=1; next }
+    on && /^##[[:space:]]/ { on=0 }
+    on && /^[[:space:]]*\|[[:space:]]*R[0-9]+[[:space:]]*\|/ {
+      line=$0; sub(/^[[:space:]]*\|/, "", line); sub(/\|[[:space:]]*$/, "", line)
+      n=split(line, cell, "|"); id=cell[1]; proof=cell[n]
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", id); gsub(/^[[:space:]]+|[[:space:]]+$/, "", proof)
+      if (proof == "" || proof ~ /^(-|—|TBD|todo|\?|pending)$/) printf "%s ", id
+    }' "$spec" 2>/dev/null || true)"
+  [ -n "$unproven" ] && add_block "the spec's source requirements have no proof on: ${unproven%% }. Each row needs a test, an HTTP/browser run, a screenshot — or «out of scope: <reason agreed with the user>»."
+fi
+
 [ "$noac" -gt 0 ] && [ "$noac" -eq "$total" ] && add_notice "none of the ${total} slices carries an (ACn) reference, so nothing was reconciled against the spec."
 
 # --- the migration boundary -------------------------------------------------------------------------

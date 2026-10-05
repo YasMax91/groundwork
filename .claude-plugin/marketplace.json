@@ -3,13 +3,21 @@
   "owner": {
     "name": "Max Yastremskyi (YasMax91)"
   },
-  "allowCrossMarketplaceDependenciesOn": ["claude-plugins-official"],
+  "allowCrossMarketplaceDependenciesOn": [
+    "claude-plugins-official"
+  ],
   "plugins": [
     {
       "name": "groundwork",
       "source": "./",
       "category": "development",
       "description": "Spec-driven workflow for Laravel backends: grounded discovery and specs before code, an anti-hallucination protocol for external integrations, and hooks that hold the runner, formatting, static analysis, tests and the OpenAPI document."
+    },
+    {
+      "name": "follow-through",
+      "source": "./follow-through",
+      "category": "development",
+      "description": "Project-agnostic gates on how an agent ends its turn: no stopping on an announcement, no prose questions, no handing work back, no 'it works' on changed screens without a screenshot, plain outbound texts for clients, and a permission prompt before destructive commands."
     },
     {
       "name": "groundwork-pack",

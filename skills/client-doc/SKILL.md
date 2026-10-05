@@ -45,6 +45,12 @@ says, so anything that says nothing reads as padding on the invoice. On top of t
   available today, is a deferral the client pays for. Run it, then write what it showed (the live-proof
   discipline in `${CLAUDE_SKILL_DIR}/../final-check/SKILL.md`).
 - **No invented certainty.** Anything undecided or unverified is named as open, not smoothed over.
+- **Every statement has a source** (GW34-AC6). Each line about scope or behaviour traces to the spec
+  (§ or `R<n>`), the code (`file:line`), or the client's own message — kept in an HTML comment beside it
+  so the client never sees it. A line with no source is labelled «предложение» in the text itself. A
+  "cannot / нельзя" about a provider carries the documentation link or the probe that showed it.
+  Unsourced detail is how «журнал 1С», «ювелирка» and «выписать нельзя» reached clients.
+- **Never mention who writes the code.** No "AI", "agent" or "Claude" in anything the client reads.
 
 ## Estimating — the agent's real time, never man-days
 

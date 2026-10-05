@@ -8,6 +8,15 @@
 
 ## Root cause
 
+## Source requirements (verbatim — every item of the request, subtasks and notes included)
+
+<!-- Quote each item exactly as the person or the brief wrote it. One row per item; nothing summarised away.
+     The last column is filled during the work. slice-gate blocks "done" while any row has no proof. -->
+
+| ID | Requirement (verbatim) | Source (message time / file:line) | Proof (test, HTTP run, screenshot, or out of scope: <reason agreed>) |
+|---|---|---|---|
+| R1 | | | |
+
 ## Expected behavior
 
 ## Fix (smallest safe change)

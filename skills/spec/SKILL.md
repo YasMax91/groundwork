@@ -14,32 +14,39 @@ a useful spec beats a perfect document.
    `integration-change.md`.
 2. **Link the spec** back to the CRD section, existing docs, code behavior, or the explicit user
    decision that justifies it.
-3. **Separate Stage A / MVP scope from future-stage notes.** Future notes guide naming and
+3. **Quote the request before restating it.** Fill `## Source requirements`: every item of the ТЗ,
+   brief, ticket or user message — subtasks, notes at the end ("На що звернути увагу"), adjacent
+   surfaces the person named (mobile, admin, gateway repo, exports) — copied **verbatim**, one row each,
+   id `R1`, `R2`, … with its source (message time or file:line). Nothing summarised away: the
+   2026-10-05 sweep found ~70 complaints of a dropped subtask or note while every AC was green. Each
+   row's proof cell is filled during the work; `slice-gate` refuses "done" while one is empty. A row
+   dropped by agreement gets `out of scope: <reason, and when the user agreed>`.
+4. **Separate Stage A / MVP scope from future-stage notes.** Future notes guide naming and
    boundaries; they do not expand the current implementation.
-4. **Write acceptance criteria in EARS form** with stable IDs and a test pointer — each becomes a
+5. **Write acceptance criteria in EARS form** with stable IDs and a test pointer — each becomes a
    fail-first test (the red list) for L2+/bug fixes. Five EARS forms (combine for complex):
    `THE SYSTEM SHALL <r>` · `WHEN <trigger> …` · `WHILE <state> …` · `IF <cond> THEN …` ·
    `WHERE <feature> …`. IDs (`AC1`, `AC2`, …) are stable — **append, never renumber**; a renumber
    breaks the `→ test:` links and the checkpoint. Keep it proportional: trivial CRUD gets a plain
    "returns 201 + shape" criterion, not invented branches.
-5. **Record the technical approach and tradeoffs** — if the CRD intent is right but a different
+6. **Record the technical approach and tradeoffs** — if the CRD intent is right but a different
    technical shape is safer, document why. For a **cross-cutting, durable** L3/L4 decision (new
    dependency, new architectural layer, workflow-state model), also write an ADR to
    `docs/ai/adr/NNNN-<slug>.md` from `${CLAUDE_SKILL_DIR}/../../templates/adr.md` (≥2 options + chosen +
    why); keep feature-local trade-offs here in the spec.
-6. **Specify the OpenAPI delta when the task touches an endpoint** — for a new or changed route, the
+7. **Specify the OpenAPI delta when the task touches an endpoint** — for a new or changed route, the
    spec states which operations gain or change, and what each one documents: request body (from the
    FormRequest rules), response schema (from the JsonResource), and every reachable status code
    (success + 401/403/404/409/422). Treat it as deliverable scope, not a footnote — the `openapi`
    Stop gate blocks "done" without it. See
    `${CLAUDE_SKILL_DIR}/../../guidelines/openapi-protocol.md`.
-7. **List risks, assumptions, and the verification plan** (which tests — written test-first — and
+8. **List risks, assumptions, and the verification plan** (which tests — written test-first — and
    which gates). See the TDD protocol (`${CLAUDE_SKILL_DIR}/../../guidelines/tdd-protocol.md`). Also
    fill the spec's **"Blind spots considered"** section — the dimensions the request did not name but
    the domain demands (per `${CLAUDE_SKILL_DIR}/../../guidelines/blind-spot-protocol.md`), each closed
    in this spec or deliberately deferred with the reason; pull from the Discovery blind-spot pass /
    `blind-spot-mapper` output. Material only; "none" is valid.
-8. **Hand off with a Russian summary (выжимка).** After the spec file is saved, post a short Russian
+9. **Hand off with a Russian summary (выжимка).** After the spec file is saved, post a short Russian
    digest to chat so the user grasps the essentials without reading the full English document. The
    digest is chat, so it follows `${CLAUDE_SKILL_DIR}/../../guidelines/plain-language.md` — no EARS, no
    AC ids without the sentence they stand for, no section heading in the plugin's vocabulary, and the

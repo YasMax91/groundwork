@@ -134,6 +134,10 @@
           },
           {
             "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/estimate-docs.py\""
+          },
+          {
+            "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/hooks/plain-language.sh",
             "statusMessage": "Groundwork: checking the wording…"
           },

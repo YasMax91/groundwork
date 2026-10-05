@@ -38,16 +38,16 @@ exit_of() { # dir msg [active] -> exit code, and it must always be 0 in this rel
 
 warns() { # name dir msg [active] — expects a systemMessage on stdout
   local out; out="$(run "$2" "$3" "${4:-false}")"
-  if printf '%s' "$out" | jq -e '.systemMessage // empty' >/dev/null 2>&1; then
-    pass=$((pass+1)); printf '  ok   %-38s [warned]\n' "$1"
+  if printf '%s' "$out" | jq -e '.decision == "block" and (.reason // "") != ""' >/dev/null 2>&1; then
+    pass=$((pass+1)); printf '  ok   %-38s [blocked]\n' "$1"
   else
-    fail=$((fail+1)); printf '  FAIL %-38s want a systemMessage, got "%s"\n' "$1" "$out"
+    fail=$((fail+1)); printf '  FAIL %-38s want a block decision, got "%s"\n' "$1" "$out"
   fi
 }
 
 silent() { # name dir msg [active] — expects no systemMessage
   local out; out="$(run "$2" "$3" "${4:-false}")"
-  if printf '%s' "$out" | jq -e '.systemMessage // empty' >/dev/null 2>&1; then
+  if printf '%s' "$out" | jq -e '.decision // empty' >/dev/null 2>&1; then
     fail=$((fail+1)); printf '  FAIL %-38s want silence, got "%s"\n' "$1" "$out"
   else
     pass=$((pass+1)); printf '  ok   %-38s [silent]\n' "$1"

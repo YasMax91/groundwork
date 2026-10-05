@@ -5,11 +5,11 @@
 # like "I checked it selectively" satisfies the Definition of Done's "state what stayed unverified"
 # literally, while telling the reader nothing about whether that was eight of nine or one of nine.
 #
-# WARN-ONLY in v0.24.0 (W14-AC7). It never blocks and never re-enters the model — a regex over
-# natural language will have false positives, and every trigger is logged so the rate can be read
-# before a later wave turns blocking on. `additionalContext` is deliberately NOT used: the spike
-# in docs/specs/wave-14-coverage-and-silent-decisions.md showed it continues the turn, which is a
-# soft block, not a warning.
+# BLOCKING since v0.44.0 (GW34-AC1). It was warn-only from v0.24.0, and the warning went to
+# `systemMessage` — the user's screen, never the model's — so the agent that made the claim never
+# learned of it (2 logged triggers in otaje while denominator complaints continued). The verdict is now
+# `decision: block` with the reason fed back to the model; one re-entry, then the loop guard lets go.
+# Every trigger is still logged.
 set -uo pipefail
 
 # --- The four lists this gate is made of. Tune them here; the logic below never changes. ---
@@ -72,10 +72,11 @@ log=".claude/groundwork/coverage-claims.log"
 } 2>/dev/null || true
 
 jq -nc --arg marker "$marker" '{
-  systemMessage: ("groundwork: «" + $marker + "» — a verification claim with no denominator. "
+  decision: "block",
+  reason: ("groundwork: «" + $marker + "» — a verification claim with no denominator. "
     + "State covered/total against a named set (impact-map consumers, routes, acceptance-criterion IDs, changed files) "
     + "and list what was not covered — or say plainly that no verification was performed. "
-    + "Never estimate the fraction. Warning only: nothing is blocked.")
+    + "Never estimate the fraction. Rewrite the claim before ending the turn.")
 }' 2>/dev/null || true
 
 exit 0

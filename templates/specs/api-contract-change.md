@@ -23,6 +23,15 @@ the FormRequest rules, response schema from the JsonResource) and **every status
 return** (success + 401/403/404/409/422). Name the shared components (resource schema, validation-error
 envelope, pagination envelope) it references. See `guidelines/openapi-protocol.md`.
 
+## Source requirements (verbatim — every item of the request, subtasks and notes included)
+
+<!-- Quote each item exactly as the person or the brief wrote it. One row per item; nothing summarised away.
+     The last column is filled during the work. slice-gate blocks "done" while any row has no proof. -->
+
+| ID | Requirement (verbatim) | Source (message time / file:line) | Proof (test, HTTP run, screenshot, or out of scope: <reason agreed>) |
+|---|---|---|---|
+| R1 | | | |
+
 ## Acceptance criteria (EARS — each maps to a red test)
 
 Stable IDs; append, never renumber.

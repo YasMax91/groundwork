@@ -10,13 +10,12 @@
 #   PostToolUse (AskUserQuestion) — the question has already been asked, so nothing is blocked. The
 #     correction reaches the model through `additionalContext` and lands on the next round, the plan,
 #     and the closing report.
-#   Stop — the last assistant message is read the way coverage-claim.sh reads it, and the notice goes
-#     to the user through `systemMessage`. `additionalContext` is deliberately NOT used on Stop: the
-#     spike in docs/specs/wave-14-coverage-and-silent-decisions.md showed it continues the turn, which
-#     is a soft block, not a warning.
+#   Stop — the last assistant message is read the way coverage-claim.sh reads it. BLOCKING since
+#     v0.44.0 (GW34-AC1): `decision: block`, reason fed back to the model, one re-entry. Warn-only
+#     from v0.42.0 through `systemMessage`, which only the user sees — otaje logged 149 triggers while
+#     the jargon complaints continued.
 #
-# WARN-ONLY (v0.42.0, W33-AC9). It never refuses, and every trigger is logged to
-# .claude/groundwork/plain-language.log so the rate can be read before a later wave tightens it.
+# Every trigger is logged to .claude/groundwork/plain-language.log.
 set -uo pipefail
 
 # --- The lists this gate is made of. Tune them here; the logic below never changes. ---
@@ -148,18 +147,20 @@ case "$event" in
     if [ -n "$marker" ]; then
       gw_pl_log "message" "$marker" "$msg"
       jq -nc --arg marker "$marker" --arg spelling "$(gw_pl_spelling "$marker")" '{
-        systemMessage: ("groundwork: «" + $marker + "» — the plugin’s vocabulary reached the reader. "
+        decision: "block",
+        reason: ("groundwork: «" + $marker + "» — the plugin’s vocabulary reached the reader. "
           + "In chat it is called: " + $spelling + ". Identifiers from the project itself stay, after "
-          + "the meaning. Warning only: nothing is blocked.")
+          + "the meaning. Rewrite the message in the reader’s words before ending the turn.")
       }' 2>/dev/null || true
       exit 0
     fi
 
     gw_pl_log "message" "no-ask-line" "$msg"
     jq -nc '{
-      systemMessage: ("groundwork: this message ends without saying what the reader does now. "
-        + "One last line: answer these questions · approve the plan · run this on your machine · "
-        + "nothing, I continue. Warning only: nothing is blocked.")
+      decision: "block",
+      reason: ("groundwork: this message ends without saying what the reader does now. "
+        + "Add one last line: answer these questions · approve the plan · run this on your machine · "
+        + "nothing, I continue.")
     }' 2>/dev/null || true
     exit 0
     ;;

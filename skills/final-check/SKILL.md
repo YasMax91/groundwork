@@ -56,7 +56,16 @@ change gets a browser run, a pure internal refactor gets neither.
   route **loads** at runtime (network — the edited file is really requested, not ignored by the theme),
   (2) the edited style / behavior is the **effective computed** one (not shadowed by theme specificity),
   after a hard refresh, and (3) no **persisted client state** (`localStorage` / session) is masking it.
-  Drive it yourself — never hand the user a visual check you can run.
+  Drive it yourself — never hand the user a visual check you can run. Sign in with the project's
+  `dev_login` (`.groundwork.json`, seeded by `init`) instead of asking the user to log in.
+
+  **The set is named before the run** (GW34-AC5): every changed screen, plus every screen that
+  includes a changed shared CSS/JS file or partial (grep the layout and component includes), plus the
+  sheets, modals and dropdowns inside them; both themes when the project has two; widths 375 and
+  1440. Take a screenshot of each, look at it — alignment, overflow, spacing, empty and long values —
+  and record `screens checked: n/m` in the receipt with the unchecked ones named. The follow-through
+  plugin refuses "it works" after a screen edit with no screenshot; this list is what the screenshots
+  must cover.
 - **Coverage — every consumer, not the first one.** When the change touches a field, an enum, or a
   response shape, verify it **everywhere it surfaces** — List *and* Show, export, the API `JsonResource`,
   notifications — using the discovery impact map as the checklist. Confirm every denormalized / derived
