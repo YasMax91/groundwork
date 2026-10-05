@@ -24,6 +24,9 @@ DEFAULTS = {
         "outbound": True,
         "ui_proof": True,
         "destructive": True,
+        "lanes": True,
+        "freshness": True,
+        "status": True,
     },
     # None = detect from CLAUDE.md; "ru" / "uk" / "off" to force.
     "chat_language": None,

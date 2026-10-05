@@ -19,6 +19,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import ft  # noqa: E402
+import lanes  # noqa: E402
 
 MIGRATE = re.compile(r"\b(migrate:fresh|migrate:reset|migrate:refresh|db:wipe)\b")
 TESTING_DB = re.compile(r"--env[= ]testing\b|DB_DATABASE=\S*test|--database[= ]\S*test")
@@ -67,11 +68,79 @@ def reason_for_bash(cmd, cwd):
             return "the working tree has uncommitted changes and this git command discards changes"
     if DOCKER_DATA.search(cmd):
         return "it removes Docker volumes — the databases inside them go with them"
+    if re.search(r"\blane\.py\s+down\b.*--purge", cmd):
+        return "it drops this lane's databases (dev data cloned into the lane is lost)"
     if PROCESS_KILL.search(cmd):
         return "it stops processes (workers, servers) that are not restarted by this command"
     if GATE_CONFIG_IN_SHELL.search(cmd) and SHELL_WRITE.search(cmd):
         return "it rewrites a gate or permission config — the checks that hold the work"
     return ""
+
+
+def deny(reason):
+    print(json.dumps({"hookSpecificOutput": {
+        "hookEventName": "PreToolUse", "permissionDecision": "deny",
+        "permissionDecisionReason": "follow-through: " + reason}}, ensure_ascii=False))
+
+
+def lane_checks(payload, cwd, cfg, tool, data):
+    """Wave 35. Returns True when it answered (denied or asked) and the caller must stop."""
+    sid = payload.get("session_id") or ""
+    if not sid or not ft.gate_on(cfg, "lanes") or not lanes.common_dir(cwd):
+        return False
+    sibs = lanes.siblings(cwd, sid)
+    if not sibs:
+        return False
+    if tool in ("Edit", "Write", "MultiEdit"):
+        path = str(data.get("file_path") or "")
+        rel = lanes.relpath(cwd, path)
+        me = lanes.load(cwd, sid) or lanes.touch(cwd, sid)
+        acks = me.setdefault("acks", {"paths": [], "tree": False})
+        here = os.path.realpath(cwd)
+        same_tree = [s for s in sibs if s.get("cwd") == here]
+        if same_tree and not acks.get("tree"):
+            s = same_tree[0]
+            acks["tree"] = True
+            lanes.save(cwd, sid, me)
+            ft.log("lane_tree", payload, path)
+            deny("another live session (%s, branch %s, task: %s) works in this same tree. Enter your own lane first: "
+                 "EnterWorktree, then continue there. If the user wants both sessions in one tree, say so and retry — "
+                 "the next edit passes." % (s.get("title") or s.get("session_id", "")[:8], s.get("branch") or "?",
+                                            s.get("task") or "?"))
+            return True
+        owners = [s for s in sibs if rel and rel in s.get("files", [])]
+        if owners and rel not in acks.get("paths", []):
+            s = owners[0]
+            acks.setdefault("paths", []).append(rel)
+            lanes.save(cwd, sid, me)
+            ft.log("lane_overlap", payload, rel)
+            deny("%s is being edited by another live session (%s, branch %s, task: %s). Message it first — ListAgents, "
+                 "then SendMessage with what you intend to change — and agree who changes what. Then retry; the next edit "
+                 "of this file passes." % (rel, s.get("title") or s.get("session_id", "")[:8], s.get("branch") or "?",
+                                           s.get("task") or "?"))
+            return True
+    if tool == "Bash":
+        cmd = str(data.get("command") or "")
+        if re.search(r"\b(kill|pkill|killall|docker\s+(stop|kill|rm)|docker(-|\s+)compose\b.*\b(down|stop))\b", cmd):
+            for s in sibs:
+                names = [str(c) for c in s.get("containers", [])] + [str(p) for p in s.get("ports", [])]
+                try:
+                    with open(os.path.join(s.get("cwd", ""), ".claude", "lane.json"), encoding="utf-8") as fh:
+                        lane = json.load(fh)
+                    names += [str(c) for c in lane.get("containers", [])] + [str(p) for p in lane.get("ports", [])]
+                    names.append(str(lane.get("compose_project") or ""))
+                except Exception:
+                    pass
+                hit = next((n for n in names if n and re.search(r"(?<![\w-])%s(?![\w-])" % re.escape(n), cmd)), None)
+                if hit:
+                    ft.log("lane_kill", payload, cmd)
+                    print(json.dumps({"hookSpecificOutput": {
+                        "hookEventName": "PreToolUse", "permissionDecision": "ask",
+                        "permissionDecisionReason": "follow-through: «%s» belongs to another live session (%s) — stopping it "
+                        "breaks that session's work." % (hit, s.get("title") or s.get("session_id", "")[:8])}},
+                        ensure_ascii=False))
+                    return True
+    return False
 
 
 def main():
@@ -80,10 +149,12 @@ def main():
         return
     cwd = payload.get("cwd") or os.getcwd()
     cfg = ft.config(cwd)
-    if not ft.gate_on(cfg, "destructive"):
-        return
     tool = payload.get("tool_name") or ""
     data = payload.get("tool_input") or {}
+    if lane_checks(payload, cwd, cfg, tool, data):
+        return
+    if not ft.gate_on(cfg, "destructive"):
+        return
     reason = ""
     if tool == "Bash":
         reason = reason_for_bash(str(data.get("command") or ""), cwd)

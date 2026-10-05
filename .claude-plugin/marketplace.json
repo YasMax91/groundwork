@@ -17,7 +17,7 @@
       "name": "follow-through",
       "source": "./follow-through",
       "category": "development",
-      "description": "Project-agnostic gates on how an agent ends its turn: no stopping on an announcement, no prose questions, no handing work back, no 'it works' on changed screens without a screenshot, plain outbound texts for clients, and a permission prompt before destructive commands."
+      "description": "Project-agnostic gates on how an agent ends its turn and how parallel sessions coexist: no stopping on an announcement, no prose questions, no handing work back, no 'it works' on unseen screens, plain outbound texts, a prompt before destructive commands, a shared registry so sessions see each other, lanes that start from the freshest integration branch, and a status file kept current in the same turn."
     },
     {
       "name": "groundwork-pack",

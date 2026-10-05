@@ -126,6 +126,16 @@ mkreq "$d" "| R1 | export orders | msg 09:12 | |"
 state "$d" Implementation L2 '- [x] one (AC1) — test: tests/Feature/HereTest.php'
 expect "GW34 mid-task does not reconcile" "$d" 0
 
+# --- ST-AC6: a Done task with a draft spec is refused ---------------------------------------------
+d="$ROOT/st1"; proj "$d"; goodtest "$d/tests/Feature/HereTest.php"
+printf '# Spec\n\n- Status: **draft — awaiting approval**.\n\n| AC1 | a |\n' > "$d/docs/specs/s.md"
+state "$d" "Done — shipped" L2 '- [x] one (AC1) — test: tests/Feature/HereTest.php'
+expect "ST-AC6 draft spec at Done" "$d" 2 "Status"
+d="$ROOT/st2"; proj "$d"; goodtest "$d/tests/Feature/HereTest.php"
+printf '# Spec\n\n- Status: **implemented** (2026-10-05).\n\n| AC1 | a |\n' > "$d/docs/specs/s.md"
+state "$d" "Done — shipped" L2 '- [x] one (AC1) — test: tests/Feature/HereTest.php'
+expect "ST-AC6 implemented spec passes" "$d" 0
+
 # --- AC7: no (ACn) anywhere — one notice, no refusal ----------------------------------------------
 d="$ROOT/ac7"; proj "$d"; goodtest "$d/tests/Feature/HereTest.php"
 state "$d" Implementation L2 '- [x] a slice with no criterion — test: tests/Feature/HereTest.php'

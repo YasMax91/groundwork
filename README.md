@@ -355,6 +355,13 @@ Laravel at all: the turn that ends on «Беру следующий шаг», th
 | UI proof | a view/CSS/JS/component changed, "works" claimed, no browser or simulator screenshot after the edit | look at the screens, or write «UI не проверен: …» |
 | destructive command | `migrate:fresh` off the testing DB, discarding uncommitted git changes, removing Docker volumes, killing workers, editing a gate config | the native permission prompt asks the user |
 
+Since v0.2.0 it also lets parallel sessions of one repository coexist: a shared registry in the git
+common dir shows each session the others (branch, task, files, progress) and how far the integration
+branch moved; an empty worktree starts from the freshest `origin/development` (the app branches from
+`origin/HEAD`); a file another live session is editing stops once with that session's name; a
+`docs/ai/status.md` (created by `follow-through:status`, mirrored to a «Ревизия» artifact) must move in
+the same turn as a commit, merge, push or deploy. Details: [follow-through/README.md](follow-through/README.md).
+
 Stop checks block with one re-entry; the destructive check only ever asks, never allows or denies.
 Every trigger is logged to `~/.claude/follow-through/triggers.log`. Each check is switched off in
 `~/.claude/follow-through.json` or `<project>/.claude/follow-through.json`:
@@ -362,6 +369,18 @@ Every trigger is logged to `~/.claude/follow-through/triggers.log`. Each check i
 Replayed over the 2064 historical agent turns the sweep covers: announcement 29 triggers, 23 followed
 by «продолжай»/«да» or a complaint; empty reply 32 (15); prose question 204 (90); UI proof 56 (18);
 hand-back 28 (5); language 67 (6, mostly English client texts written outside an outbound fence).
+
+## Parallel sessions — lanes
+
+`groundwork:lane` (`hooks/lane.py up`) turns a worktree into a lane: its own Compose project and
+`<app>-<lane>.localhost` behind the shared Traefik, a dev database cloned from the main checkout's, a
+migrated test database of its own (with the lane's working copy of `phpunit.xml` pointed at it and marked
+`skip-worktree`), and `vendor/`/`node_modules/` cloned copy-on-write. `lane-guard.py` refuses `sail …`
+from a worktree whose `.env` still points at the main stack or the main dev database. The test-gate lock
+lives in the git common dir, keyed by the test database, so every worktree sees it. Verified on otaje:
+two lanes ran the same 989 tests at the same time, 989 of 989 each, no deadlock — the shared test
+database gave 167 and 123 failures on the same run. `lane.py down [--purge]` stops the lane and, with
+`--purge`, drops its databases and volumes.
 
 ## Companion plugins — `groundwork-pack`
 
@@ -543,10 +562,10 @@ once with `claude --debug` in your project before enabling.
 ```
 .claude-plugin/   plugin.json · marketplace.json
 pack/             groundwork-pack — dependency-only bundle (this plugin + follow-through + companion plugins)
-follow-through/   the project-agnostic plugin — hooks/ (stop_gate.py · guard.py · session_start.py · ft.py · tests/)
-skills/           start-task · spec · implement-approved · risk-review · final-check · estimate · ground-integration · frontend-handoff · install-portal · client-doc · openapi-audit · grill · init · deep-grounding · deep-discovery · deep-review
+follow-through/   the project-agnostic plugin — hooks/ (stop_gate.py · guard.py · session_start.py · prompt_submit.py · post_tool.py · session_end.py · lanes.py · ft.py · tests/) · skills/status
+skills/           start-task · spec · implement-approved · lane · risk-review · final-check · estimate · ground-integration · frontend-handoff · install-portal · client-doc · openapi-audit · grill · init · deep-grounding · deep-discovery · deep-review
 agents/           impact-mapper · blind-spot-mapper · grounded-researcher · adversarial-verifier · conformance-reviewer
-hooks/            hooks.json · lib.sh (shared resolvers) · session-start.sh · pre-compact.sh · task-intent.sh · format-on-edit.sh · done-gate.sh · test-gate.sh · openapi-gate.sh · slice-gate.sh · coverage-claim.sh · plain-language.sh · defect-scan.sh · estimate-claim.sh · estimate-docs.py · estimate-ledger.sh · ledger-record.sh · agent-contract.sh · trim-output.sh · pre-tool-guard.sh · stdin-guard.sh · statusline.sh · tests/all.sh
+hooks/            hooks.json · lib.sh (shared resolvers) · session-start.sh · pre-compact.sh · task-intent.sh · format-on-edit.sh · done-gate.sh · test-gate.sh · openapi-gate.sh · slice-gate.sh · coverage-claim.sh · plain-language.sh · defect-scan.sh · estimate-claim.sh · estimate-docs.py · estimate-ledger.sh · lane.py · lane-guard.py · ledger-record.sh · agent-contract.sh · trim-output.sh · pre-tool-guard.sh · stdin-guard.sh · statusline.sh · tests/all.sh
 workflows/        deep-review-run.js · deep-discovery-run.js · deep-grounding-run.js — the multi-agent orchestration, executed by the runtime
 guidelines/       ai-sdd-process · grounding-protocol · blind-spot-protocol · clarify-protocol · plain-language · openapi-protocol · laravel-standards · tdd-protocol · writing-standards · working-memory
 docs/             skill-hygiene (author-facing) · specs/

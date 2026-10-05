@@ -47,7 +47,7 @@ expect "sail missing skips"        0 "$d"          # unchanged bootstrap fail-op
 # --- W11-AC6: a lock held by another session -> wait, then allow with a reason (never red) ---
 d="$ROOT/t5"; fixture "$d" '{ "runner": "host", "commands": { "test": "./bad.sh" },
   "gates": { "test_db_lock": true, "test_lock_wait_seconds": 1 } }'; stub "$d/bad.sh" 1
-mkdir -p "$d/.claude/groundwork/locks/test-db"                 # someone else holds it, fresh
+mkdir -p "$d/.git/groundwork/locks/test-db-default"                 # someone else holds it, fresh
 expect "busy lock reports, no red" 1 "$d"
 
 # --- the lock is released after a run, so a second run is not blocked by the first ---
@@ -55,7 +55,7 @@ d="$ROOT/t6"; fixture "$d" '{ "runner": "host", "commands": { "test": "./ok.sh" 
   "gates": { "test_db_lock": true, "test_lock_wait_seconds": 1 } }'; stub "$d/ok.sh" 0
 expect "first run allows"          0 "$d"
 expect "second run not stuck"      0 "$d"
-if [ ! -d "$d/.claude/groundwork/locks/test-db" ]; then
+if [ ! -d "$d/.git/groundwork/locks/test-db-default" ]; then
   pass=$((pass+1)); printf '  ok   %-30s [released]\n' "lock released on exit"
 else
   fail=$((fail+1)); printf '  FAIL %-30s lock dir still present\n' "lock released on exit"
@@ -64,14 +64,25 @@ fi
 # --- a stale lock (an interrupted session) is taken over, not honored forever ---
 d="$ROOT/t7"; fixture "$d" '{ "runner": "host", "commands": { "test": "./bad.sh" },
   "gates": { "test_db_lock": true, "test_lock_wait_seconds": 1 } }'; stub "$d/bad.sh" 1
-mkdir -p "$d/.claude/groundwork/locks/test-db"
-touch -t 200001010000 "$d/.claude/groundwork/locks/test-db"     # ancient -> stale
+mkdir -p "$d/.git/groundwork/locks/test-db-default"
+touch -t 200001010000 "$d/.git/groundwork/locks/test-db-default"     # ancient -> stale
 expect "stale lock taken over"     2 "$d"          # ran the suite, which is red
+
+# --- GW35-AC3: a worktree sees the lock its main checkout holds on the same test database ---
+d="$ROOT/t9a"; fixture "$d" '{ "runner": "host", "commands": { "test": "./bad.sh" },
+  "gates": { "test_db_lock": true, "test_lock_wait_seconds": 1 } }'; stub "$d/bad.sh" 1
+( cd "$d" && git add -A && git commit -qm all && git worktree add -q "$d/wt" -b lane )
+printf '<?php\nclass B {}\n' > "$d/wt/app/B.php"
+mkdir -p "$d/.git/groundwork/locks/test-db-default"           # the main checkout's session holds it
+expect "worktree sees shared lock"  1 "$d/wt"
+# --- and a lane with its own test database takes its own lock ---
+printf 'DB_DATABASE=app_test_lane\n' > "$d/wt/.env.testing"
+expect "own test DB, own lock"      2 "$d/wt"
 
 # --- W11-AC7: the lock is opt-out ---
 d="$ROOT/t8"; fixture "$d" '{ "runner": "host", "commands": { "test": "./bad.sh" },
   "gates": { "test_db_lock": false } }'; stub "$d/bad.sh" 1
-mkdir -p "$d/.claude/groundwork/locks/test-db"                 # held, but locking is disabled
+mkdir -p "$d/.git/groundwork/locks/test-db-default"                 # held, but locking is disabled
 expect "lock disabled ignores it"  2 "$d"
 
 # --- W11-AC12: PHP inside a BRAND-NEW untracked directory must still trigger the gate.
@@ -93,9 +104,9 @@ expect "override beats runner"     2 "$d"
 # --- the lock must not spin when it cannot be managed: unwritable lock parent -> run unlocked ---
 d="$ROOT/t12"; fixture "$d" '{ "runner": "host", "commands": { "test": "./bad.sh" },
   "gates": { "test_db_lock": true, "test_lock_wait_seconds": 2 } }'; stub "$d/bad.sh" 1
-mkdir -p "$d/.claude/groundwork/locks"; chmod 500 "$d/.claude/groundwork/locks"
+mkdir -p "$d/.git/groundwork/locks"; chmod 500 "$d/.git/groundwork/locks"
 start=$(date +%s); ( cd "$d" && bash "$GATE" >/dev/null 2>&1 ); got=$?; elapsed=$(( $(date +%s) - start ))
-chmod 700 "$d/.claude/groundwork/locks"
+chmod 700 "$d/.git/groundwork/locks"
 if [ "$got" = 2 ] && [ "$elapsed" -lt 10 ]; then
   pass=$((pass+1)); printf '  ok   %-30s (exit %s, %ss — no spin)\n' "unlockable runs unlocked" "$got" "$elapsed"
 else
@@ -105,9 +116,9 @@ fi
 # --- a lock owned by ANOTHER live session must survive our exit (no cross-session deletion) ---
 d="$ROOT/t13"; fixture "$d" '{ "runner": "host", "commands": { "test": "./ok.sh" },
   "gates": { "test_db_lock": true, "test_lock_wait_seconds": 1 } }'; stub "$d/ok.sh" 0
-mkdir -p "$d/.claude/groundwork/locks/test-db"; printf 'someone-else\n' > "$d/.claude/groundwork/locks/test-db/owner"
+mkdir -p "$d/.git/groundwork/locks/test-db-default"; printf 'someone-else\n' > "$d/.git/groundwork/locks/test-db-default/owner"
 ( cd "$d" && bash "$GATE" >/dev/null 2>&1 )
-if [ -d "$d/.claude/groundwork/locks/test-db" ] && grep -q 'someone-else' "$d/.claude/groundwork/locks/test-db/owner" 2>/dev/null; then
+if [ -d "$d/.git/groundwork/locks/test-db-default" ] && grep -q 'someone-else' "$d/.git/groundwork/locks/test-db-default/owner" 2>/dev/null; then
   pass=$((pass+1)); printf '  ok   %-30s [foreign lock intact]\n' "never deletes foreign lock"
 else
   fail=$((fail+1)); printf '  FAIL %-30s foreign lock was removed\n' "never deletes foreign lock"

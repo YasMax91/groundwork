@@ -84,7 +84,20 @@ fi
 # neither session's code ("1412 Table definition has changed" -> "1146 doesn't exist"). An atomic
 # mkdir is the lock (flock is absent on macOS). Every path here fails OPEN: a busy database is an
 # environment problem, and this gate must never invent a red.
-lock_dir='.claude/groundwork/locks/test-db'
+# The lock lives in the repository's COMMON git dir, keyed by the test database (GW35-AC3): every
+# worktree of the repository sees it, and two lanes with their own test databases never wait on each
+# other. Until v0.45.0 it lived in `.claude/groundwork/locks/` of each working tree, so two worktrees
+# sharing one test database each held "the" lock and collided anyway.
+# phpunit.xml first: it is what the run actually uses — it beats .env.testing, often with force="true".
+lock_db="$(grep -oE 'name="DB_DATABASE"[^>]*value="[^"]*"' phpunit.xml 2>/dev/null | sed -E 's/.*value="([^"]*)".*/\1/' | head -1)"
+[ -n "$lock_db" ] || lock_db="$(sed -n 's/^[[:space:]]*DB_DATABASE[[:space:]]*=[[:space:]]*//p' .env.testing 2>/dev/null | head -1 | tr -d '"'"'"' ')"
+lock_db="$(printf '%s' "${lock_db:-default}" | tr -c 'A-Za-z0-9_.-' '_')"
+lock_common="$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null || true)"
+if [ -n "$lock_common" ] && [ -d "$lock_common" ]; then
+  lock_dir="$lock_common/groundwork/locks/test-db-$lock_db"
+else
+  lock_dir='.claude/groundwork/locks/test-db'
+fi
 lock_wait=45      # keep well inside the harness's hook timeout, or the wait is killed before it reports
 stale_minutes=30  # deliberately NOT derived from lock_wait: a long suite must not lose its own lock
 lock_id="$$"

@@ -14,6 +14,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import ft  # noqa: E402
+import lanes  # noqa: E402
 
 # --- the lists this gate is made of. Tune them here; the checks below never change. ---------------
 
@@ -276,11 +277,87 @@ def check_ui_proof(msg, tools):
     )
 
 
+STATUS_EVENT = re.compile(r"\bgit\s+(commit|merge|push|cherry-pick|rebase)\b|\bgh\s+pr\s+merge\b")
+STATUS_UNCHANGED = re.compile(r"статус не меняется\s*:|status unchanged\s*:", re.I)
+
+
+def check_freshness(msg, cwd, sid, cfg):
+    """LN-AC3: claiming completion while the base moved under files this lane changed."""
+    if not sid or not lanes.common_dir(cwd) or not DONE_CLAIM.search(strip_code(msg)):
+        return None
+    me = lanes.load(cwd, sid)
+    n, subjects, touching = lanes.base_drift(cwd, lanes.base_ref(cwd, cfg), me.get("files", []))
+    if not touching:
+        return None
+    return (
+        "freshness",
+        ", ".join(touching[:4]),
+        "The base moved by %d commits since this lane forked, and they change files you changed (%s). Rebase on the "
+        "base and re-run the checks before calling it done." % (n, ", ".join(touching[:6])),
+    )
+
+
+def check_status(msg, cwd, tools):
+    """ST-AC2 and ST-AC3: a status event updates docs/ai/status.md, and the file's mirror follows it."""
+    root = lanes.toplevel(cwd) or cwd
+    text = lanes.read_status(root)
+    if not text:
+        return []
+    found = []
+    status_abs = os.path.realpath(os.path.join(root, lanes.STATUS_REL))
+    events = [t for t in tools if t["name"] == "Bash" and STATUS_EVENT.search(str(t["input"].get("command") or ""))]
+    envs = lanes.front_matter(text).get("environments") or {}
+    for t in tools:
+        if t["name"] != "Bash":
+            continue
+        cmd = str(t["input"].get("command") or "")
+        for spec in envs.values():
+            pat = spec.get("deploy_cmd")
+            if pat:
+                try:
+                    if re.search(pat, cmd):
+                        events.append(t)
+                except re.error:
+                    pass
+    last_edit = -1
+    for i, t in enumerate(tools):
+        p = edited_path(t)
+        if (p and os.path.realpath(p if os.path.isabs(p) else os.path.join(cwd, p)) == status_abs) or (
+                t["name"] == "Bash" and "status.md" in str(t["input"].get("command") or "")
+                and re.search(r"sed\s+-i|>|tee|python", str(t["input"].get("command") or ""))):
+            last_edit = i
+    if events and last_edit < 0 and not STATUS_UNCHANGED.search(msg):
+        found.append((
+            "status_event",
+            str(events[0]["input"].get("command") or "")[:80],
+            "This turn committed, merged, pushed or deployed, and %s was not updated. Mark what moved (status, lane, "
+            "proof = the commit or deploy) now — or, if nothing in the plan changed, add a line «статус не меняется: "
+            "<почему>»." % lanes.STATUS_REL,
+        ))
+    mirror = lanes.front_matter(text).get("mirror")
+    if mirror and last_edit >= 0:
+        published = any(t["name"] == "Artifact" and str(t["input"].get("url") or "").rstrip("/") == mirror.rstrip("/")
+                        and (t["input"].get("action") in (None, "", "publish"))
+                        for t in tools[last_edit + 1:])
+        if not published:
+            found.append((
+                "status_mirror",
+                mirror,
+                "%s changed and its mirror %s was not republished after the change. Publish the updated plan to that "
+                "artifact now (Artifact, url = the mirror) — do not ask whether to." % (lanes.STATUS_REL, mirror),
+            ))
+    return found
+
+
 def main():
     payload = ft.read_payload()
-    if not payload or payload.get("stop_hook_active"):
+    if not payload:
         return
     cwd = payload.get("cwd") or os.getcwd()
+    if payload.get("session_id") and lanes.common_dir(cwd):
+        lanes.touch(cwd, payload["session_id"])
+    if payload.get("stop_hook_active"):
+        return
     cfg = ft.config(cwd)
     msg = payload.get("last_assistant_message") or ""
     user_text, tools = ft.current_turn(payload.get("transcript_path") or "")
@@ -301,6 +378,10 @@ def main():
             found.append(check_outbound(msg, cfg))
         if ft.gate_on(cfg, "ui_proof"):
             found.append(check_ui_proof(msg, tools))
+        if ft.gate_on(cfg, "freshness"):
+            found.append(check_freshness(msg, cwd, payload.get("session_id") or "", cfg))
+    if ft.gate_on(cfg, "status"):
+        found.extend(check_status(msg, cwd, tools))
     found = [f for f in found if f]
     if not found:
         return

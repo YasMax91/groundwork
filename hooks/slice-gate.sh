@@ -281,6 +281,16 @@ if [ "$is_done" -eq 1 ] && [ -n "${spec:-}" ] && [ -f "${spec:-}" ]; then
   [ -n "$unproven" ] && add_block "the spec's source requirements have no proof on: ${unproven%% }. Each row needs a test, an HTTP/browser run, a screenshot — or «out of scope: <reason agreed with the user>»."
 fi
 
+# --- the spec says what happened, at Mode: Done only (ST-AC6, wave 35) ------------------------------
+# A spec left at "draft" after the work shipped tells the next session — and the frontend — that nothing
+# was built. The status line is part of the change, like the code.
+if [ "$is_done" -eq 1 ] && [ -n "${spec:-}" ] && [ -f "${spec:-}" ]; then
+  spec_status="$(grep -m1 -iE '^[[:space:]]*-?[[:space:]]*\**Status\**:' "$spec" 2>/dev/null | sed -E 's/^[^:]*:[[:space:]]*//' || true)"
+  if printf '%s' "$spec_status" | grep -qiE 'draft|awaiting|in progress|proposed|черновик|ожида'; then
+    add_block "the task is Done but the spec still reads «Status: ${spec_status%%.*}». Set it to implemented (with the date and what was verified) in this turn."
+  fi
+fi
+
 [ "$noac" -gt 0 ] && [ "$noac" -eq "$total" ] && add_notice "none of the ${total} slices carries an (ACn) reference, so nothing was reconciled against the spec."
 
 # --- the migration boundary -------------------------------------------------------------------------
