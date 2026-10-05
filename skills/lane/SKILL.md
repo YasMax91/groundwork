@@ -27,7 +27,8 @@ dev database — that is how a lane ended up testing another session's code (ota
 3. **Open the lane** at the domain the script printed and log in with the project's `dev_login`.
 4. **Fresh data on request:** `lane.py up --refresh-data` re-clones the dev database from the main
    checkout and re-applies this branch's migrations.
-5. **When the lane's work is merged:** `lane.py down` stops its stack. `lane.py down --purge` also drops
+5. **When the lane's work is merged:** `lane.py down` stops its stack and keeps its data and its
+   `phpunit.xml` pin. `lane.py down --purge` also drops
    its databases — a permission prompt asks first.
 
 `lane.py status` prints what the lane uses (`.claude/lane.json`): Compose project, domain, databases,

@@ -160,6 +160,25 @@ def env_for(cwd):
     return env
 
 
+def pin_phpunit(lane, test_db):
+    """Point the lane's working copy of phpunit.xml at its own test DB (skip-worktree, never committed)."""
+    phpunit = os.path.join(lane, "phpunit.xml")
+    if test_db and os.path.isfile(phpunit):
+        try:
+            xml = open(phpunit, encoding="utf-8").read()
+            new_xml, n = re.subn(r'(<(?:env|server)\s+name="DB_DATABASE"\s+value=")[^"]*(")', r"\g<1>%s\g<2>" % test_db, xml)
+            if n:
+                run(["git", "-C", lane, "update-index", "--no-skip-worktree", "phpunit.xml"], timeout=20)
+                with open(phpunit, "w", encoding="utf-8") as fh:
+                    fh.write(new_xml)
+                run(["git", "-C", lane, "update-index", "--skip-worktree", "phpunit.xml"], timeout=20)
+                say("phpunit.xml points at %s in this lane only (skip-worktree — never committed; "
+                    "before a rebase that touches it: lane.py down, rebase, lane.py up)" % test_db)
+        except Exception as exc:  # noqa: BLE001
+            say("phpunit.xml not adjusted: %s — tests may still use the shared test database" % exc)
+
+
+
 def up(refresh_data=False):
     lane, main = contexts(os.getcwd())
     slug = lane_slug(lane)
@@ -229,20 +248,7 @@ def up(refresh_data=False):
     # which beats .env.testing — so without this every lane still runs on the one shared test database.
     # The lane's working copy points at its own test DB and is marked skip-worktree, so the change can
     # never be committed; `lane.py down` restores the file.
-    phpunit = os.path.join(lane, "phpunit.xml")
-    if test_db and os.path.isfile(phpunit):
-        try:
-            xml = open(phpunit, encoding="utf-8").read()
-            new_xml, n = re.subn(r'(<(?:env|server)\s+name="DB_DATABASE"\s+value=")[^"]*(")', r"\g<1>%s\g<2>" % test_db, xml)
-            if n:
-                run(["git", "-C", lane, "update-index", "--no-skip-worktree", "phpunit.xml"], timeout=20)
-                with open(phpunit, "w", encoding="utf-8") as fh:
-                    fh.write(new_xml)
-                run(["git", "-C", lane, "update-index", "--skip-worktree", "phpunit.xml"], timeout=20)
-                say("phpunit.xml points at %s in this lane only (skip-worktree — never committed; "
-                    "before a rebase that touches it: lane.py down, rebase, lane.py up)" % test_db)
-        except Exception as exc:  # noqa: BLE001
-            say("phpunit.xml not adjusted: %s — tests may still use the shared test database" % exc)
+    pin_phpunit(lane, test_db)
 
     for d in ("vendor", "node_modules"):
         src, dst = os.path.join(main, d), os.path.join(lane, d)
@@ -337,7 +343,9 @@ def down(purge=False):
     main_env, _ = read_env(os.path.join(os.path.dirname(git(lane, "rev-parse", "--path-format=absolute", "--git-common-dir")), ".env"))
     if env_vals.get("COMPOSE_PROJECT_NAME") and env_vals.get("COMPOSE_PROJECT_NAME") == main_env.get("COMPOSE_PROJECT_NAME"):
         sys.exit("lane: this worktree's .env points at the MAIN stack — refusing to stop it")
-    if git(lane, "ls-files", "-v", "phpunit.xml").startswith("S"):
+    # Only a purge gives phpunit.xml back: a stopped lane may be restarted with a plain `sail up`, and its
+    # tests must still land on the lane's own database.
+    if purge and git(lane, "ls-files", "-v", "phpunit.xml").startswith("S"):
         run(["git", "-C", lane, "update-index", "--no-skip-worktree", "phpunit.xml"], timeout=20)
         run(["git", "-C", lane, "checkout", "--", "phpunit.xml"], timeout=20)
         say("phpunit.xml restored to the committed version")

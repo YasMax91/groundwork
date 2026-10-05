@@ -150,7 +150,8 @@ dirs hold 0 memory files; the main one holds the project's memories).
 1. **`phpunit.xml` beats `.env.testing`.** 6 of 10 projects set `DB_DATABASE` in `phpunit.xml`, otaje with
    `force="true"`, so two provisioned lanes still ran on the one `otaje_test` (167 and 123 failures,
    `1213 Deadlock`, `1412`). `lane.py up` now points the lane's working copy of `phpunit.xml` at the
-   lane's test DB and marks it `skip-worktree` — never committed; `lane.py down` restores it. The
+   lane's test DB and marks it `skip-worktree` — never committed; only `lane.py down --purge` restores it
+   (a plain `down` keeps it, so a stack restarted with `sail up` still tests on the lane's own DB). The
    test-gate lock reads the database name from `phpunit.xml` first for the same reason.
 2. **The test DB must be migrated at provision time.** Unit tests that do not refresh the database
    (otaje: `PromoCodeStackingTest`, `DashboardStatsServiceTest`) relied on the shared test DB having
