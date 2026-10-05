@@ -344,7 +344,8 @@ def check_status(msg, cwd, tools):
                 "status_mirror",
                 mirror,
                 "%s changed and its mirror %s was not republished after the change. Publish the updated plan to that "
-                "artifact now (Artifact, url = the mirror) — do not ask whether to." % (lanes.STATUS_REL, mirror),
+                "artifact now: render it with follow-through's hooks/render_status.py <repo> <out.html>, then Artifact "
+                "publish with url = the mirror — do not ask whether to." % (lanes.STATUS_REL, mirror),
             ))
     return found
 

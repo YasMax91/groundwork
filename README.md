@@ -562,7 +562,7 @@ once with `claude --debug` in your project before enabling.
 ```
 .claude-plugin/   plugin.json · marketplace.json
 pack/             groundwork-pack — dependency-only bundle (this plugin + follow-through + companion plugins)
-follow-through/   the project-agnostic plugin — hooks/ (stop_gate.py · guard.py · session_start.py · prompt_submit.py · post_tool.py · session_end.py · lanes.py · ft.py · tests/) · skills/status
+follow-through/   the project-agnostic plugin — hooks/ (stop_gate.py · guard.py · session_start.py · prompt_submit.py · post_tool.py · session_end.py · lanes.py · render_status.py · ft.py · tests/) · skills/status
 skills/           start-task · spec · implement-approved · lane · risk-review · final-check · estimate · ground-integration · frontend-handoff · install-portal · client-doc · openapi-audit · grill · init · deep-grounding · deep-discovery · deep-review
 agents/           impact-mapper · blind-spot-mapper · grounded-researcher · adversarial-verifier · conformance-reviewer
 hooks/            hooks.json · lib.sh (shared resolvers) · session-start.sh · pre-compact.sh · task-intent.sh · format-on-edit.sh · done-gate.sh · test-gate.sh · openapi-gate.sh · slice-gate.sh · coverage-claim.sh · plain-language.sh · defect-scan.sh · estimate-claim.sh · estimate-docs.py · estimate-ledger.sh · lane.py · lane-guard.py · ledger-record.sh · agent-contract.sh · trim-output.sh · pre-tool-guard.sh · stdin-guard.sh · statusline.sh · tests/all.sh

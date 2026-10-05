@@ -284,6 +284,22 @@ class Status(unittest.TestCase):
         self.assertIn("doing: P1", ctx)
 
 
+class Render(unittest.TestCase):
+    def test_mirror_page_has_every_row_and_environment(self):
+        r = Repo()
+        w = r.worktree("lane", "origin/development")
+        os.makedirs(os.path.join(w, "docs", "ai"))
+        with open(os.path.join(w, "docs", "ai", "status.md"), "w") as fh:
+            fh.write(STATUS.replace("| P1 |", "| P2 | Готово | done | development | abc1234 | 2026-10-05 |\n| P1 |"))
+        out = os.path.join(r.root, "status.html")
+        subprocess.run(["python3", os.path.join(HOOKS, "render_status.py"), w, out], check=True, capture_output=True)
+        page = open(out, encoding="utf-8").read()
+        self.assertEqual(page.count("<tr data-s="), 2)
+        self.assertIn('data-s="doing"', page)
+        self.assertIn("staging", page)
+        self.assertIn("<title>", page)
+
+
 class Memory(unittest.TestCase):
     def test_stale_memory_is_listed(self):
         r = Repo()

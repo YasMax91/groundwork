@@ -54,6 +54,10 @@ Rules:
    it is behind the integration branch (`git rev-list --count <env-branch>..<base>`). If a `version_url`
    exists, read it — that is the live answer; the branch is only what CD was asked to deploy.
 4. **Write the file**, commit it on the current lane (it merges like any file), and if there is a
-   mirror, republish the artifact from the file in the same turn.
+   mirror, republish the artifact from the file in the same turn: render it with
+   `python3 "${CLAUDE_SKILL_DIR}/../../hooks/render_status.py" <repo> <scratchpad>/status.html`, then
+   publish that file with the Artifact tool and `url` = the `mirror:` value. A new mirror is a first
+   publish of the rendered file; put its URL into `mirror:` and republish once more. Never edit the
+   mirror page by hand — it is rebuilt from the file every time.
 5. **Answer «на сервере всё актуально?»** from this file plus `version_url` — one line per environment,
    no investigation the file already answers.
