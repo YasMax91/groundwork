@@ -400,7 +400,28 @@ def down(purge=False):
                 say("dropped %s" % name)
 
 
+def newest_installed():
+    """When run from the plugin cache, the newest cached version of this script (sessions call a path they
+    remembered; on 2026-10-06 a session ran 0.45.1 and brought the workers back that 0.46 leaves out)."""
+    here = os.path.realpath(__file__)
+    parts = here.split(os.sep)
+    if "cache" not in parts or len(parts) < 4:
+        return here
+    versions_dir = os.sep.join(parts[:-3])          # …/cache/<marketplace>/groundwork/<version>/hooks/lane.py
+    def key(v):
+        return [int(x) if x.isdigit() else 0 for x in re.split(r"[.-]", v)]
+    try:
+        best = max((v for v in os.listdir(versions_dir) if os.path.isfile(os.path.join(versions_dir, v, "hooks", "lane.py"))), key=key)
+    except ValueError:
+        return here
+    return os.path.realpath(os.path.join(versions_dir, best, "hooks", "lane.py"))
+
+
 if __name__ == "__main__":
+    target = newest_installed()
+    if target != os.path.realpath(__file__) and not os.environ.get("GW_LANE_NO_UPGRADE"):
+        say("running the newest installed lane.py: %s" % target)
+        os.execv(sys.executable, [sys.executable, target] + sys.argv[1:])
     args = sys.argv[1:]
     cmd = args[0] if args else "status"
     if cmd == "up":

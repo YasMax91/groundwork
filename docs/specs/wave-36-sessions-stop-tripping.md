@@ -54,6 +54,7 @@
 - **GW36-AC4** `estimate-docs.py`: «N days» blocks only next to an estimate word on the line or in its
   section heading, and never on a lifetime, window, TTL, cookie or session line.
 - **FT36-AC4** the status skill claims a new ID by pushing its row first; the mirror marks a duplicated ID.
+- **GW36-AC5** `lane.py` started from an older cached version re-runs the newest one installed (a session ran 0.45.1 from a remembered path and brought Horizon back).
 - **docker-proxy** (e20472b, local repository): `--skip-log-bin`, `--innodb-flush-log-at-trx-commit=2`;
   restarted after three idle samples in a row.
 
