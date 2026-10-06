@@ -153,6 +153,17 @@ class Lanes(unittest.TestCase):
         self.assertEqual(r.edit(w, "s2", "x.txt"), "deny")
         self.assertEqual(r.edit(w, "s2", "x.txt"), "")
 
+    def test_worktree_own_files_never_overlap(self):
+        r = Repo()
+        with open(os.path.join(r.main, ".gitignore"), "w") as fh:
+            fh.write(".env\n")
+        sh(r.main, "add", ".gitignore"); sh(r.main, "commit", "-qm", "ignore"); sh(r.main, "push", "-q", "origin", "development")
+        a, b = r.worktree("one", "origin/development"), r.worktree("two", "origin/development")
+        r.start(a, "sa"); r.start(b, "sb")
+        for rel in (".claude/groundwork/task-state.md", ".env"):
+            self.assertEqual(r.edit(a, "sa", rel), "")
+            self.assertEqual(r.edit(b, "sb", rel), "", rel)
+
     def test_stale_sibling_is_ignored(self):
         r = Repo()
         a, b = r.worktree("one", "origin/development"), r.worktree("two", "origin/development")
@@ -245,25 +256,46 @@ class Status(unittest.TestCase):
     def test_commit_without_status_update_blocks(self):
         r, w = self.repo_with_status()
         reason = r.stop(w, "s1", RU, tools=[("Bash", {"command": "git commit -m 'feat: refunds'"})])
-        self.assertIn("status.md was not updated", reason)
+        self.assertIn("was not updated", reason)
 
     def test_escape_line_passes(self):
         r, w = self.repo_with_status()
         msg = RU + "\nстатус не меняется: это правка опечатки в тесте."
         self.assertEqual(r.stop(w, "s1", msg, tools=[("Bash", {"command": "git commit -m 'fix typo'"})]), "")
 
-    def test_status_edit_without_mirror_publish_blocks(self):
+    def pushed_status(self):
+        """A lane whose status.md (with a mirror) is committed and pushed to origin/development."""
         r, w = self.repo_with_status()
-        tools = [("Bash", {"command": "git commit -m x"}),
-                 ("Edit", {"file_path": os.path.join(w, "docs/ai/status.md")})]
-        self.assertIn("mirror", r.stop(w, "s1", RU, tools=tools))
+        sh(w, "add", "docs/ai/status.md"); sh(w, "commit", "-qm", "status")
+        sh(w, "push", "-q", "origin", "HEAD:development"); sh(w, "fetch", "-q", "origin")
+        return r, w
 
-    def test_status_edit_with_mirror_publish_passes(self):
-        r, w = self.repo_with_status()
-        tools = [("Bash", {"command": "git commit -m x"}),
-                 ("Edit", {"file_path": os.path.join(w, "docs/ai/status.md")}),
+    def test_edit_without_push_asks_no_mirror(self):
+        r, w = self.pushed_status()
+        tools = [("Edit", {"file_path": os.path.join(w, "docs/ai/status.md")}), ("Bash", {"command": "git commit -am x"})]
+        self.assertNotIn("mirror", r.stop(w, "s1", RU, tools=tools))
+
+    def test_push_changing_base_status_without_publish_blocks(self):
+        r, w = self.pushed_status()
+        reason = r.stop(w, "s1", RU, tools=[("Bash", {"command": "git push origin HEAD:development"})])
+        self.assertIn("--ref origin/development", reason)
+
+    def test_push_then_publish_passes(self):
+        r, w = self.pushed_status()
+        tools = [("Bash", {"command": "git push origin HEAD:development"}),
                  ("Artifact", {"url": "https://claude.ai/artifact/abc", "file_path": "/tmp/x.html"})]
         self.assertEqual(r.stop(w, "s1", RU, tools=tools), "")
+
+    def test_push_after_mirror_already_shows_this_status_passes(self):
+        r, w = self.pushed_status()
+        r.hook("post_tool.py", {"session_id": "s1", "cwd": w, "tool_name": "Artifact",
+                                "tool_input": {"url": "https://claude.ai/artifact/abc"}})
+        self.assertEqual(r.stop(w, "s1", RU, tools=[("Bash", {"command": "git push"})]), "")
+
+    def test_reading_status_with_redirect_is_not_an_edit(self):
+        r, w = self.repo_with_status()
+        tools = [("Bash", {"command": "git commit -m x"}), ("Bash", {"command": "grep -n P1 docs/ai/status.md 2>/dev/null"})]
+        self.assertIn("was not updated", r.stop(w, "s1", RU, tools=tools))
 
     def test_deploy_is_recorded_and_shown(self):
         r, w = self.repo_with_status()

@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Groundwork plugin :: a lane — one worktree, its own Docker stack, its own databases (wave 35, GW35-AC1).
 
-    python3 lane.py up [--refresh-data]   provision this worktree as an isolated lane
+    python3 lane.py up [--refresh-data] [--full]   provision this worktree as an isolated lane
+                                          (--full also starts horizon / scheduler / queue workers)
     python3 lane.py status                print what this lane uses
     python3 lane.py down [--purge]        stop the lane's stack; --purge also drops its databases
 
@@ -31,6 +32,7 @@ import subprocess
 import sys
 
 LANE_FILE = os.path.join(".claude", "lane.json")
+BACKGROUND = re.compile(r"^(horizon|scheduler|schedule|queue|queue-worker|worker|cron)$")
 
 
 def say(msg):
@@ -179,7 +181,7 @@ def pin_phpunit(lane, test_db):
 
 
 
-def up(refresh_data=False):
+def up(refresh_data=False, full=False):
     lane, main = contexts(os.getcwd())
     slug = lane_slug(lane)
     main_env, main_lines = read_env(os.path.join(main, ".env"))
@@ -228,9 +230,22 @@ def up(refresh_data=False):
                 port = free_port(port + 1)
             updates[var] = str(port)
         taken.add(int(updates[var]))
-    for k, v in main_env.items():   # every other value that names the main domain follows the lane
-        if main_domain and main_domain in v and k not in updates:
-            updates[k] = v.replace(main_domain, lane_domain)
+    defaults = dict(re.findall(r"\$\{([A-Z0-9_]+):-([0-9]+)\}", compose))   # ${MINIO_PORT:-9000}
+    moved = {}
+    for v in published_port_vars(compose):
+        old_port = main_env.get(v) or defaults.get(v)
+        if v in updates and old_port and old_port != updates[v]:
+            moved[old_port] = updates[v]
+    for k, v in main_env.items():   # every other value that names the main domain or a moved port follows the lane
+        if k in updates:
+            continue
+        nv = v.replace(main_domain, lane_domain) if main_domain else v
+        for old_port, new_port in moved.items():   # AWS_URL=http://localhost:9000/… must follow MINIO_PORT
+            # host-side addresses only: inside the Compose network `minio:9000` keeps its container port
+            nv = re.sub(r"((?:localhost|127\.0\.0\.1|0\.0\.0\.0|%s):)%s(?=\b|/)" % (re.escape(lane_domain), re.escape(old_port)),
+                        r"\g<1>%s" % new_port, nv)
+        if nv != v:
+            updates[k] = nv
     write_env(os.path.join(lane, ".env"), main_lines, updates)
     say(".env written — project %s, %s, database %s" % (updates["COMPOSE_PROJECT_NAME"], lane_domain,
                                                           updates.get("DB_DATABASE", "—")))
@@ -250,6 +265,14 @@ def up(refresh_data=False):
     # never be committed; `lane.py down` restores the file.
     pin_phpunit(lane, test_db)
 
+    # Private package credentials (Backpack Pro, Nova …) are git-ignored: without them a lane cannot
+    # `composer install` the moment its composer.lock differs from the main checkout's.
+    for f in ("auth.json",):
+        src, dst = os.path.join(main, f), os.path.join(lane, f)
+        if os.path.isfile(src) and not os.path.exists(dst):
+            shutil.copy2(src, dst)
+            say("%s copied from the main checkout" % f)
+
     for d in ("vendor", "node_modules"):
         src, dst = os.path.join(main, d), os.path.join(lane, d)
         if os.path.isdir(src) and not os.path.exists(dst):
@@ -259,10 +282,18 @@ def up(refresh_data=False):
             say("%s cloned from the main checkout%s" % (d, "" if code == 0 else " — FAILED, run composer/npm install"))
 
     env = env_for(lane)
+    services = []
     sail = os.path.join(lane, "vendor", "bin", "sail")
     if os.path.isfile(sail):
-        code, out = run([sail, "up", "-d"], cwd=lane, env=env, timeout=900)
-        say("stack %s" % ("started" if code == 0 else "did NOT start:\n" + out[-1500:]))
+        # Background workers are left out unless asked for: tests run the queue synchronously, and six lanes
+        # each idling a Horizon (~440 MiB) and a scheduler put the host into swap (7.9 of 9.2 GB, 2026-10-06).
+        code, out = run(["docker", "compose", "config", "--services"], cwd=lane, env=env, timeout=60)
+        services = [l.strip() for l in out.splitlines() if l.strip()] if code == 0 else []
+        workers = [x for x in services if BACKGROUND.search(x)]
+        wanted = services if (full or not workers) else [x for x in services if x not in workers]
+        code, out = run([sail, "up", "-d"] + ([] if wanted == services else wanted), cwd=lane, env=env, timeout=900)
+        say("stack %s%s" % ("started" if code == 0 else "did NOT start:\n" + out[-1500:],
+                            "" if wanted == services else " without %s (lane.py up --full starts them)" % ", ".join(workers)))
     else:
         say("no vendor/bin/sail — stack not started")
 
@@ -302,8 +333,16 @@ def up(refresh_data=False):
             # Tests that do not refresh the database (unit tests reading a migrated schema) rely on a test
             # DB that already has the tables — the shared one always did, a new lane's would not.
             if test_db:
-                code, out = run([sail, "artisan", "migrate", "--env=testing", "--force"], cwd=lane, env=env, timeout=600)
-                say("test database %s migrated: %s" % (test_db, "yes" if code == 0 else "FAILED:\n" + out[-800:]))
+                # `artisan migrate --env=testing` is not enough: where `.env` wins over `.env.testing` it
+                # migrates the DEV database (otaje, verified 2026-09-18). The connection is named explicitly.
+                app = read_env(os.path.join(lane, ".env"))[0].get("APP_SERVICE") or (
+                    "laravel.test" if "laravel.test" in services else next((x for x in services if "app" in x), "laravel.test"))
+                code, out = run(["docker", "compose", "exec", "-T", "-e", "DB_DATABASE=%s" % test_db, app,
+                                 "php", "artisan", "migrate", "--force"], cwd=lane, env=env, timeout=600)
+                c2, n = mysql_in(dst_server, "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='%s'" % test_db)
+                tables = (n.strip().splitlines() or ["?"])[-1].strip()
+                say("test database %s migrated: %s" % (test_db, ("yes, %s tables" % tables) if code == 0 and tables not in ("0", "?")
+                                                       else "FAILED (%s tables):\n%s" % (tables, out[-800:])))
 
     code, out = run(["docker", "compose", "ps", "--format", "{{.Name}}"], cwd=lane, env=env, timeout=30)
     containers = [l.strip() for l in out.splitlines() if l.strip()] if code == 0 else []
@@ -365,7 +404,7 @@ if __name__ == "__main__":
     args = sys.argv[1:]
     cmd = args[0] if args else "status"
     if cmd == "up":
-        up(refresh_data="--refresh-data" in args)
+        up(refresh_data="--refresh-data" in args, full="--full" in args)
     elif cmd == "down":
         down(purge="--purge" in args)
     else:

@@ -311,3 +311,83 @@ def awareness(cwd, sid, cfg, me):
         text.append("Environments: " + " | ".join(envs))
     signature = hashlib.sha1(json.dumps([lines, n, touching, envs]).encode()).hexdigest()
     return "\n".join(text), signature
+
+
+# --- does a shell command WRITE a file? (wave 36) -------------------------------------------------
+# The first version asked "does the command mention the file and contain a `>` anywhere", so
+# `cat .groundwork.json 2>/dev/null` opened a permission prompt and `grep … status.md 2>/dev/null`
+# demanded a mirror republish. Only an operation whose TARGET is the file counts.
+
+_SEGMENT = re.compile(r"(?:&&|\|\||;|\n|(?<![|>])\|(?!\|))")
+
+
+def shell_writes(cmd, target):
+    """True when `cmd` writes a path matching the compiled regex `target`."""
+    for seg in _SEGMENT.split(cmd or ""):
+        seg = seg.strip()
+        if not seg:
+            continue
+        for m in re.finditer(r"(?<![0-9&])>>?\s*([^\s;&|<>]+)|\b[12]>>?\s*([^\s;&|<>]+)", seg):
+            dest = m.group(1) or m.group(2) or ""
+            if dest.startswith("&") or dest == "/dev/null":
+                continue
+            if target.search(dest):
+                return True
+        if re.match(r"(sudo\s+)?(tee|sed|mv|cp|rm|truncate|install)\b", seg) or re.search(r"\|\s*tee\b", seg):
+            words = seg.split()
+            if words and words[0] == "sed" and not any(w.startswith("-i") for w in words[1:]):
+                continue
+            if words and words[0] in ("mv", "cp", "install"):
+                words = words[-1:]          # only the destination is written
+            if any(target.search(w.strip("'\"")) for w in words[1:] or words):
+                return True
+        if target.search(seg) and re.search(r"open\([^)]*['\"][wa]['\"]|write_text|\.write\(|file_put_contents", seg):
+            return True
+    return False
+
+
+def ignored_by_git(cwd, rel):
+    if not rel:
+        return False
+    try:
+        r = subprocess.run(["git", "-C", cwd, "check-ignore", "-q", rel], capture_output=True, timeout=3)
+        return r.returncode == 0
+    except Exception:
+        return False
+
+
+# --- the mirror follows the integration branch (wave 36) ---------------------------------------------
+
+def status_at(root, ref):
+    """docs/ai/status.md as committed on `ref` (e.g. origin/development), or ''."""
+    return git(root, "show", "%s:%s" % (ref, STATUS_REL)) if ref else ""
+
+
+def status_blob(root, ref):
+    return git(root, "rev-parse", "-q", "--verify", "%s:%s" % (ref, STATUS_REL)) if ref else ""
+
+
+def mirror_record_path(root):
+    cd = common_dir(root)
+    return os.path.join(cd, "follow-through", "mirror.json") if cd else ""
+
+
+def mirror_published_blob(root):
+    try:
+        with open(mirror_record_path(root), encoding="utf-8") as fh:
+            return json.load(fh).get("blob", "")
+    except Exception:
+        return ""
+
+
+def record_mirror_published(root, base):
+    p = mirror_record_path(root)
+    blob = status_blob(root, base)
+    if not p or not blob:
+        return
+    try:
+        os.makedirs(os.path.dirname(p), exist_ok=True)
+        with open(p, "w", encoding="utf-8") as fh:
+            json.dump({"blob": blob, "ref": base, "time": int(time.time())}, fh)
+    except Exception:
+        pass

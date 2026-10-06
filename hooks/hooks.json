@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/session-start.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/in-cwd.sh\" session-start.sh",
             "statusMessage": "Groundwork: loading project state…"
           }
         ]
@@ -16,7 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/pre-compact.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/in-cwd.sh\" pre-compact.sh"
           }
         ]
       }
@@ -26,7 +26,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/task-intent.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/in-cwd.sh\" task-intent.sh"
           }
         ]
       }
@@ -37,7 +37,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/agent-contract.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/in-cwd.sh\" agent-contract.sh",
             "statusMessage": "Groundwork: checking the agent's output contract…"
           }
         ]
@@ -49,7 +49,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/stdin-guard.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/in-cwd.sh\" stdin-guard.sh"
           }
         ]
       },
@@ -58,7 +58,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/lane-guard.py\""
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/in-cwd.sh\" lane-guard.py"
           }
         ]
       },
@@ -67,7 +67,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/pre-tool-guard.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/in-cwd.sh\" pre-tool-guard.sh",
             "statusMessage": "Groundwork: checking command…"
           }
         ]
@@ -79,7 +79,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/format-on-edit.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/in-cwd.sh\" format-on-edit.sh",
             "statusMessage": "Groundwork: formatting…"
           }
         ]
@@ -89,7 +89,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/trim-output.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/in-cwd.sh\" trim-output.sh"
           }
         ]
       },
@@ -98,7 +98,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/plain-language.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/in-cwd.sh\" plain-language.sh"
           }
         ]
       }
@@ -108,51 +108,51 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/done-gate.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/in-cwd.sh\" done-gate.sh",
             "statusMessage": "Groundwork: static analysis…"
           },
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/test-gate.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/in-cwd.sh\" test-gate.sh",
             "statusMessage": "Groundwork: running tests…"
           },
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/openapi-gate.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/in-cwd.sh\" openapi-gate.sh",
             "statusMessage": "Groundwork: checking OpenAPI…"
           },
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/slice-gate.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/in-cwd.sh\" slice-gate.sh",
             "statusMessage": "Groundwork: checking the slice ledger…"
           },
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/coverage-claim.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/in-cwd.sh\" coverage-claim.sh",
             "statusMessage": "Groundwork: checking the coverage claim…"
           },
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/defect-scan.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/in-cwd.sh\" defect-scan.sh",
             "statusMessage": "Groundwork: scanning for defect classes…"
           },
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/estimate-claim.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/in-cwd.sh\" estimate-claim.sh",
             "statusMessage": "Groundwork: checking the estimate…"
           },
           {
             "type": "command",
-            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/estimate-docs.py\""
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/in-cwd.sh\" estimate-docs.py"
           },
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/plain-language.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/in-cwd.sh\" plain-language.sh",
             "statusMessage": "Groundwork: checking the wording…"
           },
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/ledger-record.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/in-cwd.sh\" ledger-record.sh",
             "statusMessage": "Groundwork: recording what the task took…"
           }
         ]
@@ -161,8 +161,18 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/handoff-gate.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/in-cwd.sh\" handoff-gate.sh",
             "statusMessage": "Groundwork: checking the frontend handoff…"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/in-cwd.sh\" lane-idle.py"
           }
         ]
       }

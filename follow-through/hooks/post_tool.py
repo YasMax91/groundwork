@@ -53,8 +53,8 @@ def main():
     data = payload.get("tool_input") or {}
     if tool in ("Edit", "Write", "MultiEdit"):
         rel = lanes.relpath(cwd, str(data.get("file_path") or ""))
-        if not rel:
-            return
+        if not rel or rel.startswith(".claude/") or lanes.ignored_by_git(cwd, rel):
+            return  # a worktree's own file never conflicts with a sibling's
         me = lanes.load(cwd, sid) or lanes.touch(cwd, sid)
         if rel not in me.get("files", []):
             me.setdefault("files", []).append(rel)
@@ -63,6 +63,13 @@ def main():
         lanes.save(cwd, sid, me)
     elif tool == "Bash":
         record_deploy(cwd, sid, str(data.get("command") or ""))
+    elif tool == "Artifact":
+        # Remember which committed status the mirror now shows, so only a real change asks for a republish.
+        root = lanes.toplevel(cwd) or cwd
+        base = lanes.base_ref(root, ft.config(cwd))
+        mirror = lanes.front_matter(lanes.status_at(root, base) or lanes.read_status(root)).get("mirror")
+        if mirror and str(data.get("url") or "").rstrip("/") == mirror.rstrip("/"):
+            lanes.record_mirror_published(root, base)
 
 
 if __name__ == "__main__":

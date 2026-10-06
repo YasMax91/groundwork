@@ -42,7 +42,6 @@ GATE_CONFIG = re.compile(
 GATE_CONFIG_IN_SHELL = re.compile(
     r"\.groundwork\.json|\.company-sdd\.json|\.claude/settings(\.local)?\.json|\.claude/follow-through\.json"
 )
-SHELL_WRITE = re.compile(r"\bsed\s+-i|>\s*\S|\btee\b|\bmv\b|\brm\b|\bcp\b|\bjq\b[^|]*>")
 
 
 def dirty(cwd):
@@ -72,7 +71,7 @@ def reason_for_bash(cmd, cwd):
         return "it drops this lane's databases (dev data cloned into the lane is lost)"
     if PROCESS_KILL.search(cmd):
         return "it stops processes (workers, servers) that are not restarted by this command"
-    if GATE_CONFIG_IN_SHELL.search(cmd) and SHELL_WRITE.search(cmd):
+    if lanes.shell_writes(cmd, GATE_CONFIG_IN_SHELL):
         return "it rewrites a gate or permission config — the checks that hold the work"
     return ""
 
@@ -108,6 +107,11 @@ def lane_checks(payload, cwd, cfg, tool, data):
                  "the next edit passes." % (s.get("title") or s.get("session_id", "")[:8], s.get("branch") or "?",
                                             s.get("task") or "?"))
             return True
+        # A path git ignores (the groundwork checkpoint, a lane's .env, caches) is each worktree's own
+        # file: the same relative path in a sibling is a different file. 9 of 9 overlap stops on
+        # 2026-10-05/06 were `.claude/groundwork/task-state.md`.
+        if rel.startswith(".claude/") or lanes.ignored_by_git(cwd, rel):
+            return False
         owners = [s for s in sibs if rel and rel in s.get("files", [])]
         if owners and rel not in acks.get("paths", []):
             s = owners[0]

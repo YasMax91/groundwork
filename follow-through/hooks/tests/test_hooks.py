@@ -257,6 +257,9 @@ class Guard(unittest.TestCase):
     def test_gate_config_shell_write_asks(self):
         self.assertTrue(self.asks(self.run_bash(Env(), "sed -i '' 's/true/false/' .groundwork.json")))
 
+    def test_gate_config_read_with_redirect_passes(self):
+        self.assertFalse(self.asks(self.run_bash(Env(), "ls -la .claude/ 2>&1 | head; cat .groundwork.json 2>/dev/null")))
+
     def test_gate_config_read_passes(self):
         self.assertFalse(self.asks(self.run_bash(Env(), "cat .groundwork.json")))
 

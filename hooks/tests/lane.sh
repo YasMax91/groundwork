@@ -44,8 +44,11 @@ DB_HOST=no-such-db-host
 DB_DATABASE=shop
 DB_USERNAME=sail
 FORWARD_MINIO_PORT=9000
+AWS_URL=http://localhost:9000/shop
+AWS_ENDPOINT=http://minio:9000
 ENV
 printf 'APP_URL=http://shop.localhost\nCOMPOSE_PROJECT_NAME=shop\nDB_DATABASE=shop_test\n' > "$M/.env.testing"
+printf '{"http-basic":{"backpackforlaravel.com":{"username":"u","password":"p"}}}\n' > "$M/auth.json"
 cat > "$M/phpunit.xml" <<'XML'
 <phpunit><php>
     <env name="APP_ENV" value="testing" force="true"/>
@@ -76,6 +79,9 @@ eq "lane .env sanctum"     "shop-crankyb9e4.localhost,localhost" "$(val "$W/.env
 eq "lane .env app name kept" "Shop"                          "$(val "$W/.env" APP_NAME)"
 p="$(val "$W/.env" FORWARD_MINIO_PORT)"
 [ -n "$p" ] && [ "$p" != "9000" ]; eq "lane published port moved" 0 $?
+eq "lane AWS_URL follows the moved port" "http://localhost:$(val "$W/.env" FORWARD_MINIO_PORT)/shop" "$(val "$W/.env" AWS_URL)"
+eq "lane AWS_ENDPOINT keeps the container port" "http://minio:9000" "$(val "$W/.env" AWS_ENDPOINT)"
+[ -f "$W/auth.json" ]; eq "auth.json copied to the lane" 0 $?
 eq "lane .env.testing db"  "shop_test_crankyb9e4"            "$(val "$W/.env.testing" DB_DATABASE)"
 eq "lane .env.testing project" "shop_crankyb9e4"             "$(val "$W/.env.testing" COMPOSE_PROJECT_NAME)"
 grep -q 'database server not reachable' "$ROOT/up.log"; eq "unreachable DB is reported" 0 $?

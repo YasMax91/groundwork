@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """follow-through :: render docs/ai/status.md into the HTML page published as its `mirror:` artifact.
 
-    python3 render_status.py <repo dir> <out.html>
+    python3 render_status.py <repo dir> <out.html> [--ref origin/development]
+
+With --ref the page is rendered from the status committed on that branch — the integration branch is the
+only copy every lane agrees on, and a lane's own copy may lag it (rendering from one rolled the mirror back).
 
 The mirror is rebuilt from the file every time, never edited on its own, so a session that moved a row
 republishes with two calls: this script, then an Artifact publish to the `mirror:` URL. The page shows
@@ -60,15 +63,15 @@ def remote_url(root):
     return "https://%s/%s" % (m.group(1), m.group(2)) if m else ""
 
 
-def render(root):
-    text = lanes.read_status(root)
+def render(root, ref=""):
+    text = lanes.status_at(root, ref) if ref else lanes.read_status(root)
     if not text:
         sys.exit("render_status: no %s in %s" % (lanes.STATUS_REL, root))
     fm = lanes.front_matter(text)
     title, intro, sections = parse(text)
     remote = remote_url(root)
     base = lanes.base_ref(root, {})
-    head = lanes.git(root, "rev-parse", "--short", "HEAD")
+    head = lanes.git(root, "rev-parse", "--short", ref or "HEAD")
     rows = [r for s in sections for r in s["rows"]]
     counts = {k: sum(1 for r in rows if r["status"].lower() == k) for k in STATUSES}
 
@@ -107,7 +110,7 @@ def render(root):
     return PAGE.format(
         title=html.escape(title.replace("Status — ", "Статус ")), intro=inline(intro, remote), tally=tally,
         envs=env_html or '<p class="note">Среды не описаны.</p>', body=body,
-        stamp="Собрано %s из %s @ %s" % (time.strftime("%Y-%m-%d %H:%M"), lanes.STATUS_REL, head),
+        stamp="Собрано %s из %s @ %s%s" % (time.strftime("%Y-%m-%d %H:%M"), lanes.STATUS_REL, (ref + " ") if ref else "", head),
         total=len(rows))
 
 
@@ -190,9 +193,15 @@ code {{ font: 12.5px var(--mono); }}
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
+    args = sys.argv[1:]
+    ref = ""
+    if "--ref" in args:
+        i = args.index("--ref")
+        ref = args[i + 1] if i + 1 < len(args) else ""
+        del args[i:i + 2]
+    if len(args) != 2:
         sys.exit(__doc__)
-    page = render(os.path.abspath(sys.argv[1]))
-    with open(sys.argv[2], "w", encoding="utf-8") as fh:
+    page = render(os.path.abspath(args[0]), ref)
+    with open(args[1], "w", encoding="utf-8") as fh:
         fh.write(page)
-    print("render_status: wrote %s" % sys.argv[2])
+    print("render_status: wrote %s" % args[1])

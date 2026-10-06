@@ -297,55 +297,56 @@ def check_freshness(msg, cwd, sid, cfg):
     )
 
 
-def check_status(msg, cwd, tools):
-    """ST-AC2 and ST-AC3: a status event updates docs/ai/status.md, and the file's mirror follows it."""
+def check_status(msg, cwd, tools, cfg):
+    """ST-AC2/ST-AC3, wave 36: a commit or deploy updates docs/ai/status.md; the mirror follows the
+    integration branch and is republished by the session whose push changed the status there."""
     root = lanes.toplevel(cwd) or cwd
     text = lanes.read_status(root)
     if not text:
         return []
     found = []
     status_abs = os.path.realpath(os.path.join(root, lanes.STATUS_REL))
-    events = [t for t in tools if t["name"] == "Bash" and STATUS_EVENT.search(str(t["input"].get("command") or ""))]
+    status_re = re.compile(r"(^|/)docs/ai/status\.md$")
+    cmds = [(i, str(t["input"].get("command") or "")) for i, t in enumerate(tools) if t["name"] == "Bash"]
+    commits = [c for _, c in cmds if re.search(r"\bgit\s+(commit|cherry-pick)\b", c)]
     envs = lanes.front_matter(text).get("environments") or {}
-    for t in tools:
-        if t["name"] != "Bash":
-            continue
-        cmd = str(t["input"].get("command") or "")
+    deploys = []
+    for _, c in cmds:
         for spec in envs.values():
             pat = spec.get("deploy_cmd")
-            if pat:
-                try:
-                    if re.search(pat, cmd):
-                        events.append(t)
-                except re.error:
-                    pass
-    last_edit = -1
-    for i, t in enumerate(tools):
+            try:
+                if pat and re.search(pat, c):
+                    deploys.append(c)
+            except re.error:
+                pass
+    edited = False
+    for t in tools:
         p = edited_path(t)
-        if (p and os.path.realpath(p if os.path.isabs(p) else os.path.join(cwd, p)) == status_abs) or (
-                t["name"] == "Bash" and "status.md" in str(t["input"].get("command") or "")
-                and re.search(r"sed\s+-i|>|tee|python", str(t["input"].get("command") or ""))):
-            last_edit = i
-    if events and last_edit < 0 and not STATUS_UNCHANGED.search(msg):
+        if p and os.path.realpath(p if os.path.isabs(p) else os.path.join(cwd, p)) == status_abs:
+            edited = True
+        if t["name"] == "Bash" and lanes.shell_writes(str(t["input"].get("command") or ""), status_re):
+            edited = True
+    if (commits or deploys) and not edited and not STATUS_UNCHANGED.search(msg):
         found.append((
             "status_event",
-            str(events[0]["input"].get("command") or "")[:80],
-            "This turn committed, merged, pushed or deployed, and %s was not updated. Mark what moved (status, lane, "
-            "proof = the commit or deploy) now — or, if nothing in the plan changed, add a line «статус не меняется: "
-            "<почему>»." % lanes.STATUS_REL,
+            (commits or deploys)[0][:80],
+            "This turn committed or deployed, and %s was not updated. Mark what moved (status, lane, proof = the "
+            "commit or deploy) — or, if nothing in the plan changed, add a line «статус не меняется: <почему>»." % lanes.STATUS_REL,
         ))
-    mirror = lanes.front_matter(text).get("mirror")
-    if mirror and last_edit >= 0:
-        published = any(t["name"] == "Artifact" and str(t["input"].get("url") or "").rstrip("/") == mirror.rstrip("/")
-                        and (t["input"].get("action") in (None, "", "publish"))
-                        for t in tools[last_edit + 1:])
-        if not published:
+    base = lanes.base_ref(root, cfg)
+    mirror = lanes.front_matter(lanes.status_at(root, base) or text).get("mirror")
+    pushed = [i for i, c in cmds if re.search(r"\bgit\s+push\b|\bgh\s+pr\s+merge\b", c)]
+    if mirror and pushed and base:
+        blob = lanes.status_blob(root, base)
+        published_after = any(t["name"] == "Artifact" and str(t["input"].get("url") or "").rstrip("/") == mirror.rstrip("/")
+                              for t in tools[pushed[-1] + 1:])
+        if blob and blob != lanes.mirror_published_blob(root) and not published_after:
             found.append((
                 "status_mirror",
                 mirror,
-                "%s changed and its mirror %s was not republished after the change. Publish the updated plan to that "
-                "artifact now: render it with follow-through's hooks/render_status.py <repo> <out.html>, then Artifact "
-                "publish with url = the mirror — do not ask whether to." % (lanes.STATUS_REL, mirror),
+                "Your push changed %s on %s, and its mirror %s still shows the previous version. Render it from the "
+                "integration branch — python3 <follow-through>/hooks/render_status.py %s <out.html> --ref %s — and publish "
+                "with url = the mirror. Never render from a lane's own copy." % (lanes.STATUS_REL, base, mirror, root, base),
             ))
     return found
 
@@ -382,7 +383,7 @@ def main():
         if ft.gate_on(cfg, "freshness"):
             found.append(check_freshness(msg, cwd, payload.get("session_id") or "", cfg))
     if ft.gate_on(cfg, "status"):
-        found.extend(check_status(msg, cwd, tools))
+        found.extend(check_status(msg, cwd, tools, cfg))
     found = [f for f in found if f]
     if not found:
         return

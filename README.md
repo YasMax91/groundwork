@@ -380,7 +380,10 @@ from a worktree whose `.env` still points at the main stack or the main dev data
 lives in the git common dir, keyed by the test database, so every worktree sees it. Verified on otaje:
 two lanes ran the same 989 tests at the same time, 989 of 989 each, no deadlock — the shared test
 database gave 167 and 123 failures on the same run. `lane.py down [--purge]` stops the lane and, with
-`--purge`, drops its databases and volumes.
+`--purge`, drops its databases and volumes. A lane starts without Horizon, scheduler or queue workers
+(`lane.py up --full` adds them), and `lane-idle.py` stops its containers when the last session in the worktree
+closes. Every hook runs in the session's own directory (`in-cwd.sh`), so a session opened in the main
+checkout and working in a worktree is judged on the worktree.
 
 ## Companion plugins — `groundwork-pack`
 
@@ -565,7 +568,7 @@ pack/             groundwork-pack — dependency-only bundle (this plugin + foll
 follow-through/   the project-agnostic plugin — hooks/ (stop_gate.py · guard.py · session_start.py · prompt_submit.py · post_tool.py · session_end.py · lanes.py · render_status.py · ft.py · tests/) · skills/status
 skills/           start-task · spec · implement-approved · lane · risk-review · final-check · estimate · ground-integration · frontend-handoff · install-portal · client-doc · openapi-audit · grill · init · deep-grounding · deep-discovery · deep-review
 agents/           impact-mapper · blind-spot-mapper · grounded-researcher · adversarial-verifier · conformance-reviewer
-hooks/            hooks.json · lib.sh (shared resolvers) · session-start.sh · pre-compact.sh · task-intent.sh · format-on-edit.sh · done-gate.sh · test-gate.sh · openapi-gate.sh · slice-gate.sh · coverage-claim.sh · plain-language.sh · defect-scan.sh · estimate-claim.sh · estimate-docs.py · estimate-ledger.sh · lane.py · lane-guard.py · ledger-record.sh · agent-contract.sh · trim-output.sh · pre-tool-guard.sh · stdin-guard.sh · statusline.sh · tests/all.sh
+hooks/            hooks.json · lib.sh (shared resolvers) · session-start.sh · pre-compact.sh · task-intent.sh · format-on-edit.sh · done-gate.sh · test-gate.sh · openapi-gate.sh · slice-gate.sh · coverage-claim.sh · plain-language.sh · defect-scan.sh · estimate-claim.sh · estimate-docs.py · estimate-ledger.sh · lane.py · lane-guard.py · lane-idle.py · in-cwd.sh · ledger-record.sh · agent-contract.sh · trim-output.sh · pre-tool-guard.sh · stdin-guard.sh · statusline.sh · tests/all.sh
 workflows/        deep-review-run.js · deep-discovery-run.js · deep-grounding-run.js — the multi-agent orchestration, executed by the runtime
 guidelines/       ai-sdd-process · grounding-protocol · blind-spot-protocol · clarify-protocol · plain-language · openapi-protocol · laravel-standards · tdd-protocol · writing-standards · working-memory
 docs/             skill-hygiene (author-facing) · specs/
