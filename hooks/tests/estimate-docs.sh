@@ -50,6 +50,14 @@ d="$ROOT/c"; proj "$d"; printf '# Оценка\n\nОдобрение шабло�
 transcript "$d" "$d/docs/ai/client/est.md"
 silent "days for a named wait pass" "$d" "Готово."
 
+d="$ROOT/b2"; proj "$d"; printf '# Spec\n\nThe buyer stays signed in for 30 days since the last visit; the cookie lives 60 days.\n' > "$d/docs/ai/client/est.md"
+transcript "$d" "$d/docs/ai/client/est.md"
+silent "a lifetime in days is not an estimate" "$d" "Готово."
+
+d="$ROOT/b3"; proj "$d"; printf '# Plan\n\nThe audit report covers the last 7 days of orders.\n' > "$d/docs/ai/client/est.md"
+transcript "$d" "$d/docs/ai/client/est.md"
+silent "days with no estimate word pass" "$d" "Готово."
+
 d="$ROOT/d"; proj "$d"; printf '| Задача | Часы |\n|---|---|\n| A | 2 |\n| B | 3.5 |\n| **Итого** | **7** |\n' > "$d/docs/ai/client/est.md"
 transcript "$d" "$d/docs/ai/client/est.md"
 blocks "total that does not add up" "$d" "Готово." "add up to 5.5"

@@ -38,6 +38,9 @@ Rules:
 - **Lane** is the branch or worktree that owns a `doing` row, so a sibling session knows whom to message.
 - **Updated in the same turn** as the change that moved it — never batched for later.
 - Rows keep their IDs forever; new work is appended, finished work stays (with its proof).
+- **Claim a new ID by pushing it.** Take the next free ID on `origin/<base>`, commit and push that one row
+  (`doing`, your lane) before the work — parallel lanes see it at once, and `merge=union` keeps everyone's
+  appended rows without a conflict. The mirror marks an ID used twice as «дубль».
 
 ## Steps
 

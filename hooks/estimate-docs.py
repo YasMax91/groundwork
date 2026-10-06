@@ -23,6 +23,8 @@ import sys
 HUMAN_UNIT = re.compile(r"человеко[-‑ ]?(час|дн|день|недел)\w*|person[- ]?(day|hour)s?|man[- ]?(day|hour)s?", re.I)
 DAYS = re.compile(r"\b\d+([.,]\d+)?\s*(-\s*\d+\s*)?(дн(я|ей)|день|days?|working days?|раб\w* дн\w*)\b", re.I)
 WAIT_WORD = re.compile(r"ожидани|одобрени|апрув|ревью|review|approval|wait|согласовани|модераци|Meta|клиент", re.I)
+ESTIMATE_CUE = re.compile(r"оцен|estimat|effort|займ|уйд[её]т|потребу|разработ|реализац|build|implement|develop|deliver|sprint|спринт|\|", re.I)
+LIFETIME = re.compile(r"lifetime|ttl|expir|истека|valid|действ|окно|window|since|после последн|cookie|session|сесси|срок жизни|хранит|retention|keep|храним|token|токен|period of|inactive|неактивн", re.I)
 TOTAL_ROW = re.compile(r"^\s*\|\s*\**(Итого|Всего|Total|Разом|Сума|Сумма)\b", re.I)
 HOURS_CELL = re.compile(r"^\**\s*(\d+(?:[.,]\d+)?)\s*(ч|h|час\w*|hrs?|hours?)?\s*\**$|^\**\s*(\d+):([0-5]\d)\s*\**$", re.I)
 OUTBOUND = re.compile(r"^```outbound[^\n]*\n(.*?)^```", re.M | re.S)
@@ -128,9 +130,16 @@ def scan(label, text):
     m = HUMAN_UNIT.search(text)
     if m:
         found.append("%s: «%s» — estimate in the agent's active time; a person's time is its own line, in hours" % (label, m.group(0)))
+    heading = ""
     for line in text.splitlines():
+        if line.lstrip().startswith("#"):
+            heading = line
         d = DAYS.search(line)
-        if d and not WAIT_WORD.search(line):
+        # A lifetime, window or TTL is a product rule, not an estimate («30 days since the last visit», a
+        # 60-day cookie — blocked on 2026-10-05). Days count only next to estimate words.
+        if d and LIFETIME.search(line):
+            continue
+        if d and (ESTIMATE_CUE.search(line) or ESTIMATE_CUE.search(heading)) and not WAIT_WORD.search(line):
             found.append("%s: «%s» — an estimate in days with no wait named on the line" % (label, d.group(0)))
             break
     for p in table_problems(text):

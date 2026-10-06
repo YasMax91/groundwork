@@ -25,6 +25,9 @@
 | D7 | Slow suites on one server | agents splitting suites, waiting «until the shared DB is stable for two minutes» | `innodb_flush_log_at_trx_commit=1` and the binary log on: two fsyncs per commit |
 | D8 | Lane gaps | memory `worktree-lane-py-up`: test DB empty — migrate it by hand; `AWS_URL` pointing at the main MinIO | `migrate --env=testing` migrates the dev DB in otaje; port-bearing URLs not rewritten; `auth.json` (private packages) not copied |
 
+| D9 | Product rules blocked as estimates | otaje memory `estimate-docs-flags-day-counts`: «30 days since the last visit» (sign-in lifetime) blocked; agents hyphenate «30-day» to slip past | `estimate-docs.py` treated every «N days» in a changed doc as an estimate |
+| D10 | Two lanes took the same row ID («A7») | otaje memory `status-mirror-publish-race` | IDs were picked from each lane's own copy |
+
 ## Changes
 
 - **GW36-AC1** `hooks/in-cwd.sh`: every `hooks.json` command runs through it; it reads the payload, `cd`s
@@ -48,6 +51,9 @@
 - **GW36-AC3** `lane.py up` migrates the test DB with `docker compose exec -e DB_DATABASE=<test db>` and
   reports the table count, copies `auth.json`; host-side URLs (`localhost`, `127.0.0.1`, the lane domain) follow a moved
   published port, container-side ones (`minio:9000`) do not.
+- **GW36-AC4** `estimate-docs.py`: «N days» blocks only next to an estimate word on the line or in its
+  section heading, and never on a lifetime, window, TTL, cookie or session line.
+- **FT36-AC4** the status skill claims a new ID by pushing its row first; the mirror marks a duplicated ID.
 - **docker-proxy** (e20472b, local repository): `--skip-log-bin`, `--innodb-flush-log-at-trx-commit=2`;
   restarted after three idle samples in a row.
 

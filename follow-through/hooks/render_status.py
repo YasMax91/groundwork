@@ -73,6 +73,9 @@ def render(root, ref=""):
     base = lanes.base_ref(root, {})
     head = lanes.git(root, "rev-parse", "--short", ref or "HEAD")
     rows = [r for s in sections for r in s["rows"]]
+    seen, dupes = set(), set()
+    for r in rows:
+        (dupes if r["id"] in seen else seen).add(r["id"])
     counts = {k: sum(1 for r in rows if r["status"].lower() == k) for k in STATUSES}
 
     envs = []
@@ -98,9 +101,10 @@ def render(root, ref=""):
     body = ""
     for s in sections:
         trs = "".join(
-            '<tr data-s="{s}"><td class="id">{id}</td><td class="item">{item}</td><td><span class="tag s-{s}">{label}</span></td>'
+            '<tr data-s="{s}"><td class="id">{id}{dup}</td><td class="item">{item}</td><td><span class="tag s-{s}">{label}</span></td>'
             '<td class="lane">{lane}</td><td class="proof">{proof}</td><td class="upd">{upd}</td></tr>'.format(
-                s=html.escape(r["status"].lower()), id=html.escape(r["id"]), item=inline(r["item"], remote),
+                s=html.escape(r["status"].lower()), id=html.escape(r["id"]),
+                dup=(' <span class="tag s-blocked" title="this ID is used by more than one row">дубль</span>' if r["id"] in dupes else ""), item=inline(r["item"], remote),
                 label=LABEL.get(r["status"].lower(), html.escape(r["status"])), lane=html.escape(r["lane"]),
                 proof=inline(r["proof"], remote), upd=html.escape(r["updated"])) for r in s["rows"])
         body += ('<section><h2>%s</h2>%s<div class="scroll"><table><thead><tr><th>ID</th><th>Пункт</th><th>Статус</th>'
