@@ -11,10 +11,14 @@ Run the gates and the self-review before declaring the work done. Use the projec
 
 - Format: `./vendor/bin/sail composer format:test` (or `format` to apply).
 - Static analysis: `./vendor/bin/sail composer analyse`.
-- Tests: the narrowest relevant first, then broader — e.g.
-  `./vendor/bin/sail artisan test --filter=...`, then `./vendor/bin/sail composer test`. They must be
-  **green** — the Stop gate also runs the suite on changed PHP (`gates.test_on_stop`). Confirm the
-  tests for the changed behavior were written **test-first** (red→green).
+- Tests: the change's own tests, by path or `--filter` — e.g.
+  `./vendor/bin/sail artisan test tests/Feature/OrderExportTest.php`. They must be **green**. The Stop
+  gate runs the same selection on every stop (`hooks/test-select.py`: changed tests, and tests naming a
+  changed class, table, config key or route). **Do not run the whole suite here**: it runs once, right
+  before the push to a shared branch — `push-gate` refuses that push until the exact tree has a green
+  full run, and a full run you made is recorded, so it is never repeated. Run it earlier only when the
+  user asks or the change is cross-cutting and you say why. Confirm the tests for the changed behavior
+  were written **test-first** (red→green).
 - OpenAPI: if the change touched an endpoint, regenerate the spec
   (`./vendor/bin/sail artisan l5-swagger:generate`) — it must finish with **no errors and no
   warnings**, and every touched endpoint must be documented to the standard in

@@ -71,6 +71,15 @@
             "statusMessage": "Groundwork: checking command…"
           }
         ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/in-cwd.sh\" push-gate.py"
+          }
+        ]
       }
     ],
     "PostToolUse": [
@@ -99,6 +108,15 @@
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/in-cwd.sh\" plain-language.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/in-cwd.sh\" suite-record.py"
           }
         ]
       }

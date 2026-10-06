@@ -317,6 +317,12 @@ def up(refresh_data=False, full=False):
                 code, out = mysql_in(dst_server, "GRANT ALL PRIVILEGES ON `%s`.* TO '%s'@'%%'" % (name, user))
                 if code != 0:
                     say("could not grant %s on %s: %s" % (user, name, out[-300:]))
+        if test_db and user and user != "root":
+            # `artisan test --parallel` creates `<test db>_test_<n>` per process (wave 37)
+            pattern = test_db.replace("_", "\\_") + "\\_test\\_%"
+            code, out = mysql_in(dst_server, "GRANT ALL PRIVILEGES ON `%s`.* TO '%s'@'%%'" % (pattern, user))
+            if code != 0:
+                say("could not grant %s on the parallel test databases: %s" % (user, out[-300:]))
         lane_db = updates.get("DB_DATABASE")
         code, out = mysql_in(dst_server, "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='%s'" % lane_db)
         empty = code == 0 and (out.strip().splitlines() or ["?"])[-1].strip() == "0"
@@ -394,10 +400,19 @@ def down(purge=False):
         code, out = run([sail, "down"] + (["-v"] if purge else []), cwd=lane, env=env_for(lane), timeout=300)
         say("stack %s" % ("stopped" if code == 0 else "not stopped: " + out[-400:]))
     if purge and info.get("db_server"):
-        for name in info.get("databases", []):
-            if name and name != main_env.get("DB_DATABASE"):
-                mysql_in(info["db_server"], "DROP DATABASE IF EXISTS `%s`" % name)
-                say("dropped %s" % name)
+        user = env_vals.get("DB_USERNAME", "")
+        names = [n for n in info.get("databases", []) if n and n != main_env.get("DB_DATABASE")]
+        for name in names:
+            code, out = mysql_in(info["db_server"], "SHOW DATABASES LIKE '%s\\_test\\_%%'" % name.replace("_", "\\_"))
+            for extra in [l.strip() for l in out.splitlines() if l.strip()] if code == 0 else []:
+                mysql_in(info["db_server"], "DROP DATABASE IF EXISTS `%s`" % extra)   # parallel-test databases
+                say("dropped %s" % extra)
+            mysql_in(info["db_server"], "DROP DATABASE IF EXISTS `%s`" % name)
+            say("dropped %s" % name)
+            if user and user != "root":
+                mysql_in(info["db_server"], "REVOKE ALL PRIVILEGES ON `%s`.* FROM '%s'@'%%'" % (name, user))
+                mysql_in(info["db_server"], "REVOKE ALL PRIVILEGES ON `%s`.* FROM '%s'@'%%'" % (
+                    name.replace("_", "\\_") + "\\_test\\_%", user))
 
 
 def newest_installed():

@@ -370,6 +370,16 @@ Replayed over the 2064 historical agent turns the sweep covers: announcement 29 
 by «продолжай»/«да» or a complaint; empty reply 32 (15); prose question 204 (90); UI proof 56 (18);
 hand-back 28 (5); language 67 (6, mostly English client texts written outside an outbound fence).
 
+## Tests — the change's own while working, the whole suite once
+
+The Stop gate runs the tests that touch the change (`test-select.py`: changed tests, and tests naming a
+changed class, table, config key or route). The whole suite runs once, before a push to a shared branch:
+`push-gate.py` refuses `git push` to development / main / staging / production and `gh pr merge` until the
+pushed tree has a recorded green full run, and a full run you make yourself is recorded, so it is never
+repeated. `commands.test_full` sets the command for that run (e.g. `artisan test --parallel
+--processes=4`). Measured on otaje: 79 whole-suite gate runs in a week (383 min) became targeted runs of a
+median 2 of 647 files; `--parallel` halved the full run (397 s → 203 s, same failures).
+
 ## Parallel sessions — lanes
 
 `groundwork:lane` (`hooks/lane.py up`) turns a worktree into a lane: its own Compose project and
@@ -568,7 +578,7 @@ pack/             groundwork-pack — dependency-only bundle (this plugin + foll
 follow-through/   the project-agnostic plugin — hooks/ (stop_gate.py · guard.py · session_start.py · prompt_submit.py · post_tool.py · session_end.py · lanes.py · render_status.py · ft.py · tests/) · skills/status
 skills/           start-task · spec · implement-approved · lane · risk-review · final-check · estimate · ground-integration · frontend-handoff · install-portal · client-doc · openapi-audit · grill · init · deep-grounding · deep-discovery · deep-review
 agents/           impact-mapper · blind-spot-mapper · grounded-researcher · adversarial-verifier · conformance-reviewer
-hooks/            hooks.json · lib.sh (shared resolvers) · session-start.sh · pre-compact.sh · task-intent.sh · format-on-edit.sh · done-gate.sh · test-gate.sh · openapi-gate.sh · slice-gate.sh · coverage-claim.sh · plain-language.sh · defect-scan.sh · estimate-claim.sh · estimate-docs.py · estimate-ledger.sh · lane.py · lane-guard.py · lane-idle.py · in-cwd.sh · ledger-record.sh · agent-contract.sh · trim-output.sh · pre-tool-guard.sh · stdin-guard.sh · statusline.sh · tests/all.sh
+hooks/            hooks.json · lib.sh (shared resolvers) · session-start.sh · pre-compact.sh · task-intent.sh · format-on-edit.sh · done-gate.sh · test-gate.sh · openapi-gate.sh · slice-gate.sh · coverage-claim.sh · plain-language.sh · defect-scan.sh · estimate-claim.sh · estimate-docs.py · estimate-ledger.sh · lane.py · lane-guard.py · lane-idle.py · in-cwd.sh · test-select.py · suite-record.py · push-gate.py · ledger-record.sh · agent-contract.sh · trim-output.sh · pre-tool-guard.sh · stdin-guard.sh · statusline.sh · tests/all.sh
 workflows/        deep-review-run.js · deep-discovery-run.js · deep-grounding-run.js — the multi-agent orchestration, executed by the runtime
 guidelines/       ai-sdd-process · grounding-protocol · blind-spot-protocol · clarify-protocol · plain-language · openapi-protocol · laravel-standards · tdd-protocol · writing-standards · working-memory
 docs/             skill-hygiene (author-facing) · specs/

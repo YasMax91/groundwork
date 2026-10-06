@@ -79,6 +79,30 @@ if [ "$declared" != "sqlite" ]; then
   done
 fi
 
+# --- scope: the change's own tests while working; the whole suite before a shared push (wave 37) ---
+# The whole suite on every Stop cost otaje 383 minutes in a week (79 runs, median 5.4 min) for changes
+# whose own tests were a median of 2 files. Now this gate runs what test-select.py picks; push-gate.py
+# requires one green full run on the exact tree before a push to a shared branch.
+# `gates.test_scope: "full"` restores the old behaviour. A custom `commands.test` that is not an
+# artisan / phpunit / pest call cannot take file arguments, so it still runs whole.
+hooks_dir="$(cd "$(dirname "$0")" && pwd)"
+scope="$(jq -r '.gates.test_scope // "targeted"' .groundwork.json 2>/dev/null || echo targeted)"
+full_run=1
+full_cmd="$(jq -r '.commands.test_full // empty' .groundwork.json 2>/dev/null || true)"   # e.g. … artisan test --parallel
+if [ "$scope" = "full" ] || ! printf '%s' "$cmd" | grep -qE 'artisan test|phpunit|/pest( |$)'; then
+  [ -n "$full_cmd" ] && cmd="$full_cmd"
+fi
+if [ "$scope" != "full" ] && printf '%s' "$cmd" | grep -qE 'artisan test|phpunit|/pest( |$)'; then
+  selected="$(python3 "$hooks_dir/test-select.py" 2>/dev/null || true)"
+  if [ -z "$selected" ]; then
+    echo "groundwork test-gate: no test names the changed code — none run now. The whole suite runs before a push to a shared branch." >&2
+    exit 0
+  fi
+  n_sel="$(printf '%s\n' "$selected" | grep -c .)"
+  cmd="$cmd $(printf '%s\n' "$selected" | tr '\n' ' ')"
+  full_run=0
+fi
+
 # --- serialise the suite across parallel sessions sharing one test database ---
 # Two sessions interleaving `migrate:fresh` and a running suite produce failures that describe
 # neither session's code ("1412 Table definition has changed" -> "1146 doesn't exist"). An atomic
@@ -166,10 +190,16 @@ if [ "$status" -ne 0 ]; then
     exit 1
   fi
   {
-    echo "groundwork test-gate: tests FAILED on changed PHP — not done yet (red). Make them green before finishing."
+    if [ "$full_run" = "1" ]; then
+      echo "groundwork test-gate: tests FAILED on changed PHP — not done yet (red). Make them green before finishing."
+    else
+      echo "groundwork test-gate: the ${n_sel} test files that touch this change FAILED — not done yet (red). Make them green before finishing."
+    fi
     printf '%s\n' "$out" | tail -40
   } >&2
   exit 2
 fi
 
+# A green whole-suite run on this exact tree is what push-gate.py asks for; remember it.
+[ "$full_run" = "1" ] && python3 "$hooks_dir/suite-record.py" --record >/dev/null 2>&1 || true
 exit 0
