@@ -20,7 +20,7 @@ Battle-tested day to day on production Laravel backends at RaDevs.
 
 ## In practice
 
-Across **7 production codebases** as of August 2026: ~340 procedure runs, ~160 written specs, 27
+Across **12 production codebases** as of October 2026: 800+ procedure runs, 300+ written specs, 90
 auto-generated frontend hand-offs — and roughly **one task in three stopped before any code was
 written**, because it was mis-scoped, conflicted with behaviour that already existed, or was
 cheaper to solve without development at all.
@@ -205,7 +205,7 @@ companion plugins and per-project configuration are further down this file.
   the next one. Every gate honors the declared
   `runner`: a `runner: host` project runs host commands and is never denied them, and a command that
   cannot run at all (missing binary, undefined script) is reported as an environment problem rather than a
-  red. All hooks are covered by tests — `bash hooks/tests/all.sh` (379 cases, 17 suites), run on every push by `.github/workflows/ci.yml`.
+  red. All hooks are covered by tests — `bash hooks/tests/all.sh` (549 cases, 25 suites), run on every push by `.github/workflows/ci.yml`.
 - **A closed slice names what proves it** — the other Stop gates read the repository; `slice-gate` reads
   the task. A slice ticked `[x]` in the checkpoint carries `test: <path>` (the file must exist), or
   `manual: <what a person observed>` ("verified" is not an observation), or `abandoned: <reason>` — which
