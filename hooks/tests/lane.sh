@@ -101,6 +101,22 @@ cp "$M/.env" "$W/.env"
 ( cd "$W" && python3 "$HOOKS/lane.py" down > "$ROOT/down.log" 2>&1 ); c=$?
 [ "$c" -ne 0 ] && grep -q 'MAIN stack' "$ROOT/down.log"; eq "down refuses the main stack" 0 $?
 
+# --- a project without .env.testing names its test database only in phpunit.xml (2026-10-06) ------
+C="$ROOT/cafe"; mkdir -p "$C"
+( cd "$C" && git init -q && git config user.email t@t && git config user.name t
+  printf '{}\n' > .groundwork.json
+  printf 'services:\n    laravel.test:\n        image: x\n' > docker-compose.yml
+  printf '<phpunit><php>\n    <env name="DB_DATABASE" value="cafe_testing" force="true"/>\n</php></phpunit>\n' > phpunit.xml
+  git add -A && git commit -qm init
+  git worktree add -q "$C/.claude/worktrees/sleepy-hopper-a1b2c3" -b claude/sleepy )
+printf 'APP_URL=http://cafe.localhost\nCOMPOSE_PROJECT_NAME=cafe\nDB_HOST=no-such-db-host\nDB_DATABASE=cafe\n' > "$C/.env"
+CW="$C/.claude/worktrees/sleepy-hopper-a1b2c3"
+( cd "$CW" && python3 "$HOOKS/lane.py" up > "$ROOT/cafe.log" 2>&1 )
+eq "no .env.testing: lane test db from phpunit.xml" 'value="cafe_testing_sleepya1b2"' \
+  "$(grep -o 'name="DB_DATABASE" value="[^"]*"' "$CW/phpunit.xml" | grep -o 'value="[^"]*"')"
+grep -q 'named after phpunit.xml' "$ROOT/cafe.log"; eq "…and says where the name came from" 0 $?
+[ ! -f "$CW/.env.testing" ]; eq "…without inventing a .env.testing" 0 $?
+
 # --- opt-out -------------------------------------------------------------------------------------
 printf '{"gates":{"lane_guard":false}}\n' > "$W/.groundwork.json"
 eq "guard: opt-out"        allow "$(guard "$W" './vendor/bin/sail artisan test')"

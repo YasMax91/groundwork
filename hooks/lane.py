@@ -251,9 +251,20 @@ def up(refresh_data=False, full=False):
                                                           updates.get("DB_DATABASE", "—")))
 
     test_env, test_lines = read_env(os.path.join(main, ".env.testing"))
+    # Where there is no .env.testing (4 of 5 projects measured on 2026-10-06) the test database is named only
+    # in phpunit.xml; without this the lane had no test DB of its own and every test hit the shared one.
+    phpunit_db = ""
+    try:
+        m = re.search(r'<(?:env|server)\s+name="DB_DATABASE"\s+value="([^"]+)"', open(os.path.join(main, "phpunit.xml"), encoding="utf-8").read())
+        phpunit_db = m.group(1) if m and m.group(1) not in (":memory:",) and not m.group(1).endswith(".sqlite") else ""
+    except Exception:
+        pass
     test_db = ""
+    if not test_env and phpunit_db:
+        test_db = "%s_%s" % (phpunit_db, slug)
+        say("test database %s (named after phpunit.xml; there is no .env.testing)" % test_db)
     if test_env:
-        test_db = "%s_%s" % (test_env.get("DB_DATABASE", db + "_test"), slug)
+        test_db = "%s_%s" % (test_env.get("DB_DATABASE") or phpunit_db or db + "_test", slug)
         tu = {k: v for k, v in updates.items() if k in test_env and k != "DB_DATABASE"}
         tu["DB_DATABASE"] = test_db
         write_env(os.path.join(lane, ".env.testing"), test_lines, tu)
@@ -292,7 +303,8 @@ def up(refresh_data=False, full=False):
         workers = [x for x in services if BACKGROUND.search(x)]
         wanted = services if (full or not workers) else [x for x in services if x not in workers]
         code, out = run([sail, "up", "-d"] + ([] if wanted == services else wanted), cwd=lane, env=env, timeout=900)
-        say("stack %s%s" % ("started" if code == 0 else "did NOT start:\n" + out[-1500:],
+        errors = "\n".join(l for l in out.splitlines() if l.strip() and "level=warning" not in l)
+        say("stack %s%s" % ("started" if code == 0 else "did NOT start:\n" + errors[-1500:],
                             "" if wanted == services else " without %s (lane.py up --full starts them)" % ", ".join(workers)))
     else:
         say("no vendor/bin/sail — stack not started")
