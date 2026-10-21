@@ -117,6 +117,151 @@ eq "no .env.testing: lane test db from phpunit.xml" 'value="cafe_testing_sleepya
 grep -q 'named after phpunit.xml' "$ROOT/cafe.log"; eq "…and says where the name came from" 0 $?
 [ ! -f "$CW/.env.testing" ]; eq "…without inventing a .env.testing" 0 $?
 
+# --- a lane whose stack never started is not ready (2026-10-21) -----------------------------------
+grep -q 'lane NOT ready: shop-crankyb9e4.localhost (no vendor/bin/sail' "$ROOT/up.log"; eq "no sail: lane NOT ready" 0 $?
+grep -q 'lane ready' "$ROOT/up.log"; eq "…and never lane ready" 1 $?
+
+# --- the stack: Docker's address pools used up, and public/storage on a fresh lane (2026-10-21) ----
+# Docker and Sail are stand-ins: they answer what lane.py asks, from files in $FAKE, and log what it ran.
+FAKE="$ROOT/fake"; mkdir -p "$FAKE" "$ROOT/bin"
+cat > "$ROOT/bin/docker" <<'SH'
+#!/usr/bin/env bash
+F="$LANE_FAKE"; echo "docker $*" >> "$F/docker.log"
+case "$1" in
+  inspect) [ "${4:-}" = "deli-db" ] ;;                     # inspect --type container <name>: the external DB server
+  exec) if [ "$2" = "-i" ]; then case "$(cat)" in *"COUNT(*)"*) echo 0 ;; esac; fi ;;
+  info) echo null ;;                                        # no default-address-pools of its own
+  compose)
+    case "$2" in
+      config) if [ "${3:-}" = "--services" ]; then printf 'laravel.test\nhorizon\n'; echo 'level=warning msg="obsolete"' >&2
+              else cat "$F/config.json"; fi ;;
+      ps) if [[ "$*" == *--format* ]] && [ -f "$F/up.$(basename "$PWD")" ]; then echo "$(basename "$PWD")_app"; fi ;;
+    esac ;;
+  network)                                                  # $F/nets: name <TAB> Compose project <TAB> subnets
+    case "$2" in
+      ls) cut -f1 "$F/nets" ;;
+      inspect) cat "$F/nets" ;;
+    esac ;;
+  ps) if [ "${2:-}" = "-a" ]; then cat "$F/containers"; else grep -v '^exited' "$F/containers" || true; fi ;;
+esac
+SH
+D="$ROOT/deli"; mkdir -p "$D"
+( cd "$D" && git init -q && git config user.email t@t && git config user.name t
+  printf '{}\n' > .groundwork.json
+  printf '/vendor\n/public/storage\n.env\n' > .gitignore
+  mkdir -p public storage/app/public && printf '<?php\n' > public/index.php && printf '*\n!.gitignore\n' > storage/app/public/.gitignore
+  printf 'services:\n    laravel.test:\n        image: sail-8.4/app\n        networks: [sail, traefik]\nnetworks:\n    sail:\n        driver: bridge\n    traefik:\n        external: true\n        name: traefik-network\n' > docker-compose.yml
+  git add -A && git commit -qm init
+  git worktree add -q "$D/.claude/worktrees/brave-curie-c0ffee" -b claude/brave
+  git worktree add -q "$D/.claude/worktrees/calm-noether-d00d" -b claude/calm
+  git worktree add -q "$D/.claude/worktrees/eager-sails-e1e1" -b claude/eager )
+printf 'APP_URL=http://deli.localhost\nCOMPOSE_PROJECT_NAME=deli\nDB_CONNECTION=mysql\nDB_HOST=deli-db\nDB_DATABASE=deli\nDB_USERNAME=sail\n' > "$D/.env"
+mkdir -p "$D/vendor/bin"; cat > "$D/vendor/bin/sail" <<'SH'
+#!/usr/bin/env bash
+F="$LANE_FAKE"; echo "sail $*" >> "$F/sail.$(basename "$PWD")"
+case "$1 ${2:-}" in
+  "up -d")
+    if [ -f "$F/pools-used-up" ] && ! { grep -q '^COMPOSE_FILE=.*\.claude/lane-compose\.yml' .env && grep -qs '"subnet"' .claude/lane-compose.yml; }; then
+      echo 'failed to create network x_sail: Error response from daemon: all predefined address pools have been fully subnetted' >&2; exit 1
+    fi
+    if [ -f "$F/port-taken" ]; then echo 'Error response from daemon: ports are not available: listen tcp 0.0.0.0:80' >&2; exit 1; fi
+    touch "$F/up.$(basename "$PWD")" ;;
+  "artisan storage:link")
+    if [ -f "$F/no-symfony-filesystem" ]; then echo 'RuntimeException  To enable support for relative links, please install the symfony/filesystem package.'; exit 1; fi
+    ln -s ../storage/app/public/ public/storage && echo 'INFO  The [public/storage] link has been connected to [storage/app/public].' ;;
+esac
+SH
+chmod +x "$ROOT/bin/docker" "$D/vendor/bin/sail"
+printf '{"networks":{"sail":{"name":"x_sail","driver":"bridge","ipam":{}},"traefik":{"name":"traefik-network","external":true,"ipam":{}}}}\n' > "$FAKE/config.json"
+# By hand (no project), idle, held by stopped containers only, live, and other lanes on subnets of their own —
+# 10.213.0.0/17 and .128.0/18, so a new lane subnet can only come from 10.213.192.0/18.
+BASE_NETS=$'bridge\t\t172.17.0.0/16 \nhost\t\t\nnone\t\t\ntraefik-network\t\t172.31.0.0/16 '
+BASE_NETS+=$'\ncafe_old_default\tcafe_old\t192.168.16.0/20 \nshop_gone_sail\tshop_gone\t172.21.0.0/16 '
+BASE_NETS+=$'\notaje_sweet_sail\totaje_sweet\t172.26.0.0/16 \notaje_sail\totaje\t192.168.128.0/20 '
+BASE_NETS+=$'\nlanes_own_sail\tlanes_own\t10.213.0.0/17 \nlanes_more_sail\tlanes_more\t10.213.128.0/18 fd00::/64 '
+nets() { printf '%s\n' "$BASE_NETS" "$@" > "$FAKE/nets"; }   # extra lines -> $FAKE/nets
+nets $'deli_bravec0ff_sail\tdeli_bravec0ff\t172.28.0.0/16 '
+printf 'running\totaje_sail,proxy_net\nexited\totaje_sweet_sail\nrunning\tdb_net\n' > "$FAKE/containers"
+lane_up() { # worktree log [args] -> exit status of lane.py up
+  local wt="$1" log="$2"; shift 2
+  ( cd "$wt" && PATH="$ROOT/bin:$PATH" LANE_FAKE="$FAKE" python3 "$HOOKS/lane.py" up "$@" > "$log" 2>&1 )
+}
+lane_subnet() { # worktree -> the subnet its .claude/lane-compose.yml gives the sail network
+  python3 -c 'import json,sys; print(json.loads("".join(l for l in open(sys.argv[1]) if not l.startswith("#")))["networks"]["sail"]["ipam"]["config"][0]["subnet"])' \
+    "$1/.claude/lane-compose.yml" 2>&1
+}
+in_free_range() { python3 -c 'import ipaddress,sys; sys.exit(0 if ipaddress.ip_network(sys.argv[1]).subnet_of(ipaddress.ip_network("10.213.192.0/18")) else 1)' "$1" 2>/dev/null; }
+DW="$D/.claude/worktrees/brave-curie-c0ffee"; DL="$FAKE/sail.brave-curie-c0ffee"
+
+touch "$FAKE/pools-used-up"
+lane_up "$DW" "$ROOT/deli1.log"; eq "pools used up: up exits 1"               1 $?
+grep -q 'no address range left for a new network' "$ROOT/deli1.log"; eq "…says what happened" 0 $?
+eq "…names the networks no container uses" "docker network rm cafe_old_default shop_gone_sail" \
+  "$(grep -o 'docker network rm .*' "$ROOT/deli1.log")"
+grep -q "ONLY with the owner's consent" "$ROOT/deli1.log"; eq "…removing them is the owner's call" 0 $?
+grep -q 'stopped containers only.*otaje_sweet$' "$ROOT/deli1.log"; eq "…names the stack held by stopped containers" 0 $?
+grep -q 'traefik-network' "$ROOT/deli1.log"; eq "…never a network made by hand" 1 $?
+grep -q 'lanes_own_sail' "$ROOT/deli1.log"; eq "…never one outside the pools" 1 $?
+grep -q 'lane.py up --own-subnet' "$ROOT/deli1.log"; eq "…offers a subnet of its own" 0 $?
+grep -q 'migrations: not run — the stack is not up' "$ROOT/deli1.log"; eq "…no migrations on a stack that is down" 0 $?
+grep -q 'artisan migrate' "$DL"; eq "…so no 'Sail is not running'" 1 $?
+grep -q 'storage:link' "$DL"; eq "…no storage link without a stack" 1 $?
+grep -q 'lane NOT ready: deli-bravec0ff.localhost' "$ROOT/deli1.log"; eq "…ends on lane NOT ready" 0 $?
+grep -q 'lane ready' "$ROOT/deli1.log"; eq "…never lane ready" 1 $?
+[ ! -e "$DW/.claude/lane-compose.yml" ] && [ -z "$(val "$DW/.env" COMPOSE_FILE)" ]; eq "…no subnet of its own unasked" 0 $?
+[ -f "$DW/.claude/lane.json" ]; eq "…lane.json still written" 0 $?
+
+lane_up "$DW" "$ROOT/deli2.log" --own-subnet; eq "--own-subnet: up exits 0"           0 $?
+grep -q 'lane ready: deli-bravec0ff.localhost' "$ROOT/deli2.log"; eq "…lane ready" 0 $?
+eq "…COMPOSE_FILE adds the lane's compose file" "docker-compose.yml:.claude/lane-compose.yml" "$(val "$DW/.env" COMPOSE_FILE)"
+subnet="$(lane_subnet "$DW")"; in_free_range "$subnet"; eq "…a /24 no Docker network uses" 0 $?
+grep -q traefik "$DW/.claude/lane-compose.yml"; eq "…external networks left alone" 1 $?
+eq "…never committed" "" "$(git -C "$DW" status --porcelain --untracked-files=all)"
+grep -q '^\.claude/lane-compose\.yml$' "$D/.git/info/exclude"; eq "…excluded from git" 0 $?
+grep -q 'artisan migrate --force' "$DL"; eq "…migrations run once the stack is up" 0 $?
+[ -L "$DW/public/storage" ] && [ -d "$DW/public/storage" ]; eq "storage: public/storage resolves on the host" 0 $?
+case "$(readlink "$DW/public/storage")" in ../*) r=0 ;; *) r=1 ;; esac; eq "…a relative link" 0 $r
+grep -q 'artisan storage:link --relative' "$DL"; eq "…made by artisan storage:link --relative" 0 $?
+grep -q 'public/storage linked to storage/app/public, relative (artisan' "$ROOT/deli2.log"; eq "…and the step is printed" 0 $?
+
+before="$(grep -v '^#' "$DW/.claude/lane-compose.yml")"
+lane_up "$DW" "$ROOT/deli3.log"; eq "re-run: up exits 0"                      0 $?
+eq "re-run keeps the lane's subnet" "$before" "$(grep -v '^#' "$DW/.claude/lane-compose.yml")"
+eq "re-run keeps COMPOSE_FILE" "docker-compose.yml:.claude/lane-compose.yml" "$(val "$DW/.env" COMPOSE_FILE)"
+eq "re-run links storage only once" 1 "$(grep -c 'storage:link' "$DL")"
+eq "compose's stderr never reaches sail up" "sail up -d laravel.test" "$(grep '^sail up' "$DL" | sort -u)"
+
+# A subnet the lane holds stays, though a fresh choice would differ: its own network carries it, and that is not
+# "taken". Once another network took it while the lane's was gone (`down` removes it), the lane moves off.
+K=10.213.250.0/24; [ "$subnet" = "$K" ] && K=10.213.251.0/24
+printf '{"networks": {"sail": {"ipam": {"config": [{"subnet": "%s"}]}}}}\n' "$K" > "$DW/.claude/lane-compose.yml"
+nets $'deli_bravec0ff_sail\tdeli_bravec0ff\t'"$K "
+lane_up "$DW" "$ROOT/deli3b.log"; eq "held subnet: up exits 0"                 0 $?
+eq "…stays on its own network" "$K" "$(lane_subnet "$DW")"
+nets $'intruder_sail\tintruder\t'"$K "
+lane_up "$DW" "$ROOT/deli3c.log"; eq "held subnet taken by another: up exits 0" 0 $?
+moved="$(lane_subnet "$DW")"; [ "$moved" != "$K" ] && in_free_range "$moved"; eq "…moves to a free /24" 0 $?
+grep -q "sail moved off $K, which another network uses now" "$ROOT/deli3c.log"; eq "…and says so" 0 $?
+
+rm "$FAKE/pools-used-up"; touch "$FAKE/no-symfony-filesystem"
+DW2="$D/.claude/worktrees/calm-noether-d00d"
+lane_up "$DW2" "$ROOT/deli4.log"; eq "fresh lane: up exits 0"                 0 $?
+[ -L "$DW2/public/storage" ] && [ -d "$DW2/public/storage" ]; eq "storage: linked from the host when artisan cannot" 0 $?
+grep -q 'relative, from the host — artisan storage:link --relative failed' "$ROOT/deli4.log"; eq "…and says so" 0 $?
+[ -z "$(val "$DW2/.env" COMPOSE_FILE)" ] && [ ! -e "$DW2/.claude/lane-compose.yml" ]; eq "…no subnet of its own unasked" 0 $?
+touch "$FAKE/port-taken"
+lane_up "$DW2" "$ROOT/deli5.log"; eq "other start error: up exits 1"           1 $?
+grep -q 'ports are not available' "$ROOT/deli5.log" && grep -q 'lane NOT ready' "$ROOT/deli5.log"; eq "…shows it and is NOT ready" 0 $?
+grep -q 'address range' "$ROOT/deli5.log"; eq "…not taken for used-up pools" 1 $?
+rm "$FAKE/port-taken"
+
+# Sail turns SAIL_FILES into -f flags, which outrank COMPOSE_FILE: the lane's file joins them.
+printf 'SAIL_FILES=docker-compose.yml\n' >> "$D/.env"
+DW3="$D/.claude/worktrees/eager-sails-e1e1"
+lane_up "$DW3" "$ROOT/deli6.log" --own-subnet; eq "SAIL_FILES: up exits 0"   0 $?
+eq "…the lane's file joins SAIL_FILES" "docker-compose.yml:.claude/lane-compose.yml" "$(val "$DW3/.env" SAIL_FILES)"
+eq "…and COMPOSE_FILE" "docker-compose.yml:.claude/lane-compose.yml" "$(val "$DW3/.env" COMPOSE_FILE)"
+
 # --- opt-out -------------------------------------------------------------------------------------
 printf '{"gates":{"lane_guard":false}}\n' > "$W/.groundwork.json"
 eq "guard: opt-out"        allow "$(guard "$W" './vendor/bin/sail artisan test')"

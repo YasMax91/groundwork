@@ -55,6 +55,25 @@
   section heading, and never on a lifetime, window, TTL, cookie or session line.
 - **FT36-AC4** the status skill claims a new ID by pushing its row first; the mirror marks a duplicated ID.
 - **GW36-AC5** `lane.py` started from an older cached version re-runs the newest one installed (a session ran 0.45.1 from a remembered path and brought Horizon back).
+- **GW36-AC6** (v0.49.1, 2026-10-21) `lane.py up` links `public/storage` with `artisan storage:link --relative`
+  once the stack is up, and from the host when artisan cannot (`--relative` needs symfony/filesystem). An otaje
+  lane had none: Backpack's `/storage/basset/…` answered 403, so the admin opened without its styles and
+  without `common.js`, which sets jQuery's CSRF header. Relative, because a link made in the container names
+  `/var/www/html`, which the host does not have.
+- **GW36-AC7** (v0.49.1, 2026-10-21) used-up address pools are named as such: on Docker Desktop 30 of 30 were
+  taken (9 otaje lanes, the main stack, other projects; 16 networks without a container), `sail up` failed with
+  «all predefined address pools have been fully subnetted», and `up` went on to «Sail is not running» on the
+  migrations and still printed «lane ready … containers: none». Now it gives two ways out: the Compose
+  networks on a range from Docker's pools that no container uses, running or stopped (`docker ps -a`;
+  `network inspect` counts running ones only), named for the owner to remove — never a network made by hand
+  such as `traefik-network`, never one on a subnet of its own (removing it frees no range), never removed by
+  the script; or `--own-subnet`: a /24 of 10.213.0.0/16 per lane network in `.claude/lane-compose.yml`, named
+  by `COMPOSE_FILE` (and `SAIL_FILES` where the project sets it — Sail's `-f` flags outrank `COMPOSE_FILE`) in
+  the lane's `.env` and listed in `info/exclude`. The subnet is kept across runs unless another network took
+  it while the lane's was gone (`down` removes it); then the lane moves to a free /24 and says so. A stack
+  that did not start skips the migrations and ends on `lane NOT ready`, exit 1. `docker compose config
+  --services` is read from stdout alone: a Compose warning on stderr had reached `sail up -d` as one more
+  service whenever workers were left out.
 - **docker-proxy** (e20472b, local repository): `--skip-log-bin`, `--innodb-flush-log-at-trx-commit=2`;
   restarted after three idle samples in a row.
 
@@ -68,5 +87,16 @@
 - Live probe lane on otaje: 3 containers instead of 5, provisioned in 30 s, test DB 84 tables, MinIO 200
   from inside the lane (`minio:9000`) and from the host (`localhost:<lane port>`); torn down to 0
   containers, 0 volumes, 0 databases.
+- **v0.49.1:** `lane.sh` 82 of 82 (49 new cases on stand-in `docker` and `sail`; 27 of them fail on 0.49.0, one
+  of those the Compose warning reaching `sail up -d`); all groundwork suites and follow-through 69 of 69 green.
+  An adversarial review found a kept subnet reused unchecked, idle networks off the pools listed, and two
+  behaviours no case held (the kept subnet, `ps -a`); fixed, and six mutations of `lane.py` — each fix undone,
+  `-a` dropped — each fail at least one case. On Docker 29.5.2 / Compose 5.1.3 a throwaway lane started on
+  172.18.0.0/16, moved to 10.213.114.0/24 with `--own-subnet` while running (Compose re-created the network and
+  reconnected the container), kept its subnet on re-runs while its own network held it, went back to the pools
+  when `.claude/lane-compose.yml` was deleted, and its `public/storage` resolved on the host; `git status` stayed
+  clean. The diagnosis read against the real host: no idle Compose network, `otaje_sweeta204` held by stopped
+  containers only, `traefik-network` not named. Not reproduced: the used-up pools themselves — the regex
+  matches Docker's message as the otaje session reported it.
 - Not measured: the memory saved on the host after the running lanes are restarted — they keep their
   current containers until their sessions close or `lane.py up` runs again.
