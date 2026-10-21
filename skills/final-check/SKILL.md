@@ -111,7 +111,7 @@ in scope or offered as a slice?
 
 ## Conformance review (L2+ — per the fan-out table in `../../guidelines/ai-sdd-process.md`)
 
-Before the handoff, spawn the **conformance-reviewer** agent on the working diff (`git diff`) against
+Before the handoff, spawn the **conformance-reviewer** agent, with the level's `effort` (`ai-sdd-process.md` §Fan-out by level), on the working diff (`git diff`) against
 the spec's acceptance-criterion IDs. At **L3/L4**, also spawn the **adversarial-verifier** on the
 riskiest "it works" claim — the same table owns both calibrations. In a fresh context it judges each AC `met` / `partial` / `unmet`
 and reports only correctness/requirement gaps. Fix any unmet-AC gap, or fold it into the handoff as a

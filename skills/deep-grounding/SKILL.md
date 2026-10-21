@@ -23,7 +23,7 @@ mode — confidently assuming a capability the provider does not have.
 1. Establish the provider / product / API version, the **list of capabilities** the task needs (one
    row per capability), and the doc **sources** (URLs).
 2. Invoke the `Workflow` tool with `name: "groundwork:deep-grounding-run"` and
-   `args: { capabilities: [...], sources: "<official doc URLs>" }`. The shipped script (a) fans out one
+   `args: { capabilities: [...], sources: "<official doc URLs>", level: "L3" | "L4" }`. The shipped script (a) fans out one
    `grounded-researcher` per capability — each returns a cited finding; (b) runs an adversarial panel
    (2 `adversarial-verifier` skeptics, distinct lenses, refute-by-default) per row; (c) synthesizes the
    matrix. Do **not** rewrite it inline. It refuses to run without `capabilities`, and logs the fan-out

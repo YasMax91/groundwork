@@ -16,7 +16,7 @@ survived). This single-agent flow stays the default for L0–L2.
 
 1. **Identify the exact provider, product, and API version** in use (or to be used).
 2. **Fetch the official documentation** with WebFetch/WebSearch (and the provider's own MCP if one
-   exists). For a deep sweep, spawn the **grounded-researcher** agent.
+   exists). For a deep sweep, spawn the **grounded-researcher** agent (it runs on Sonnet; pass the level's `effort`).
 3. **Build a capability matrix** — one row per feature the task needs:
 
    | Feature needed | Supported? | Evidence (URL + quote / endpoint) | Fallback if not |
@@ -38,7 +38,7 @@ survived). This single-agent flow stays the default for L0–L2.
    supported, surface it and propose the fallback — do not silently work around it.
 5. **Plan the executable proof**: a real sandbox/API call that exercises the path. The integration
    is not "done" until that call succeeds.
-6. Before completion, have the **adversarial-verifier** agent challenge each "it works" claim against
+6. Before completion, have the **adversarial-verifier** agent (the level's `effort`) challenge each "it works" claim against
    the cited evidence and the sandbox result.
 
 ## Output

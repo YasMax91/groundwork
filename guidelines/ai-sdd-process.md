@@ -144,6 +144,21 @@ fit, so only Discovery and Verification fan out.
 short: **conformance-reviewer at L2+** (does the diff match the spec?), **adversarial-verifier at L3/L4
 and whenever a claim about an external capability is made** (is the claim true?).
 
+**Model and effort by role and level** (wave 39). An agent's own file sets its model: `grounded-researcher`
+on Sonnet; `conformance-reviewer`, `adversarial-verifier` and `blind-spot-mapper` on Opus, whatever the
+session runs; `impact-mapper` on the session's model — on six otaje tasks Sonnet named 71 % of the files the
+Opus maps named, 47 % on the deepest, against a 95 % bar. The level sets the effort: pass it as `effort` on
+each `Agent` call and as `args.level` to the deep workflows (the plugin's mod sets the same where the app
+loads mods):
+
+| Level | mapping, research | checkers |
+|---|---|---|
+| L2 normal | medium | high |
+| L3 high-risk | high | xhigh |
+| L4 critical | high | max |
+
+`max` stays at L4: the model's own documentation warns it overthinks and gives diminishing returns.
+
 **Implementation is single-threaded.** Work one TDD slice at a time — no parallel coding agents. The
 fan-out above is for Discovery and Verification only.
 

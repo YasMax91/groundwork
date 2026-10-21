@@ -9,6 +9,12 @@ export const meta = {
   ],
 }
 
+// Effort follows the task's level (guidelines/ai-sdd-process.md §Fan-out by level): mapping and research one
+// row, checkers the other. The agent files set the models.
+const LEVEL = String((args && args.level) || 'L3').toUpperCase()
+const EFFORT = { L2: { map: 'medium', check: 'high' }, L3: { map: 'high', check: 'xhigh' }, L4: { map: 'high', check: 'max' } }[LEVEL]
+  || { map: 'high', check: 'xhigh' }
+
 // Read -> Verify is a pipeline: each row verifies the moment its read returns, so a slow capability
 // never blocks a fast one.
 const CAPS = (args && args.capabilities) || []
@@ -31,10 +37,10 @@ log(`deep-grounding: ${CAPS.length} возможностей × (1 читате�
 const rows = await pipeline(CAPS,
   cap => agent(
     `Research whether the provider supports "${cap}". Cite an official-docs URL + exact quote, or mark unknown. Never guess: an absent source is "unknown", not "no". Sources: ${SOURCES}`,
-    { agentType: 'groundwork:grounded-researcher', schema: FINDING, phase: 'Read', label: `read:${cap}` }),
+    { agentType: 'groundwork:grounded-researcher', schema: FINDING, phase: 'Read', label: `read:${cap}`, effort: EFFORT.map }),
   finding => parallel(['docs-literal', 'edge-cases'].map(lens => () =>
       agent(`Adversarially refute this capability claim via the ${lens} lens; default REFUTED if evidence is absent: ${JSON.stringify(finding)}`,
-        { agentType: 'groundwork:adversarial-verifier', schema: VERDICT, phase: 'Verify', label: `verify:${finding.capability}` }))
+        { agentType: 'groundwork:adversarial-verifier', schema: VERDICT, phase: 'Verify', label: `verify:${finding.capability}`, effort: EFFORT.check }))
     .then(vs => ({ ...finding, verdicts: vs.filter(Boolean) })))
 )
 

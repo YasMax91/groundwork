@@ -45,7 +45,7 @@ Stay in **Discovery mode**: inspect and plan only, do not edit files until the p
    - **Surface blind spots** — after mapping couplings, walk the blind-spot taxonomy
      (`${CLAUDE_SKILL_DIR}/../../guidelines/blind-spot-protocol.md`): the dimensions the request omits —
      unintended consequences, missing requirements, domain/product angles the user is not the expert in.
-     For **L3/L4** spawn the `blind-spot-mapper` agent in a fresh context (optional at L2). Report a
+     For **L3/L4** spawn the `blind-spot-mapper` agent in a fresh context (optional at L2). Every agent spawned here gets the level's `effort` (`ai-sdd-process.md` §Fan-out by level). Report a
      **blind spots** block, separate from clarifications — material items only, ranked, or "none".
 5. **Consult the CRD** for business intent when the task touches domain/API/schema/permissions/
    financial behavior/notifications/reports/integrations/deployment.

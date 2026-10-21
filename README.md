@@ -400,6 +400,18 @@ Measured on otaje, 2026-10-06 – 10-21 (0.47.0): 30 Stop runs took 5+ minutes, 
 needed a whole run; 15 questions asked the owner to record a lane's pass by hand. The old selection on 81
 commits: median 62 of 849 files, p90 679 — see `docs/specs/wave-38-tests-by-what-changed.md` for the new one.
 
+## Models and effort — by the agent's role, by the task's level
+
+Each agent's file sets its model: `grounded-researcher` on Sonnet; the three checkers (`conformance-reviewer`,
+`adversarial-verifier`, `blind-spot-mapper`) on Opus whatever the session runs; `impact-mapper` stays on the
+session's model — on six otaje tasks Sonnet named 71 % of the files the Opus maps named (47 % on the deepest),
+against a 95 % bar. The task's level sets the effort: the skills pass it on every `Agent` call, the deep
+workflows take `args.level`, and the mod `hooks/effort.ts` sets it per request — the main conversation by the
+level the checkpoint states (L0 medium, L1-L2 high, L3 xhigh, L4 max; no open task: the menu's effort) and
+groundwork's agents by role and level. A change of effort keeps the prompt cache on the 5.5 models; the model
+is never switched. A line under the answer says when the effort changed. `.groundwork.json` `effort.by_level:
+false` turns the mod off; `effort.table.<main|mapping|checkers>.<L0..L4>` overrides a level.
+
 ## Parallel sessions — lanes
 
 `groundwork:lane` (`hooks/lane.py up`) turns a worktree into a lane: its own Compose project and
@@ -598,7 +610,7 @@ pack/             groundwork-pack — dependency-only bundle (this plugin + foll
 follow-through/   the project-agnostic plugin — hooks/ (stop_gate.py · guard.py · session_start.py · prompt_submit.py · post_tool.py · session_end.py · lanes.py · render_status.py · ft.py · tests/) · skills/status
 skills/           start-task · spec · implement-approved · lane · risk-review · final-check · estimate · ground-integration · frontend-handoff · install-portal · client-doc · openapi-audit · grill · init · deep-grounding · deep-discovery · deep-review
 agents/           impact-mapper · blind-spot-mapper · grounded-researcher · adversarial-verifier · conformance-reviewer
-hooks/            hooks.json · lib.sh (shared resolvers) · session-start.sh · pre-compact.sh · task-intent.sh · format-on-edit.sh · done-gate.sh · test-gate.sh · openapi-gate.sh · slice-gate.sh · coverage-claim.sh · plain-language.sh · defect-scan.sh · estimate-claim.sh · estimate-docs.py · estimate-ledger.sh · lane.py · lane-guard.py · lane-idle.py · in-cwd.sh · gw_tests.py · test-select.py · test-run.py · suite-record.py · push-gate.py · ledger-record.sh · agent-contract.sh · trim-output.sh · pre-tool-guard.sh · stdin-guard.sh · statusline.sh · tests/all.sh
+hooks/            hooks.json · lib.sh (shared resolvers) · session-start.sh · pre-compact.sh · task-intent.sh · format-on-edit.sh · done-gate.sh · test-gate.sh · openapi-gate.sh · slice-gate.sh · coverage-claim.sh · plain-language.sh · defect-scan.sh · estimate-claim.sh · estimate-docs.py · estimate-ledger.sh · lane.py · lane-guard.py · lane-idle.py · in-cwd.sh · effort.ts (mod) · gw_tests.py · test-select.py · test-run.py · suite-record.py · push-gate.py · ledger-record.sh · agent-contract.sh · trim-output.sh · pre-tool-guard.sh · stdin-guard.sh · statusline.sh · tests/all.sh
 workflows/        deep-review-run.js · deep-discovery-run.js · deep-grounding-run.js — the multi-agent orchestration, executed by the runtime
 guidelines/       ai-sdd-process · grounding-protocol · blind-spot-protocol · clarify-protocol · plain-language · openapi-protocol · laravel-standards · tdd-protocol · writing-standards · working-memory
 docs/             skill-hygiene (author-facing) · specs/

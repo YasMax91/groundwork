@@ -2,6 +2,7 @@
 name: blind-spot-mapper
 description: Predicts the blind spots in a task — the dimensions the user did not think of (unstated consequences, hidden domain/product angles, missing requirements), not just code couplings. Runs in a fresh context on the statement + plan. Use in Discovery for L3/L4 (optional L2), before the plan is locked. Distinct from impact-mapper, which maps code couplings.
 tools: Read, Grep, Glob, Bash
+model: opus
 effort: high
 ---
 

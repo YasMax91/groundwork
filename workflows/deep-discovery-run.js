@@ -8,6 +8,12 @@ export const meta = {
   ],
 }
 
+// Effort follows the task's level (guidelines/ai-sdd-process.md §Fan-out by level): mapping and research one
+// row, checkers the other. The agent files set the models.
+const LEVEL = String((args && args.level) || 'L3').toUpperCase()
+const EFFORT = { L2: { map: 'medium', check: 'high' }, L3: { map: 'high', check: 'xhigh' }, L4: { map: 'high', check: 'max' } }[LEVEL]
+  || { map: 'high', check: 'xhigh' }
+
 // The map stage is a genuine barrier: the dedup below needs every seed map at once. Edge
 // verification then fans out over the union.
 const SEEDS = (args && args.seeds) || []
@@ -30,10 +36,10 @@ phase('Map')
 const maps = await parallel([
   ...SEEDS.map(s => () => agent(
     `Map the FULL blast radius of seed "${s}" across the whole project — callers/consumers, events/listeners, observers, jobs, scheduled commands, policies/Gates, FK/cascades, the JsonResource shape and its API consumers, and covering tests. Flag dynamic edges grep cannot prove.`,
-    { agentType: 'groundwork:impact-mapper', schema: MAP, phase: 'Map', label: `map:${s}` })),
+    { agentType: 'groundwork:impact-mapper', schema: MAP, phase: 'Map', label: `map:${s}`, effort: EFFORT.map })),
   ...(INTEGRATION ? [() => agent(
     `Research the external integration touched by this change: ${INTEGRATION}. Cite official sources.`,
-    { agentType: 'groundwork:grounded-researcher', phase: 'Map', label: 'research' })] : []),
+    { agentType: 'groundwork:grounded-researcher', phase: 'Map', label: 'research', effort: EFFORT.map })] : []),
 ])
 
 phase('Verify edges')
@@ -49,7 +55,7 @@ if (edges.length > examined.length) {
 
 const checked = await parallel(examined.map(e => () => agent(
   `Confirm or refute this dynamic edge against the real code; cite file:line: ${JSON.stringify(e)}`,
-  { agentType: 'groundwork:adversarial-verifier', phase: 'Verify edges', label: 'edge' })))
+  { agentType: 'groundwork:adversarial-verifier', phase: 'Verify edges', label: 'edge', effort: EFFORT.check })))
 
 const hotspots = [...new Set(seedMaps.flatMap(m => m.hotspots || []))]
 const failedSeeds = SEEDS.length - seedMaps.length

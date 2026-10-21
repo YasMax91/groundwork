@@ -19,7 +19,7 @@ plausible-but-wrong noise.
 ## How to run
 
 1. Ensure there is a diff (`git diff`) and, if a spec exists, its acceptance-criterion IDs.
-2. Invoke the `Workflow` tool with `name: "groundwork:deep-review-run"`. Optional `args`: `scope` (what
+2. Invoke the `Workflow` tool with `name: "groundwork:deep-review-run"`. Optional `args`: `level` (`L3`/`L4`: each phase's effort follows it), `scope` (what
    to review, default the working diff) and `criteria` (where the acceptance-criterion IDs live). The
    script ships with the plugin — do **not** rewrite it inline; it holds the dimension list, the
    two-lens adversarial panel, and the conformance pass, and it logs its own fan-out.

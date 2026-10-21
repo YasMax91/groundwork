@@ -9,6 +9,12 @@ export const meta = {
   ],
 }
 
+// Effort follows the task's level (guidelines/ai-sdd-process.md §Fan-out by level): mapping and research one
+// row, checkers the other. The agent files set the models.
+const LEVEL = String((args && args.level) || 'L3').toUpperCase()
+const EFFORT = { L2: { map: 'medium', check: 'high' }, L3: { map: 'high', check: 'xhigh' }, L4: { map: 'high', check: 'max' } }[LEVEL]
+  || { map: 'high', check: 'xhigh' }
+
 // Each dimension is a pipeline: find -> verify as soon as THAT dimension's findings land. No barrier
 // between dimensions, so a slow dimension never holds up verification of a fast one.
 const DIMENSIONS = [
@@ -38,11 +44,11 @@ log(`deep-review: ${DIMENSIONS.length} измерений риска по диф
 const results = await pipeline(DIMENSIONS,
   d => agent(
     `Review ${scope} for the ${d.key} risk: ${d.prompt}. Report concrete findings with file:line, or none.`,
-    { schema: FINDING, phase: 'Find', label: `find:${d.key}` }),
+    { schema: FINDING, phase: 'Find', label: `find:${d.key}`, effort: EFFORT.check }),
   review => parallel(((review && review.findings) || []).map(f => () =>
     parallel(['exploit-path', 'false-alarm'].map(lens => () =>
       agent(`Adversarially verify this risk via the ${lens} lens — is it REAL or a false alarm? Cite evidence: ${JSON.stringify(f)}`,
-        { agentType: 'groundwork:adversarial-verifier', schema: VERDICT, phase: 'Verify', label: `verify:${review.dimension}` })))
+        { agentType: 'groundwork:adversarial-verifier', schema: VERDICT, phase: 'Verify', label: `verify:${review.dimension}`, effort: EFFORT.check })))
       .then(vs => ({ ...f, dimension: review.dimension, verdicts: vs.filter(Boolean),
         real: vs.filter(Boolean).some(v => v.real) }))))
 )
@@ -50,7 +56,7 @@ const results = await pipeline(DIMENSIONS,
 phase('Conform')
 const conformance = await agent(
   `Judge ${scope} against ${criteria}. Report only correctness/requirement gaps, each with file:line + the unmet AC ID. A verification claim carrying no denominator is itself a gap.`,
-  { agentType: 'groundwork:conformance-reviewer', phase: 'Conform', label: 'conformance' })
+  { agentType: 'groundwork:conformance-reviewer', phase: 'Conform', label: 'conformance', effort: EFFORT.check })
 
 const all = results.flat().filter(Boolean)
 const confirmed = all.filter(f => f.real)

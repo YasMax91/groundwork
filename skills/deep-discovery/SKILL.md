@@ -23,7 +23,7 @@ tables). It maps each seed in parallel and consolidates one blast radius, instea
 
 1. List the seeds (models, services, tables, symbols) and pick a `<slug>` from the primary seed.
 2. Invoke the `Workflow` tool with `name: "groundwork:deep-discovery-run"` and
-   `args: { seeds: [...], integration: "<provider or null>" }`. The shipped script fans out one
+   `args: { seeds: [...], integration: "<provider or null>", level: "L3" | "L4" }`. The shipped script fans out one
    `impact-mapper` per seed (plus a `grounded-researcher` when an external API is involved), dedups into
    one blast radius with ranked hotspots, then verifies the dynamic edges. Do **not** rewrite it inline.
    It refuses to run without `seeds`, and it logs both the seed count and any edges left unchecked.

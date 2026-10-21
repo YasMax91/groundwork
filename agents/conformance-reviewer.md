@@ -2,6 +2,7 @@
 name: conformance-reviewer
 description: Judges a diff against the approved spec's acceptance criteria in a fresh context — does the implementation satisfy each criterion? Reports only correctness/requirement gaps, never style. Use in Review / final-check for L2+ before handoff. Distinct from adversarial-verifier, which challenges "it works" claims.
 tools: Read, Grep, Glob, Bash
+model: opus
 effort: high
 ---
 
