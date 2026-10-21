@@ -17,8 +17,9 @@ the main dev DB. A lane gets:
   * `vendor/` and `node_modules/` cloned from the main checkout (copy-on-write on APFS);
   * its dev database CLONED from the main checkout's, its test database empty — on the same server when
     the project uses an external one (shared-mysql), or in its own DB container otherwise;
-  * the stack started, the lane's migrations applied to the clone, `public/storage` linked, and
-    `.claude/lane.json` written so sibling sessions (follow-through) know which containers are this lane's.
+  * the stack started, the lane's migrations applied to the clone, `public/storage` linked, the OpenAPI
+    document generated, and `.claude/lane.json` written so sibling sessions (follow-through) know which
+    containers are this lane's.
 
 Every step prints what it did; a step that cannot run says why and the lane continues where it can. A lane
 whose stack did not start ends on "lane NOT ready" and exit status 1.
@@ -378,6 +379,50 @@ def link_storage(lane, sail, env):
         out.strip()[-600:]))
 
 
+def generate_openapi(lane, sail, env):
+    """The OpenAPI document is usually git-ignored (storage/api-docs in 6 of the 7 projects with l5-swagger,
+    2026-10-21), so a new lane had none and every contract test failed on «Generate the spec first»: 91 failures
+    and 4 errors in an otaje lane, 59 on 2026-10-13. The project's `commands.openapi_generate` runs, else
+    l5-swagger's own command where it is installed. A committed file the command rewrites is put back — as
+    committed, or as the lane had it — so the step never changes the lane's tracked tree."""
+    try:
+        cmd = (json.load(open(os.path.join(lane, ".groundwork.json"), encoding="utf-8")).get("commands") or {}).get("openapi_generate")
+    except Exception:
+        cmd = None
+    if not cmd and not os.path.isdir(os.path.join(lane, "vendor", "darkaonline", "l5-swagger")):
+        return
+
+    def changed():   # tracked files that differ from the index
+        return [p for p in (stdout_of(["git", "-C", lane, "diff", "--name-only", "-z"], timeout=20) or "").split("\0") if p]
+
+    def content(path):
+        try:
+            return open(os.path.join(lane, path), "rb").read()
+        except OSError:
+            return None
+
+    before = {p: content(p) for p in changed()}
+    code, out = run(cmd, cwd=lane, env=env, shell=True, timeout=600) if cmd else \
+        run([sail, "artisan", "l5-swagger:generate"], cwd=lane, env=env, timeout=600)
+    kept = []
+    for path in sorted(set(changed()) | set(before)):
+        if path not in before:
+            run(["git", "-C", lane, "checkout", "--", path], timeout=20)
+        elif content(path) == before[path]:
+            continue
+        elif before[path] is None:
+            os.remove(os.path.join(lane, path))
+        else:
+            with open(os.path.join(lane, path), "wb") as fh:
+                fh.write(before[path])
+        kept.append(path)
+    how = cmd or "artisan l5-swagger:generate — no commands.openapi_generate"
+    say("OpenAPI document %s (%s)%s" % (
+        "generated" if code == 0 else "NOT generated", how,
+        ("; %s kept as it was — the command rewrote %s" % (", ".join(kept), "it" if len(kept) == 1 else "them")) if kept else "")
+        + ("" if code == 0 else ":\n" + out.strip()[-800:]))
+
+
 def up(refresh_data=False, full=False, own_subnet=False):
     lane, main = contexts(os.getcwd())
     slug = lane_slug(lane)
@@ -594,6 +639,7 @@ def up(refresh_data=False, full=False, own_subnet=False):
 
     if not problem:
         link_storage(lane, sail, env)
+        generate_openapi(lane, sail, env)
 
     code, out = run(["docker", "compose", "ps", "--format", "{{.Name}}"], cwd=lane, env=env, timeout=30)
     containers = [l.strip() for l in out.splitlines() if l.strip()] if code == 0 else []

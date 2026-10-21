@@ -74,6 +74,14 @@
   that did not start skips the migrations and ends on `lane NOT ready`, exit 1. `docker compose config
   --services` is read from stdout alone: a Compose warning on stderr had reached `sail up -d` as one more
   service whenever workers were left out.
+- **GW36-AC8** (v0.49.2, 2026-10-21) `lane.py up` generates the OpenAPI document once the stack is up: the
+  project's `commands.openapi_generate`, else `artisan l5-swagger:generate` where l5-swagger is installed (2 of
+  the owner's projects have it and name no command). `storage/api-docs` is git-ignored in 6 of the 7 projects
+  with l5-swagger, so a new otaje lane had no document: its first `test-run.py --for-push` gave 91 failures and
+  4 errors in 23 files, every one «Generate the spec first»; after `l5-swagger:generate` the same code gave
+  6088 green (status E6 of 2026-10-13: 59 red for the same cause). One project commits the document
+  (budget-hub-api): a committed file the command rewrites is put back — as committed, or as the lane had it
+  when it carried an edit — so the step never changes the lane's tracked tree.
 - **docker-proxy** (e20472b, local repository): `--skip-log-bin`, `--innodb-flush-log-at-trx-commit=2`;
   restarted after three idle samples in a row.
 
@@ -98,5 +106,10 @@
   clean. The diagnosis read against the real host: no idle Compose network, `otaje_sweeta204` held by stopped
   containers only, `traefik-network` not named. Not reproduced: the used-up pools themselves — the regex
   matches Docker's message as the otaje session reported it.
+- **v0.49.2:** `lane.sh` 92 of 92; four mutations of the OpenAPI step — the call dropped, the put-back undone,
+  the put-back driven by the diff alone, the l5-swagger fallback dropped — each fail at least one case. CI on
+  0.49.1 (run 39620760355): `lane` 82 of 82 on ubuntu-latest and macos-latest; the ubuntu job stays red on
+  `scope` alone, as it has since v0.48.0. The generate command itself was not run in a real lane here; the
+  otaje session ran it by hand in its lane (6088 green after).
 - Not measured: the memory saved on the host after the running lanes are restarted — they keep their
   current containers until their sessions close or `lane.py up` runs again.

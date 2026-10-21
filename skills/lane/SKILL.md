@@ -39,6 +39,10 @@ dev database — that is how a lane ended up testing another session's code (ota
    - A new worktree has no `public/storage` (git-ignored): once the stack is up, `up` links it with
      `artisan storage:link --relative` — relative, so it resolves on the host as well as in the
      container — or from the host when artisan cannot.
+   - Nor its generated OpenAPI document (`storage/api-docs`, git-ignored in most projects), without
+     which every contract test fails: once the stack is up, `up` runs `commands.openapi_generate`, or
+     `artisan l5-swagger:generate` where l5-swagger is installed and no command is named. A committed
+     file the command rewrites is put back as it was.
 3. **Open the lane** at the domain the script printed and log in with the project's `dev_login`.
 4. **Fresh data on request:** `lane.py up --refresh-data` re-clones the dev database from the main
    checkout and re-applies this branch's migrations.

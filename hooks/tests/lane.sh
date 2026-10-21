@@ -147,9 +147,10 @@ esac
 SH
 D="$ROOT/deli"; mkdir -p "$D"
 ( cd "$D" && git init -q && git config user.email t@t && git config user.name t
-  printf '{}\n' > .groundwork.json
-  printf '/vendor\n/public/storage\n.env\n' > .gitignore
-  mkdir -p public storage/app/public && printf '<?php\n' > public/index.php && printf '*\n!.gitignore\n' > storage/app/public/.gitignore
+  printf '{"commands":{"openapi_generate":"./vendor/bin/sail artisan l5-swagger:generate"}}\n' > .groundwork.json
+  printf '/vendor\n/public/storage\n/storage/api-docs\n.env\n' > .gitignore
+  mkdir -p public storage/app/public docs && printf '<?php\n' > public/index.php && printf '*\n!.gitignore\n' > storage/app/public/.gitignore
+  printf '{"committed": true}\n' > docs/openapi.json
   printf 'services:\n    laravel.test:\n        image: sail-8.4/app\n        networks: [sail, traefik]\nnetworks:\n    sail:\n        driver: bridge\n    traefik:\n        external: true\n        name: traefik-network\n' > docker-compose.yml
   git add -A && git commit -qm init
   git worktree add -q "$D/.claude/worktrees/brave-curie-c0ffee" -b claude/brave
@@ -169,6 +170,11 @@ case "$1 ${2:-}" in
   "artisan storage:link")
     if [ -f "$F/no-symfony-filesystem" ]; then echo 'RuntimeException  To enable support for relative links, please install the symfony/filesystem package.'; exit 1; fi
     ln -s ../storage/app/public/ public/storage && echo 'INFO  The [public/storage] link has been connected to [storage/app/public].' ;;
+  "artisan l5-swagger:generate")
+    if [ -f "$F/generator-fails" ]; then echo 'Required @OA\Info() not found'; exit 1; fi
+    [ -f "$F/generator-rewrites-tracked" ] && printf '{"regenerated": true}\n' > docs/openapi.json
+    [ -f "$F/generator-writes-committed" ] && printf '{"committed": true}\n' > docs/openapi.json
+    mkdir -p storage/api-docs && printf '{"openapi": "3.0.0"}\n' > storage/api-docs/api-docs.json && echo 'Regenerating docs default' ;;
 esac
 SH
 chmod +x "$ROOT/bin/docker" "$D/vendor/bin/sail"
@@ -206,6 +212,7 @@ grep -q 'lane.py up --own-subnet' "$ROOT/deli1.log"; eq "…offers a subnet of i
 grep -q 'migrations: not run — the stack is not up' "$ROOT/deli1.log"; eq "…no migrations on a stack that is down" 0 $?
 grep -q 'artisan migrate' "$DL"; eq "…so no 'Sail is not running'" 1 $?
 grep -q 'storage:link' "$DL"; eq "…no storage link without a stack" 1 $?
+grep -q 'l5-swagger' "$DL"; eq "…no OpenAPI document without a stack" 1 $?
 grep -q 'lane NOT ready: deli-bravec0ff.localhost' "$ROOT/deli1.log"; eq "…ends on lane NOT ready" 0 $?
 grep -q 'lane ready' "$ROOT/deli1.log"; eq "…never lane ready" 1 $?
 [ ! -e "$DW/.claude/lane-compose.yml" ] && [ -z "$(val "$DW/.env" COMPOSE_FILE)" ]; eq "…no subnet of its own unasked" 0 $?
@@ -223,9 +230,15 @@ grep -q 'artisan migrate --force' "$DL"; eq "…migrations run once the stack is
 case "$(readlink "$DW/public/storage")" in ../*) r=0 ;; *) r=1 ;; esac; eq "…a relative link" 0 $r
 grep -q 'artisan storage:link --relative' "$DL"; eq "…made by artisan storage:link --relative" 0 $?
 grep -q 'public/storage linked to storage/app/public, relative (artisan' "$ROOT/deli2.log"; eq "…and the step is printed" 0 $?
+[ -f "$DW/storage/api-docs/api-docs.json" ]; eq "openapi: the lane has its document" 0 $?
+grep -q 'OpenAPI document generated (./vendor/bin/sail artisan l5-swagger:generate)$' "$ROOT/deli2.log"; eq "…by commands.openapi_generate, printed" 0 $?
 
 before="$(grep -v '^#' "$DW/.claude/lane-compose.yml")"
+touch "$FAKE/generator-fails"
 lane_up "$DW" "$ROOT/deli3.log"; eq "re-run: up exits 0"                      0 $?
+grep -q 'OpenAPI document NOT generated' "$ROOT/deli3.log" && grep -q 'Required @OA.Info() not found' "$ROOT/deli3.log"
+eq "openapi: a failed generation is shown" 0 $?
+rm "$FAKE/generator-fails"
 eq "re-run keeps the lane's subnet" "$before" "$(grep -v '^#' "$DW/.claude/lane-compose.yml")"
 eq "re-run keeps COMPOSE_FILE" "docker-compose.yml:.claude/lane-compose.yml" "$(val "$DW/.env" COMPOSE_FILE)"
 eq "re-run links storage only once" 1 "$(grep -c 'storage:link' "$DL")"
@@ -243,9 +256,11 @@ lane_up "$DW" "$ROOT/deli3c.log"; eq "held subnet taken by another: up exits 0" 
 moved="$(lane_subnet "$DW")"; [ "$moved" != "$K" ] && in_free_range "$moved"; eq "…moves to a free /24" 0 $?
 grep -q "sail moved off $K, which another network uses now" "$ROOT/deli3c.log"; eq "…and says so" 0 $?
 
-rm "$FAKE/pools-used-up"; touch "$FAKE/no-symfony-filesystem"
+rm "$FAKE/pools-used-up"; touch "$FAKE/no-symfony-filesystem" "$FAKE/generator-rewrites-tracked"
 DW2="$D/.claude/worktrees/calm-noether-d00d"
 lane_up "$DW2" "$ROOT/deli4.log"; eq "fresh lane: up exits 0"                 0 $?
+eq "openapi: a committed file it rewrites is put back" "" "$(git -C "$DW2" status --porcelain --untracked-files=no)"
+grep -q 'docs/openapi.json kept as it was — the command rewrote it' "$ROOT/deli4.log"; eq "…and says so" 0 $?
 [ -L "$DW2/public/storage" ] && [ -d "$DW2/public/storage" ]; eq "storage: linked from the host when artisan cannot" 0 $?
 grep -q 'relative, from the host — artisan storage:link --relative failed' "$ROOT/deli4.log"; eq "…and says so" 0 $?
 [ -z "$(val "$DW2/.env" COMPOSE_FILE)" ] && [ ! -e "$DW2/.claude/lane-compose.yml" ]; eq "…no subnet of its own unasked" 0 $?
@@ -254,13 +269,24 @@ lane_up "$DW2" "$ROOT/deli5.log"; eq "other start error: up exits 1"           1
 grep -q 'ports are not available' "$ROOT/deli5.log" && grep -q 'lane NOT ready' "$ROOT/deli5.log"; eq "…shows it and is NOT ready" 0 $?
 grep -q 'address range' "$ROOT/deli5.log"; eq "…not taken for used-up pools" 1 $?
 rm "$FAKE/port-taken"
+printf '{"wip": true}\n' > "$DW2/docs/openapi.json"
+lane_up "$DW2" "$ROOT/deli5b.log"; eq "openapi over work in progress: up exits 0" 0 $?
+eq "…the lane's own edit survives" '{"wip": true}' "$(cat "$DW2/docs/openapi.json")"
+rm "$FAKE/generator-rewrites-tracked"; touch "$FAKE/generator-writes-committed"   # no diff left to see it by
+lane_up "$DW2" "$ROOT/deli5c.log"
+eq "…even rewritten to the committed text" '{"wip": true}' "$(cat "$DW2/docs/openapi.json")"
+git -C "$DW2" checkout -q -- docs/openapi.json; rm "$FAKE/generator-writes-committed"
 
-# Sail turns SAIL_FILES into -f flags, which outrank COMPOSE_FILE: the lane's file joins them.
+# Sail turns SAIL_FILES into -f flags, which outrank COMPOSE_FILE: the lane's file joins them. This lane's
+# .groundwork.json names no generate command, and l5-swagger is installed: its own command runs.
 printf 'SAIL_FILES=docker-compose.yml\n' >> "$D/.env"
-DW3="$D/.claude/worktrees/eager-sails-e1e1"
+mkdir -p "$D/vendor/darkaonline/l5-swagger"
+DW3="$D/.claude/worktrees/eager-sails-e1e1"; printf '{}\n' > "$DW3/.groundwork.json"
 lane_up "$DW3" "$ROOT/deli6.log" --own-subnet; eq "SAIL_FILES: up exits 0"   0 $?
 eq "…the lane's file joins SAIL_FILES" "docker-compose.yml:.claude/lane-compose.yml" "$(val "$DW3/.env" SAIL_FILES)"
 eq "…and COMPOSE_FILE" "docker-compose.yml:.claude/lane-compose.yml" "$(val "$DW3/.env" COMPOSE_FILE)"
+[ -f "$DW3/storage/api-docs/api-docs.json" ] && grep -q 'OpenAPI document generated (artisan l5-swagger:generate — no commands.openapi_generate)' "$ROOT/deli6.log"
+eq "openapi: l5-swagger's own command without one" 0 $?
 
 # --- opt-out -------------------------------------------------------------------------------------
 printf '{"gates":{"lane_guard":false}}\n' > "$W/.groundwork.json"
