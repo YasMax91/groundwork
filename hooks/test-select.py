@@ -1,102 +1,72 @@
 #!/usr/bin/env python3
-"""Groundwork plugin :: which tests does this change touch? (wave 37)
+"""Groundwork plugin :: which tests does this change touch? (waves 37-38)
 
-    python3 test-select.py [--base <ref>]        prints one test file per line, then exits 0
+    python3 test-select.py [--base <ref>]          the close circle, one test file per line
+    python3 test-select.py --json [--base <ref>]   {"close", "wide", "shared", "why"} for the working change
+    python3 test-select.py --json --from <tree> --to <tree>    the same for the change between two trees
+    python3 test-select.py --plan-stop             what the Stop gate runs now, as JSON (see plan_stop)
 
-The Stop gate used to run the whole suite whenever PHP had changed since the last push: in otaje that was
-79 runs in a week, 383 minutes of waiting, a median of 5.4 minutes each — for changes whose own tests were
-a handful of files (median 2 of 647 over the last commits). The whole suite now runs once, before a push
-to a shared branch (push-gate.py); while working, the gate runs what this script selects:
-
-  * every changed test file;
-  * tests that name a changed class (its basename as a word);
-  * for a migration — tests that name the tables it creates or alters;
-  * for config/<name>.php — tests that read `<name>.` keys;
-  * for a routes file — tests that name its route names or URIs.
-
-"Changed" = uncommitted, untracked, and committed-but-not-pushed (the same set the gates use), so a task's
-own work stays covered until it is pushed. Nothing selectable → nothing printed, and the gate says so.
+The rules live in gw_tests.py. "The working change" = uncommitted, untracked, and committed-but-unpushed
+(against the upstream's merge base), so a task's own work stays covered until it is pushed.
+Nothing selectable -> nothing printed; any error -> nothing printed, exit 0 (the gate then says so).
 """
 
+import json
 import os
-import re
-import subprocess
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import gw_tests as gw  # noqa: E402
 
-def git(*args):
+
+def arg(name, args):
+    return args[args.index(name) + 1] if name in args and args.index(name) + 1 < len(args) else None
+
+
+def plan_stop(top, cfg):
+    """The close circle minus what already passed on this exact code, cut to the budget by recorded time.
+
+    The budget exists because the 0.47.0 gate ran whatever it selected: in otaje 30 Stop runs took 5+
+    minutes and 12 hit the 10-minute hook limit with nothing verified. What does not fit is named and left
+    to the push check, which runs close + wide before code reaches a shared branch.
+    """
+    sel = gw.select(gw.WorkingTree(top))
+    tree = gw.worktree_tree(top)
+    green = gw.passed_files(tree, top)
+    todo = [t for t in sel["close"] if t not in green]
     try:
-        r = subprocess.run(["git"] + list(args), capture_output=True, text=True, timeout=20)
-        return r.stdout if r.returncode == 0 else ""
+        budget = float(gw.gates(cfg).get("test_budget_seconds") or 180)
     except Exception:
-        return ""
-
-
-def changed_files(base=None):
-    files = set(git("diff", "--name-only", "HEAD").split())
-    files |= set(git("ls-files", "--others", "--exclude-standard").split())
-    upstream = base or git("rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}").strip()
-    if upstream:
-        files |= set(git("diff", "--name-only", "%s...HEAD" % upstream).split())
-    return sorted(f for f in files if os.path.isfile(f))
-
-
-def read(path):
-    try:
-        with open(path, encoding="utf-8", errors="ignore") as fh:
-            return fh.read()
-    except Exception:
-        return ""
-
-
-def test_files():
-    out = []
-    for root, _, names in os.walk("tests"):
-        for n in names:
-            if n.endswith("Test.php"):
-                out.append(os.path.join(root, n))
-    return sorted(out)
-
-
-def needles_for(path):
-    """Words a test would contain if it exercised `path`."""
-    text = read(path)
-    words = set()
-    if path.startswith("database/migrations/"):
-        words |= set(re.findall(r"Schema::(?:create|table|rename|dropIfExists|drop)\(\s*['\"]([a-z0-9_]+)['\"]", text))
-    elif path.startswith("config/") and path.endswith(".php"):
-        words.add(os.path.basename(path)[:-4] + ".")
-    elif path.startswith("routes/"):
-        words |= set(re.findall(r"->name\(\s*['\"]([\w.-]+)['\"]", text))
-        words |= {u.strip("/") for u in re.findall(r"Route::\w+\(\s*['\"](/?[\w/{}-]{4,})['\"]", text) if "{" not in u}
-    elif path.endswith(".php"):
-        words.add(os.path.basename(path)[:-4])
-    return {w for w in words if len(w) >= 3}
-
-
-def select(files):
-    tests = test_files()
-    chosen = {f for f in files if f.startswith("tests/") and f.endswith("Test.php")}
-    needles = set()
-    for f in files:
-        if not f.startswith("tests/"):
-            needles |= needles_for(f)
-    if not needles:
-        return sorted(chosen)
-    patterns = [re.compile(r"(?<![\w$])%s(?![\w])" % re.escape(n)) if not n.endswith(".") else re.compile(re.escape(n))
-                for n in needles]
-    for t in tests:
-        body = read(t)
-        if any(p.search(body) for p in patterns):
-            chosen.add(t)
-    return sorted(chosen)
+        budget = 180.0
+    known = gw.durations(top)
+    run, spent = [], 0.0
+    for t in todo:
+        cost = float(known.get(t, 1.5))
+        if run and spent + cost > budget:
+            break
+        run.append(t)
+        spent += cost
+    return {"run": run, "deferred": todo[len(run):], "green": len(sel["close"]) - len(todo),
+            "close": len(sel["close"]), "wide": len(sel["wide"]), "shared": sel["shared"],
+            "estimate": round(spent), "budget": budget, "tree": tree}
 
 
 def main():
     args = sys.argv[1:]
-    base = args[args.index("--base") + 1] if "--base" in args and args.index("--base") + 1 < len(args) else None
-    for f in select(changed_files(base)):
-        print(f)
+    top = gw.toplevel() or os.getcwd()
+    if "--plan-stop" in args:
+        print(json.dumps(plan_stop(top, gw.config(top))))
+        return
+    if "--from" in args and "--to" in args:
+        src = gw.TreeDiff(top, arg("--from", args), arg("--to", args))
+    else:
+        src = gw.WorkingTree(top, arg("--base", args))
+    sel = gw.select(src)
+    if "--json" in args:
+        print(json.dumps(sel))
+    else:
+        for f in sel["close"]:
+            print(f)
 
 
 if __name__ == "__main__":

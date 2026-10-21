@@ -1,32 +1,32 @@
 #!/usr/bin/env python3
-"""Groundwork plugin :: PreToolUse(Bash) — the whole suite, once, before code reaches a shared branch (wave 37).
+"""Groundwork plugin :: PreToolUse(Bash) — what must be green before code reaches a shared branch (waves 37-38).
 
-No project's CI runs the tests, so a push to a shared branch is the last moment anything checks the whole
-suite. While working, the Stop gate runs only the tests that touch the change (test-select.py). This hook
-refuses `git push` to a shared branch — `gates.shared_branches`, default development / main / master /
-staging / production — and `gh pr merge`, until the commit being pushed has a green whole-suite run
-recorded for its exact tree (suite-record.py). A run recorded on the working tree counts for the commit
-made from it. A push of a feature branch is never stopped.
+No project's CI runs the tests, so a push to a shared branch (`gates.shared_branches`, default development /
+develop / main / master / staging / production) is the last moment anything checks them. A feature-branch
+push is never stopped.
 
-Inert outside a Groundwork project, without a runnable `commands.test`, under
-`gates.full_suite_before_push: false`, and on any error.
+`gates.full_suite_before_push`:
+  "when-needed" (default) — the pushed code must rest on a *verified* tree: one with a green whole run, or
+      one this check accepted, whose chain starts from a whole run at most `gates.full_suite_max_age_hours`
+      (default 24) old. From the closest such tree, the change may not touch a shared file (dependencies,
+      test bootstrap, providers, middleware, a destructive migration — gw_tests.is_shared), and the close
+      and wide tests of that change must be green on this exact code. A change no test reads needs no run.
+  "always" — the 0.47.0 rule: a green whole run on this exact tree.
+  false — off.
+
+Measured before this rule (otaje, 2026-10-06 .. 10-21): 51 whole-suite episodes, ~1049 minutes, median 17;
+96 of 180 commits on development changed only documents and still needed a whole run each.
+The denial names one command, test-run.py --for-push, which runs exactly what is missing and records it.
+Inert outside a Groundwork project and on any error.
 """
 
 import json
 import os
 import re
-import subprocess
 import sys
 
-DEFAULT_SHARED = ["development", "develop", "main", "master", "staging", "production"]
-
-
-def git(cwd, *args):
-    try:
-        r = subprocess.run(["git", "-C", cwd] + list(args), capture_output=True, text=True, timeout=20)
-        return r.stdout.strip() if r.returncode == 0 else ""
-    except Exception:
-        return ""
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import gw_tests as gw  # noqa: E402
 
 
 def pushed_refs(cmd, cwd):
@@ -39,7 +39,7 @@ def pushed_refs(cmd, cwd):
         args = [w for w in words[words.index("push") + 1:] if not w.startswith("-")]
         specs = args[1:] if args else []
         if not specs:
-            branch = git(cwd, "branch", "--show-current")
+            branch = gw.git("branch", "--show-current", cwd=cwd).strip()
             if branch:
                 out.append(("HEAD", branch))
             continue
@@ -62,40 +62,46 @@ def main():
     if "push" not in cmd and "pr merge" not in cmd:
         return
     cwd = payload.get("cwd") or os.getcwd()
-    top = git(cwd, "rev-parse", "--show-toplevel")
-    if not top:
+    top = gw.toplevel(cwd)
+    if not top or not os.path.isfile(os.path.join(top, ".groundwork.json")):
         return
-    try:
-        cfg = json.load(open(os.path.join(top, ".groundwork.json"), encoding="utf-8"))
-    except Exception:
+    cfg = gw.config(top)
+    if gw.push_mode(cfg) == "off":
         return
-    gates = cfg.get("gates") or {}
-    if gates.get("full_suite_before_push") is False or gates.get("test_on_stop") is False:
-        return
-    shared = gates.get("shared_branches") or DEFAULT_SHARED
+    shared = gw.gates(cfg).get("shared_branches") or gw.SHARED_BRANCHES
     cmds = cfg.get("commands") or {}
-    test_cmd = cmds.get("test_full") or cmds.get("test") or "./vendor/bin/sail artisan test"
+    whole_cmd = cmds.get("test_full") or cmds.get("test") or "./vendor/bin/sail artisan test"
 
-    targets = [(src, dst) for src, dst in pushed_refs(cmd, cwd) if dst in shared]
+    targets = [(src, dst) for src, dst in pushed_refs(cmd, top) if dst in shared]
     if re.search(r"\bgh\s+pr\s+merge\b", cmd):
         targets.append(("HEAD", "the pull request's base"))
     if not targets:
         return
-    rec = os.path.join(os.path.dirname(os.path.abspath(__file__)), "suite-record.py")
-    missing = []
+    runner = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test-run.py")
+    problems = []
     for src, dst in targets:
-        r = subprocess.run([sys.executable, rec, "--check", src], cwd=top, capture_output=True, text=True, timeout=60)
-        if r.returncode != 0:
-            missing.append("%s → %s" % (src, dst))
-    if not missing:
+        tree = gw.ref_tree(src, top)
+        if not tree:
+            continue
+        need = gw.requirement(tree, cfg, top)
+        if need["ok"]:
+            if need["kind"] == "files":
+                gw.record_verified(tree, need["root_time"], need["base"], "delta", top)
+            continue
+        if need["kind"] == "whole":
+            what = "the whole suite (%s; it runs `%s`)" % (need["reason"], whole_cmd)
+        else:
+            what = "%s: %s" % (need["reason"], ", ".join(need["files"][:5]) + (" …" if len(need["files"]) > 5 else ""))
+        problems.append("%s → %s needs %s. Run `python3 \"%s\" --for-push %s` with run_in_background: true, "
+                        "wait for its notification, then push again" % (src, dst, what, runner, src))
+    if not problems:
         return
     print(json.dumps({"hookSpecificOutput": {
         "hookEventName": "PreToolUse", "permissionDecision": "deny",
-        "permissionDecisionReason": (
-            "groundwork push-gate: %s goes to a shared branch and this exact code has no green run of the whole "
-            "suite. Run it once — `%s` (no paths, no --filter) — then push again; the pass is recorded by the "
-            "tree, so committing the same content afterwards still counts. A feature-branch push needs no full "
-            "run. (gates.full_suite_before_push=false turns this off.)" % (", ".join(missing), test_cmd))
+        "permissionDecisionReason": "groundwork push-gate: " + " | ".join(problems) +
+            ". The runner records what passed by the exact code, so a commit of the same content still counts. "
+            "A feature-branch push needs nothing. (gates.full_suite_before_push: \"always\" demands the whole "
+            "suite on every push; false turns this off.)"
     }}, ensure_ascii=False))
 
 

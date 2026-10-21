@@ -1,78 +1,67 @@
 #!/usr/bin/env python3
-"""Groundwork plugin :: remember a green whole-suite run, keyed by the exact code it ran on (wave 37).
+"""Groundwork plugin :: remember what a test run proved, keyed by the exact code it ran on (waves 37-38).
 
-    suite-record.py --record      record the current working tree as passed
-    suite-record.py --check REF   exit 0 when REF's tree (or the working tree for "WORKTREE") has a pass
+    suite-record.py --record                       the working tree passed the whole suite
+    suite-record.py --check REF                    exit 0 when REF's tree (or "WORKTREE") has a whole pass
+    suite-record.py --record-run --status N [--junit PATH]   test files on stdin: record the green ones
+    (no arguments)                                 PostToolUse(Bash): read what an agent's own run proved
 
-The key is a git tree id: for the working tree it is built in a throwaway index (`git add -A` respects
-.gitignore), so committing the same content later yields the same id and the pass still counts. Records
-live in `<git-common-dir>/groundwork/suite-passes/`, shared by every worktree of the repository.
-Also a PostToolUse(Bash) hook: an agent's own whole-suite run (`artisan test` / `composer test` with no
-paths or --filter) that printed a summary with no failures is recorded too, so the gate never repeats it.
+The key is a git tree id built from the working tree (gw_tests.worktree_tree): committing the same content
+later yields the same id, and a lane's skip-worktree phpunit.xml takes the committed version, so a green run
+in a lane counts for the commit made from it.
+
+An agent's whole-suite run (`artisan test` / `composer test`, no paths, no filter) with a summary and no
+failures is a whole pass. An agent's run of named test files or folders with a green summary records those
+files as passed on this code, so neither the Stop gate nor the push check repeats them. `--filter` runs are
+never recorded: which files they covered is not knowable from the command.
 """
 
 import json
 import os
 import re
-import subprocess
 import sys
-import tempfile
-import time
 
-
-def git(*args, env=None):
-    try:
-        r = subprocess.run(["git"] + list(args), capture_output=True, text=True, timeout=60, env=env)
-        return r.stdout.strip() if r.returncode == 0 else ""
-    except Exception:
-        return ""
-
-
-def worktree_tree():
-    top = git("rev-parse", "--show-toplevel")
-    if not top:
-        return ""
-    fd, idx = tempfile.mkstemp(prefix="gw-index-")
-    os.close(fd)
-    os.unlink(idx)
-    env = dict(os.environ, GIT_INDEX_FILE=idx)
-    try:
-        if git("read-tree", "HEAD", env=env) is None:
-            return ""
-        git("-C", top, "add", "-A", env=env)
-        return git("write-tree", env=env)
-    finally:
-        try:
-            os.unlink(idx)
-        except Exception:
-            pass
-
-
-def store():
-    common = git("rev-parse", "--path-format=absolute", "--git-common-dir")
-    if not common:
-        return ""
-    d = os.path.join(common, "groundwork", "suite-passes")
-    os.makedirs(d, exist_ok=True)
-    return d
-
-
-def record():
-    tree, d = worktree_tree(), store()
-    if tree and d:
-        with open(os.path.join(d, tree), "w") as fh:
-            json.dump({"time": int(time.time()), "head": git("rev-parse", "HEAD")}, fh)
-    return tree
-
-
-def has_pass(ref):
-    tree = worktree_tree() if ref == "WORKTREE" else git("rev-parse", "%s^{tree}" % ref)
-    d = store()
-    return bool(tree and d and os.path.isfile(os.path.join(d, tree))), tree
-
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import gw_tests as gw  # noqa: E402
 
 FULL = re.compile(r"(artisan\s+test|composer\s+(run\s+)?test)(?![^\n;&|]*(--filter|--group|--testsuite|tests/|\.php\b))")
-SUMMARY = re.compile(r"Tests:\s+.*\bpassed\b")
+TARGETED = re.compile(r"(artisan\s+test|vendor/bin/(?:phpunit|pest|paratest))\b([^\n;&|>]*)")
+GREEN = re.compile(r"Tests:\s+.*\bpassed\b")
+
+
+def green_summary(out):
+    summary = [l for l in out.splitlines() if l.strip().startswith("Tests:")]
+    return bool(summary) and bool(GREEN.search(summary[-1])) and not re.search(r"\b(failed|errors?)\b", summary[-1])
+
+
+def expand(paths, top):
+    out = []
+    for p in paths:
+        full = os.path.join(top, p)
+        if p.endswith(".php") and os.path.isfile(full):
+            out.append(os.path.relpath(full, top))
+        elif os.path.isdir(full):
+            for root, _, names in os.walk(full):
+                out += [os.path.relpath(os.path.join(root, n), top) for n in names if n.endswith("Test.php")]
+    return sorted(set(out))
+
+
+def record_run(status, junit, files, top):
+    """Record the files a gate/runner run proved green, and fold the JUnit timings into the durations."""
+    tree = gw.worktree_tree(top)
+    results = gw.junit_results(junit, top) if junit and os.path.isfile(junit) else {}
+    if results:
+        gw.record_durations({f: r["time"] for f, r in results.items()}, top)
+        passed = [f for f in files if f in results and not results[f]["failed"]]
+    else:
+        passed = list(files) if status == 0 else []
+    gw.record_files(tree, passed, top)
+    if junit:
+        try:
+            os.unlink(junit)
+        except Exception:
+            pass
+    return passed
 
 
 def post_tool():
@@ -83,24 +72,42 @@ def post_tool():
     if payload.get("tool_name") != "Bash":
         return
     cmd = str((payload.get("tool_input") or {}).get("command") or "")
-    if not FULL.search(cmd):
-        return
     resp = payload.get("tool_response") or {}
     out = resp if isinstance(resp, str) else (str(resp.get("stdout") or "") + str(resp.get("stderr") or ""))
-    summary = [l for l in out.splitlines() if l.strip().startswith("Tests:")]
-    if summary and SUMMARY.search(summary[-1]) and not re.search(r"\b(failed|errors?)\b", summary[-1]):
-        record()
+    if not green_summary(out):
+        return
+    top = gw.toplevel(payload.get("cwd")) or gw.toplevel()
+    if not top:
+        return
+    if FULL.search(cmd):
+        gw.record_whole(gw.worktree_tree(top), cwd=top)
+        return
+    m = TARGETED.search(cmd)
+    if not m or "--filter" in m.group(2) or any(x in cmd for x in ("$(", "`", "xargs", " < ")):
+        return
+    files = expand(re.findall(r"(?<!\S)['\"]?(tests/[\w./-]+?)['\"]?(?=\s|$)", m.group(2)), top)
+    if files:
+        gw.record_files(gw.worktree_tree(top), files, top)
 
 
 if __name__ == "__main__":
     a = sys.argv[1:]
     try:
+        top = gw.toplevel() or os.getcwd()
         if a[:1] == ["--record"]:
-            print(record())
-        elif a[:1] == ["--check"]:
-            ok, tree = has_pass(a[1] if len(a) > 1 else "WORKTREE")
+            tree = gw.worktree_tree(top)
+            gw.record_whole(tree, cwd=top)
             print(tree)
-            sys.exit(0 if ok else 1)
+        elif a[:1] == ["--check"]:
+            ref = a[1] if len(a) > 1 else "WORKTREE"
+            tree = gw.worktree_tree(top) if ref == "WORKTREE" else gw.ref_tree(ref, top)
+            print(tree)
+            sys.exit(0 if (tree and gw.whole_pass(tree, top)) else 1)
+        elif a[:1] == ["--record-run"]:
+            status = int(a[a.index("--status") + 1]) if "--status" in a else 1
+            junit = a[a.index("--junit") + 1] if "--junit" in a and a.index("--junit") + 1 < len(a) else ""
+            files = [l.strip() for l in sys.stdin.read().splitlines() if l.strip()]
+            print("\n".join(record_run(status, junit, files, top)))
         else:
             post_tool()
     except SystemExit:

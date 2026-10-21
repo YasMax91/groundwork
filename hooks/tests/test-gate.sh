@@ -61,6 +61,17 @@ else
   fail=$((fail+1)); printf '  FAIL %-30s lock dir still present\n' "lock released on exit"
 fi
 
+# --- a lock whose holder is dead (the session restarted mid-run) is taken over at once ---
+d="$ROOT/t7b"; fixture "$d" '{ "runner": "host", "commands": { "test": "./bad.sh" },
+  "gates": { "test_db_lock": true, "test_lock_wait_seconds": 30 } }'; stub "$d/bad.sh" 1
+mkdir -p "$d/.git/groundwork/locks/test-db-default"; printf 'run-999999\n' > "$d/.git/groundwork/locks/test-db-default/owner"
+start=$(date +%s); ( cd "$d" && bash "$GATE" >/dev/null 2>&1 ); got=$?; elapsed=$(( $(date +%s) - start ))
+if [ "$got" = 2 ] && [ "$elapsed" -lt 10 ]; then
+  pass=$((pass+1)); printf '  ok   %-30s (exit %s, %ss)\n' "dead holder taken over" "$got" "$elapsed"
+else
+  fail=$((fail+1)); printf '  FAIL %-30s (want exit 2 fast, got %s in %ss)\n' "dead holder taken over" "$got" "$elapsed"
+fi
+
 # --- a stale lock (an interrupted session) is taken over, not honored forever ---
 d="$ROOT/t7"; fixture "$d" '{ "runner": "host", "commands": { "test": "./bad.sh" },
   "gates": { "test_db_lock": true, "test_lock_wait_seconds": 1 } }'; stub "$d/bad.sh" 1

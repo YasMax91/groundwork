@@ -370,15 +370,35 @@ Replayed over the 2064 historical agent turns the sweep covers: announcement 29 
 by «продолжай»/«да» or a complaint; empty reply 32 (15); prose question 204 (90); UI proof 56 (18);
 hand-back 28 (5); language 67 (6, mostly English client texts written outside an outbound fence).
 
-## Tests — the change's own while working, the whole suite once
+## Tests — the close tests while working, the change's tests before a push, the whole suite when needed
 
-The Stop gate runs the tests that touch the change (`test-select.py`: changed tests, and tests naming a
-changed class, table, config key or route). The whole suite runs once, before a push to a shared branch:
-`push-gate.py` refuses `git push` to development / main / staging / production and `gh pr merge` until the
-pushed tree has a recorded green full run, and a full run you make yourself is recorded, so it is never
-repeated. `commands.test_full` sets the command for that run (e.g. `artisan test --parallel
---processes=4`). Measured on otaje: 79 whole-suite gate runs in a week (383 min) became targeted runs of a
-median 2 of 647 files; `--parallel` halved the full run (397 s → 203 s, same failures).
+`hooks/gw_tests.py` sorts a change's tests into two circles. *Close*: changed tests, tests named after a
+changed class, tests calling a method changed on the diff's lines, the tests of a changed route (names,
+URIs, the controller's routes), of a changed config key, translation key, migration column or document.
+*Wide*: tests merely naming a changed class, a migration's table, the routes of an action using a changed
+form request. A change to a *shared* file — dependencies, `phpunit.xml`, the base test class, `bootstrap/`,
+providers, middleware, a migration that drops, renames, retypes or adds a NOT NULL column to an existing
+table, a routes line changing middleware or a group — can only be checked by the whole suite.
+
+- **Stop gate** (`test-gate.sh`): the close circle, minus files already green on this exact code, cut to
+  `gates.test_budget_seconds` (default 180) by recorded durations; what did not fit is named and left to the
+  push check. A run is stopped at twice the budget (never past 540 s) with "nothing verified", instead of
+  being killed silently by the hook timeout.
+- **Push check** (`push-gate.py`, `gates.full_suite_before_push`: `"when-needed"` default · `"always"` ·
+  `false`): a push to a shared branch rests on a *verified* tree — a green whole run, or a tree this check
+  accepted — whose chain starts from a whole run at most `gates.full_suite_max_age_hours` (24) old. From the
+  closest one, the change's close + wide tests must be green on this exact code; a shared file means the
+  whole suite. A document no test reads needs no run.
+- **One runner** (`test-run.py --close | --for-push <ref> | --whole`, the latter two with
+  `run_in_background`): runs exactly what is missing, the whole suite through `commands.test_full`
+  (parallel) or in parts of ~8 minutes, re-runs once the files that lost the database connection, holds the
+  test-database lock, and records the result by the exact code. A lane's skip-worktree `phpunit.xml` takes
+  the committed version, so a lane's green run counts for the commit.
+
+Measured on otaje, 2026-10-06 – 10-21 (0.47.0): 30 Stop runs took 5+ minutes, 12 hit the 10-minute limit;
+51 whole-suite episodes took ~1049 minutes; 96 of 180 development commits changed only documents and still
+needed a whole run; 15 questions asked the owner to record a lane's pass by hand. The old selection on 81
+commits: median 62 of 849 files, p90 679 — see `docs/specs/wave-38-tests-by-what-changed.md` for the new one.
 
 ## Parallel sessions — lanes
 
@@ -578,7 +598,7 @@ pack/             groundwork-pack — dependency-only bundle (this plugin + foll
 follow-through/   the project-agnostic plugin — hooks/ (stop_gate.py · guard.py · session_start.py · prompt_submit.py · post_tool.py · session_end.py · lanes.py · render_status.py · ft.py · tests/) · skills/status
 skills/           start-task · spec · implement-approved · lane · risk-review · final-check · estimate · ground-integration · frontend-handoff · install-portal · client-doc · openapi-audit · grill · init · deep-grounding · deep-discovery · deep-review
 agents/           impact-mapper · blind-spot-mapper · grounded-researcher · adversarial-verifier · conformance-reviewer
-hooks/            hooks.json · lib.sh (shared resolvers) · session-start.sh · pre-compact.sh · task-intent.sh · format-on-edit.sh · done-gate.sh · test-gate.sh · openapi-gate.sh · slice-gate.sh · coverage-claim.sh · plain-language.sh · defect-scan.sh · estimate-claim.sh · estimate-docs.py · estimate-ledger.sh · lane.py · lane-guard.py · lane-idle.py · in-cwd.sh · test-select.py · suite-record.py · push-gate.py · ledger-record.sh · agent-contract.sh · trim-output.sh · pre-tool-guard.sh · stdin-guard.sh · statusline.sh · tests/all.sh
+hooks/            hooks.json · lib.sh (shared resolvers) · session-start.sh · pre-compact.sh · task-intent.sh · format-on-edit.sh · done-gate.sh · test-gate.sh · openapi-gate.sh · slice-gate.sh · coverage-claim.sh · plain-language.sh · defect-scan.sh · estimate-claim.sh · estimate-docs.py · estimate-ledger.sh · lane.py · lane-guard.py · lane-idle.py · in-cwd.sh · gw_tests.py · test-select.py · test-run.py · suite-record.py · push-gate.py · ledger-record.sh · agent-contract.sh · trim-output.sh · pre-tool-guard.sh · stdin-guard.sh · statusline.sh · tests/all.sh
 workflows/        deep-review-run.js · deep-discovery-run.js · deep-grounding-run.js — the multi-agent orchestration, executed by the runtime
 guidelines/       ai-sdd-process · grounding-protocol · blind-spot-protocol · clarify-protocol · plain-language · openapi-protocol · laravel-standards · tdd-protocol · writing-standards · working-memory
 docs/             skill-hygiene (author-facing) · specs/

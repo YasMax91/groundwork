@@ -79,29 +79,70 @@ if [ "$declared" != "sqlite" ]; then
   done
 fi
 
-# --- scope: the change's own tests while working; the whole suite before a shared push (wave 37) ---
-# The whole suite on every Stop cost otaje 383 minutes in a week (79 runs, median 5.4 min) for changes
-# whose own tests were a median of 2 files. Now this gate runs what test-select.py picks; push-gate.py
-# requires one green full run on the exact tree before a push to a shared branch.
-# `gates.test_scope: "full"` restores the old behaviour. A custom `commands.test` that is not an
+# --- scope: the close tests within a budget while working; the push check covers the rest (waves 37-38) ---
+# The whole suite on every Stop cost otaje 383 minutes in a week (wave 37). Its replacement ran whatever
+# test-select.py picked, and a routes file or a central class picked hundreds of files: from 2026-10-06 to
+# 10-21, 30 Stop runs took 5+ minutes and 12 hit the hook's 10-minute limit with nothing verified. Now the
+# selection keeps to the close circle (gw_tests.py), drops files already green on this exact code, and is
+# cut to `gates.test_budget_seconds` (default 180) by recorded durations; what did not fit is named and
+# left to push-gate.py, which runs close + wide before a shared branch. A run is stopped at twice the budget
+# (never past 540 s) and says what it did not verify, instead of being killed silently by the harness.
+# `gates.test_scope: "full"` restores the whole suite here. A custom `commands.test` that is not an
 # artisan / phpunit / pest call cannot take file arguments, so it still runs whole.
 hooks_dir="$(cd "$(dirname "$0")" && pwd)"
 scope="$(jq -r '.gates.test_scope // "targeted"' .groundwork.json 2>/dev/null || echo targeted)"
 full_run=1
+limit=540
+junit=''; run_files=''; notes=''
 full_cmd="$(jq -r '.commands.test_full // empty' .groundwork.json 2>/dev/null || true)"   # e.g. … artisan test --parallel
+budget="$(jq -r '.gates.test_budget_seconds // 180' .groundwork.json 2>/dev/null || echo 180)"
+case "$budget" in ''|*[!0-9]*) budget=180 ;; esac
 if [ "$scope" = "full" ] || ! printf '%s' "$cmd" | grep -qE 'artisan test|phpunit|/pest( |$)'; then
   [ -n "$full_cmd" ] && cmd="$full_cmd"
 fi
 if [ "$scope" != "full" ] && printf '%s' "$cmd" | grep -qE 'artisan test|phpunit|/pest( |$)'; then
-  selected="$(python3 "$hooks_dir/test-select.py" 2>/dev/null || true)"
-  if [ -z "$selected" ]; then
-    echo "groundwork test-gate: no test names the changed code — none run now. The whole suite runs before a push to a shared branch." >&2
+  plan="$(python3 "$hooks_dir/test-select.py" --plan-stop 2>/dev/null || true)"
+  run_files="$(printf '%s' "$plan" | jq -r '.run[]?' 2>/dev/null || true)"
+  n_green="$(printf '%s' "$plan" | jq -r '.green // 0' 2>/dev/null || echo 0)"
+  n_wide="$(printf '%s' "$plan" | jq -r '.wide // 0' 2>/dev/null || echo 0)"
+  n_def="$(printf '%s' "$plan" | jq -r '.deferred | length' 2>/dev/null || echo 0)"
+  shared="$(printf '%s' "$plan" | jq -r '.shared | join(", ")' 2>/dev/null || true)"
+  [ "${n_def:-0}" -gt 0 ] 2>/dev/null && notes="${notes}groundwork test-gate: ${n_def} more close tests did not fit the ${budget} s budget and go to the push check: $(printf '%s' "$plan" | jq -r '.deferred[:5] | join(", ")')$([ "$n_def" -gt 5 ] && printf ' …')
+"
+  [ -n "$shared" ] && notes="${notes}groundwork test-gate: shared files changed (${shared}) — the whole suite runs before a push to a shared branch (test-run.py --for-push).
+"
+  if [ -z "$run_files" ]; then
+    if [ "${n_green:-0}" -gt 0 ] 2>/dev/null; then
+      echo "groundwork test-gate: the ${n_green} close tests already passed on this exact code — none run now." >&2
+    else
+      echo "groundwork test-gate: no test is close to this change — none run now. The push check runs its wider tests (${n_wide:-0}) before a shared branch." >&2
+    fi
+    printf '%s' "$notes" >&2
     exit 0
   fi
-  n_sel="$(printf '%s\n' "$selected" | grep -c .)"
-  cmd="$cmd $(printf '%s\n' "$selected" | tr '\n' ' ')"
+  n_sel="$(printf '%s\n' "$run_files" | grep -c .)"
+  if [ -d storage/framework/testing ]; then      # git-ignored in every Laravel skeleton; durations come from here
+    junit="storage/framework/testing/gw-junit-$$.xml"
+    cmd="$cmd --log-junit=$junit"
+  fi
+  cmd="$cmd $(printf '%s\n' "$run_files" | tr '\n' ' ')"
   full_run=0
+  limit=$((budget * 2)); [ "$limit" -gt 540 ] && limit=540; [ "$limit" -lt 10 ] && limit=10
 fi
+
+# Stop a run past its limit — and, under Sail, its PHP process inside the container, which outlives the
+# host-side client (otaje, 2026-09-25: an interrupted run kept going and held the test database).
+stop_container_tests() {
+  case "$cmd" in *vendor/bin/sail*)
+    svc="$(sed -n 's/^APP_SERVICE=//p' .env 2>/dev/null | tr -d '"' | head -1)"
+    ./vendor/bin/sail exec -T "${svc:-laravel.test}" pkill -f 'artisan test|vendor/bin/phpunit|vendor/bin/pest|paratest' >/dev/null 2>&1 || true ;;
+  esac
+}
+stop_run() {
+  pkill -TERM -P "$1" 2>/dev/null || true; kill -TERM "$1" 2>/dev/null || true
+  stop_container_tests
+  sleep 1; pkill -KILL -P "$1" 2>/dev/null || true; kill -KILL "$1" 2>/dev/null || true
+}
 
 # --- serialise the suite across parallel sessions sharing one test database ---
 # Two sessions interleaving `migrate:fresh` and a running suite produce failures that describe
@@ -154,6 +195,15 @@ if [ -f .groundwork.json ] && [ "$(jq -r '.gates.test_db_lock' .groundwork.json 
       break
     fi
 
+    # Its holder is dead (a session restarted mid-run): take it over now rather than in 30 minutes, and stop
+    # what the dead run left inside the container (otaje, 2026-10-21: the suite kept running there unowned).
+    holder_pid="$(tr -dc '0-9' < "$lock_dir/owner" 2>/dev/null || true)"
+    if [ -n "$holder_pid" ] && ! ps -p "$holder_pid" >/dev/null 2>&1; then
+      stop_container_tests
+      rm -rf "$lock_dir" 2>/dev/null || true
+      [ -d "$lock_dir" ] || continue
+    fi
+
     # Take over a lock left behind by an interrupted session rather than honoring it forever.
     if [ -n "$(find "$lock_dir" -maxdepth 0 -mmin "+$stale_minutes" 2>/dev/null || true)" ]; then
       rm -rf "$lock_dir" 2>/dev/null || true
@@ -166,7 +216,8 @@ if [ -f .groundwork.json ] && [ "$(jq -r '.gates.test_db_lock' .groundwork.json 
     fi
 
     if [ "$waited" -ge "$lock_wait" ]; then
-      echo "groundwork test-gate: the test database is busy with another session — suite NOT run, NOTHING WAS VERIFIED. Re-run when it frees up." >&2
+      holder="$(head -1 "$lock_dir/label" 2>/dev/null || true)"   # test-run.py names its run; a gate does not
+      echo "groundwork test-gate: the test database is busy (${holder:-another session}) — suite NOT run, NOTHING WAS VERIFIED. Re-run when it frees up." >&2
       exit 1
     fi
     sleep 1; waited=$((waited + 1))
@@ -174,8 +225,34 @@ if [ -f .groundwork.json ] && [ "$(jq -r '.gates.test_db_lock' .groundwork.json 
 fi
 
 # Run the gate. Pass -> allow stop. Fail -> block (exit 2) and feed errors back to the agent.
+outf="$(mktemp "${TMPDIR:-/tmp}/gw-test-gate.XXXXXX" 2>/dev/null || echo "${TMPDIR:-/tmp}/gw-test-gate.$$")"
 # shellcheck disable=SC2086
-out="$($cmd 2>&1)"; status=$?
+$cmd >"$outf" 2>&1 &
+run_pid=$!
+ticks=0; timed_out=0              # tenths of a second; fine-grained first, so a quick run costs no extra second
+while kill -0 "$run_pid" 2>/dev/null; do
+  if [ "$ticks" -ge $((limit * 10)) ]; then timed_out=1; stop_run "$run_pid"; break; fi
+  if [ "$ticks" -lt 50 ]; then sleep 0.1; ticks=$((ticks + 1)); else sleep 1; ticks=$((ticks + 10)); fi
+done
+wait "$run_pid" 2>/dev/null; status=$?
+out="$(cat "$outf" 2>/dev/null || true)"; rm -f "$outf"
+
+if [ "$timed_out" = "1" ]; then
+  [ -n "$junit" ] && rm -f "$junit"
+  {
+    echo "groundwork test-gate: the run passed its ${limit} s limit and was stopped — NOTHING WAS VERIFIED for: $(printf '%s\n' "$run_files" | head -5 | tr '\n' ' ')"
+    echo "Run them with \`python3 \"$hooks_dir/test-run.py\" --close\` (run_in_background: true), or lower the selection."
+    printf '%s' "$notes"
+  } >&2
+  exit 1
+fi
+
+# What this run proved, by the exact code: the green files (all of them on exit 0; per file from the JUnit
+# log otherwise) and their durations, so neither the next Stop nor the push check repeats them.
+if [ "$full_run" = "0" ]; then
+  printf '%s\n' "$run_files" | python3 "$hooks_dir/suite-record.py" --record-run --status "$status" --junit "$junit" >/dev/null 2>&1 || true
+fi
+
 if [ "$status" -ne 0 ]; then
   # An environment problem is a command that never RAN. Deciding that by substring is unsafe:
   # "No such file or directory" and "command not found" occur inside perfectly real Laravel failures
@@ -196,10 +273,12 @@ if [ "$status" -ne 0 ]; then
       echo "groundwork test-gate: the ${n_sel} test files that touch this change FAILED — not done yet (red). Make them green before finishing."
     fi
     printf '%s\n' "$out" | tail -40
+    printf '%s' "$notes"
   } >&2
   exit 2
 fi
 
 # A green whole-suite run on this exact tree is what push-gate.py asks for; remember it.
 [ "$full_run" = "1" ] && python3 "$hooks_dir/suite-record.py" --record >/dev/null 2>&1 || true
+printf '%s' "$notes" >&2
 exit 0

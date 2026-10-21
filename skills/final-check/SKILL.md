@@ -11,14 +11,17 @@ Run the gates and the self-review before declaring the work done. Use the projec
 
 - Format: `./vendor/bin/sail composer format:test` (or `format` to apply).
 - Static analysis: `./vendor/bin/sail composer analyse`.
-- Tests: the change's own tests, by path or `--filter` — e.g.
-  `./vendor/bin/sail artisan test tests/Feature/OrderExportTest.php`. They must be **green**. The Stop
-  gate runs the same selection on every stop (`hooks/test-select.py`: changed tests, and tests naming a
-  changed class, table, config key or route). **Do not run the whole suite here**: it runs once, right
-  before the push to a shared branch — `push-gate` refuses that push until the exact tree has a green
-  full run, and a full run you made is recorded, so it is never repeated. Run it earlier only when the
-  user asks or the change is cross-cutting and you say why. Confirm the tests for the changed behavior
-  were written **test-first** (red→green).
+- Tests: the change's own tests — `python3 "${CLAUDE_SKILL_DIR}/../../hooks/test-run.py" --close`
+  runs exactly what the Stop gate would (the close circle of `hooks/gw_tests.py`: changed tests, tests
+  named after a changed class, calling a changed method, hitting a changed route, reading a changed config
+  key, translation or document) and records them, so the gate does not repeat them; a single file by path
+  is fine too. They must be **green**. **Do not hand-pick folders as a regression sweep, and do not run the
+  whole suite here**: before a push to a shared branch `push-gate` asks for the close *and* wide tests of
+  everything changed since the last verified code, and for the whole suite only when a shared file changed
+  (dependencies, test bootstrap, providers, middleware, a destructive migration) or the last green whole run
+  is older than a day. When it refuses, run the command it names — `test-run.py --for-push <ref>` with
+  `run_in_background: true` — and push again after its notification; never split the suite by hand and never
+  record a pass by hand. Confirm the tests for the changed behavior were written **test-first** (red→green).
 - OpenAPI: if the change touched an endpoint, regenerate the spec
   (`./vendor/bin/sail artisan l5-swagger:generate`) — it must finish with **no errors and no
   warnings**, and every touched endpoint must be documented to the standard in
