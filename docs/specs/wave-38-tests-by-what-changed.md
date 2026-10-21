@@ -133,7 +133,10 @@
   (`commands.test_full`, 4 processes) — the same 6081 green, 288 s. Both recorded by the runner, no hand record.
 - A session restart mid-run killed the host-side runner while the suite went on in the container, holding the
   lock: both gates now take over a lock whose holder process is gone and stop what it left in the container.
-- Suites: `scope.sh` 89 of 89, `test-gate.sh` 23 of 23, `lane.sh` 33 of 33; all groundwork suites green.
+- **v0.48.1:** lanes clone `vendor/` from the main checkout, which has no paratest until the owner runs
+  `composer install` there; a whole run whose `commands.test_full` runs no test now falls back to the serial
+  parts and says so, instead of refusing the push as an environment problem.
+- Suites: `scope.sh` 91 of 91 (0.48.1), `test-gate.sh` 23 of 23, `lane.sh` 33 of 33; all groundwork suites green.
 
 ## Not in this wave
 

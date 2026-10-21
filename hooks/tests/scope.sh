@@ -321,6 +321,11 @@ eq "--whole: green, exit 0"                               0     "$(tr_run --whol
 eq "…in parts no longer than ~8 minutes"                  "2"   "$(sed '/^$/d' "$ROOT/runs.log" | grep -c .)"
 eq "…which together are the whole suite"                  "$(find tests -name '*Test.php' | sort | tr '\n' ' ')" "$(tr ' ' '\n' < "$ROOT/runs.log" | sed '/^$/d' | sort | tr '\n' ' ')"
 eq "…recorded as a whole pass"                            0     "$(python3 "$HOOKS/suite-record.py" --check WORKTREE >/dev/null; echo $?)"
+printf '#!/bin/sh\necho "Running tests in parallel requires \\"brianium/paratest\\"."; exit 1\n' > bin/noparatest; chmod +x bin/noparatest
+reset_records; cfg ', "test_full": "./bin/noparatest"'
+eq "--whole when test_full runs no test: serial parts instead" 0 "$(tr_run --whole)"
+has "…and it says so"                                     "serial parts instead" "$(cat "$ROOT/tr.out")"
+cfg; rm -f bin/noparatest
 reset_records; mkdir -p storage/framework/testing; printf '{"%s": "conn-once"}' "$F/ReportTest.php" > "$ROOT/control.json"
 eq "a file that lost the database connection: re-run once, green" 0 "$(tr_run --whole)"
 has "…and says it re-ran it"                              "re-running them once" "$(cat "$ROOT/tr.out")"

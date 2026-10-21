@@ -259,7 +259,12 @@ def whole(top, cfg, runner):
     full = (cfg.get("commands") or {}).get("test_full")
     if full:
         env, passed, failed = runner.run_set(full, [], "whole suite (%s)" % full)
-    else:
+        if env or (not passed and all(f.startswith("(") for f in failed)):
+            # The parallel command never ran a test: a lane whose vendor/ was cloned before brianium/paratest
+            # was added (otaje, 2026-10-21) gets "requires brianium/paratest". The serial parts still prove it.
+            say("commands.test_full did not run any test — running the whole suite in serial parts instead")
+            full = None
+    if not full:
         files = gw.suite_files(top)
         env, passed, failed = runner.run_set(runner.cmd, files, "whole suite, %d files" % len(files))
     if env:
