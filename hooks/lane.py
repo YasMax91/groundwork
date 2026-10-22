@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Groundwork plugin :: a lane — one worktree, its own Docker stack, its own databases (wave 35, GW35-AC1).
 
-    python3 lane.py up [--refresh-data] [--full]   provision this worktree as an isolated lane
-                                          (--full also starts horizon / scheduler / queue workers)
+    python3 lane.py up [--refresh-data] [--full] [--own-subnet]   provision this worktree as an isolated lane
+                                          (--full also starts horizon / scheduler / queue workers;
+                                          --own-subnet puts its networks on subnets of their own)
     python3 lane.py status                print what this lane uses
     python3 lane.py down [--purge]        stop the lane's stack; --purge also drops its databases
 
@@ -16,12 +17,15 @@ the main dev DB. A lane gets:
   * `vendor/` and `node_modules/` cloned from the main checkout (copy-on-write on APFS);
   * its dev database CLONED from the main checkout's, its test database empty — on the same server when
     the project uses an external one (shared-mysql), or in its own DB container otherwise;
-  * the stack started, the lane's migrations applied to the clone, and `.claude/lane.json` written so
-    sibling sessions (follow-through) know which containers are this lane's.
+  * the stack started, the lane's migrations applied to the clone, `public/storage` linked, the OpenAPI
+    document generated, and `.claude/lane.json` written so sibling sessions (follow-through) know which
+    containers are this lane's.
 
-Every step prints what it did; a step that cannot run says why and the lane continues where it can.
+Every step prints what it did; a step that cannot run says why and the lane continues where it can. A lane
+whose stack did not start ends on "lane NOT ready" and exit status 1.
 """
 
+import ipaddress
 import json
 import os
 import re
@@ -30,9 +34,16 @@ import shutil
 import socket
 import subprocess
 import sys
+import zlib
 
 LANE_FILE = os.path.join(".claude", "lane.json")
+LANE_COMPOSE = ".claude/lane-compose.yml"
 BACKGROUND = re.compile(r"^(horizon|scheduler|schedule|queue|queue-worker|worker|cron)$")
+# Docker gives every new network a range from its predefined pools — about 30 on Docker Desktop (172.17–31/16 and
+# 192.168.x/20) — and every Compose project, a stopped one too, holds one (otaje, 2026-10-21: 30 of 30 taken).
+POOLS_USED_UP = re.compile(r"all predefined address pools have been fully subnetted"
+                           r"|could not find an available, non-overlapping IPv4 address pool")
+OWN_SUBNETS = "10.213.%d.0/24"   # outside Docker's predefined pools
 
 
 def say(msg):
@@ -46,6 +57,16 @@ def run(cmd, cwd=None, timeout=900, env=None, input_text=None, shell=False):
         return r.returncode, (r.stdout or "") + (r.stderr or "")
     except Exception as exc:  # noqa: BLE001
         return 1, str(exc)
+
+
+def stdout_of(cmd, cwd=None, env=None, timeout=60):
+    """stdout alone, None on failure — for output that is parsed: Compose prints its warnings on stderr, and merged
+    in they read as one more service name."""
+    try:
+        r = subprocess.run(cmd, cwd=cwd, env=env, capture_output=True, text=True, timeout=timeout)
+        return r.stdout if r.returncode == 0 else None
+    except Exception:  # noqa: BLE001
+        return None
 
 
 def git(cwd, *args):
@@ -180,8 +201,229 @@ def pin_phpunit(lane, test_db):
             say("phpunit.xml not adjusted: %s — tests may still use the shared test database" % exc)
 
 
+def keep_out_of_git(lane, path):
+    """List a file local to the lane in <git-common-dir>/info/exclude: it holds in every worktree and never travels."""
+    common = git(lane, "rev-parse", "--path-format=absolute", "--git-common-dir")
+    if not common:
+        return
+    exclude = os.path.join(common, "info", "exclude")
+    try:
+        os.makedirs(os.path.dirname(exclude), exist_ok=True)
+        current = open(exclude, encoding="utf-8").read() if os.path.isfile(exclude) else ""
+        if path not in current.split():
+            with open(exclude, "a", encoding="utf-8") as fh:
+                if current and not current.endswith("\n"):
+                    fh.write("\n")
+                if "# groundwork lanes" not in current:
+                    fh.write("\n# groundwork lanes — local to each worktree, never committed\n")
+                fh.write(path + "\n")
+    except Exception:
+        pass
 
-def up(refresh_data=False, full=False):
+
+def compose_files(lane, main_env):
+    """The files Compose reads in this lane before the lane's own: the main checkout's COMPOSE_FILE or SAIL_FILES,
+    else the compose file and its override, in Compose's own order — a COMPOSE_FILE that leaves the override out
+    turns it off."""
+    for var, sep in (("COMPOSE_FILE", os.pathsep), ("SAIL_FILES", ":")):
+        if main_env.get(var):
+            return [f for f in main_env[var].split(sep) if f and f != LANE_COMPOSE]
+    found = [next((f for f in names if os.path.isfile(os.path.join(lane, f))), "") for names in (
+        ("compose.yaml", "compose.yml", "docker-compose.yml", "docker-compose.yaml"),
+        ("compose.override.yml", "compose.override.yaml", "docker-compose.override.yml", "docker-compose.override.yaml"))]
+    return [f for f in found if f] if found[0] else []
+
+
+def networks():
+    """Every Docker network as (name, its Compose project or "", its IPv4 subnets); None when Docker does not answer."""
+    ids = (stdout_of(["docker", "network", "ls", "-q"], timeout=30) or "").split()
+    out = stdout_of(["docker", "network", "inspect", "--format", '{{.Name}}\t{{index .Labels "com.docker.compose.project"}}'
+                     '\t{{range .IPAM.Config}}{{.Subnet}} {{end}}'] + ids, timeout=30) if ids else None
+    if out is None:
+        return None
+    nets = []
+    for line in out.splitlines():
+        name, project, subnets = (line.split("\t") + ["", ""])[:3]
+        found = []
+        for s in subnets.split():
+            try:
+                found.append(ipaddress.ip_network(s, strict=False))
+            except ValueError:
+                pass
+        nets.append((name, project, [n for n in found if n.version == 4]))
+    return nets
+
+
+def default_pools():
+    """The ranges Docker gives new networks from: the daemon's default-address-pools, else libnetwork's own."""
+    try:
+        pools = [ipaddress.ip_network(p["Base"]) for p in json.loads(
+            stdout_of(["docker", "info", "--format", "{{json .DefaultAddressPools}}"], timeout=30)) or []]
+    except Exception:
+        pools = []
+    pools = pools or [ipaddress.ip_network("172.%d.0.0/16" % i) for i in range(17, 32)] + [ipaddress.ip_network("192.168.0.0/16")]
+    return [p for p in pools if p.version == 4]
+
+
+def own_subnets(lane, slug, env, files, project):
+    """Give every network Compose creates for this lane a /24 of its own outside Docker's predefined pools, so the
+    lane starts when they are used up and draws nothing from them. Written to .claude/lane-compose.yml, which
+    COMPOSE_FILE names, and kept across runs — unless another network took one while this lane's was gone (`down`
+    removes it). Returns ({network: subnet}, {network: subnet given up}); RuntimeError says why there is none."""
+    out = stdout_of(["docker", "compose", "config", "--format", "json"], cwd=lane,
+                    env=dict(env, COMPOSE_FILE=os.pathsep.join(files)))
+    try:
+        names = [n for n, cfg in (json.loads(out).get("networks") or {}).items() if not (cfg or {}).get("external")]
+    except Exception:
+        raise RuntimeError("docker compose config did not answer")
+    path = os.path.join(lane, LANE_COMPOSE)
+    try:
+        kept = json.loads("".join(l for l in open(path, encoding="utf-8") if not l.startswith("#")))["networks"]
+        kept = {n: ipaddress.ip_network(c["ipam"]["config"][0]["subnet"]) for n, c in kept.items()}
+    except Exception:
+        kept = {}
+    # This lane's own networks carry the subnets it keeps; every other network's subnet is taken.
+    taken = [s for _, p, subnets in networks() or [] if p != project for s in subnets]
+    subnets, moved = {}, {}
+    for name in [n for n in names if n in kept]:
+        if any(kept[name].overlaps(t) for t in taken):
+            moved[name] = str(kept[name])
+        else:
+            subnets[name] = kept[name]
+            taken.append(kept[name])
+    start = zlib.crc32(slug.encode()) % 256
+    for name in [n for n in names if n not in subnets]:
+        free = (ipaddress.ip_network(OWN_SUBNETS % ((start + i) % 256)) for i in range(256))
+        subnets[name] = next((s for s in free if not any(s.overlaps(t) for t in taken)), None)
+        if subnets[name] is None:
+            raise RuntimeError("every /24 of 10.213.0.0/16 is taken")
+        taken.append(subnets[name])
+    subnets = {n: str(subnets[n]) for n in names}
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write("# groundwork lane: this lane's networks on subnets of their own, outside Docker's predefined pools\n"
+                 "# (lane.py up --own-subnet). Local to this worktree, never committed; delete it and run lane.py up\n"
+                 "# to go back to the pools.\n")
+        fh.write(json.dumps({"networks": {n: {"ipam": {"config": [{"subnet": s}]}} for n, s in subnets.items()}}) + "\n")
+    keep_out_of_git(lane, LANE_COMPOSE)
+    return subnets, moved
+
+
+def idle_networks(project, nets):
+    """Compose networks on a range from Docker's pools that no container is attached to, running or stopped
+    (`docker network inspect` counts the running ones only, so a stopped stack's network looks empty there), and
+    the projects whose such networks only stopped containers hold. Never named: a network made by hand (Traefik's)
+    — Compose would not re-create it; one on a subnet of its own — removing it frees no range; this lane's own.
+    None when Docker does not answer."""
+    held = stdout_of(["docker", "ps", "-a", "--format", "{{.State}}\t{{.Networks}}"], timeout=30)
+    if nets is None or held is None:
+        return None, []
+    attached, live = set(), set()
+    for line in held.splitlines():
+        state, _, names = line.partition("\t")
+        for name in filter(None, (n.strip() for n in names.split(","))):
+            attached.add(name)
+            if state.strip() not in ("exited", "created", "dead"):
+                live.add(name)
+    pools = default_pools()
+    others = {n: p for n, p, subnets in nets if p and p != project
+              and any(s.subnet_of(pool) for s in subnets for pool in pools)}
+    return (sorted(n for n in others if n not in attached),
+            sorted({p for n, p in others.items() if n in attached and n not in live}))
+
+
+def pools_used_up(project, error):
+    """What happened and both ways out. Other projects' networks are named for the owner to decide on, never removed
+    here."""
+    idle, stopped = idle_networks(project, networks())
+    lines = ["stack did NOT start: Docker has no address range left for a new network (\"%s\"). Every Compose project "
+             "holds at least one network, even while stopped, and Docker's predefined pools hold about 30. "
+             "Two ways out:" % error]
+    if idle is None:
+        lines.append("  1. remove networks that no container uses — Docker did not list them (docker network ls); they "
+                     "belong to other projects, so only with the owner's consent")
+    elif idle:
+        lines.append("  1. remove the %d networks that no container uses, running or stopped. They belong to other "
+                     "projects, so ONLY with the owner's consent; each project re-creates its network on its next up. "
+                     "Then run lane.py up again:\n       docker network rm %s" % (len(idle), " ".join(idle)))
+    else:
+        lines.append("  1. remove networks that no container uses — there are none")
+    if stopped:
+        lines.append("     networks held by stopped containers only (the owner's call too; `docker compose -p <project> "
+                     "down` frees them, removing the containers and keeping the volumes): %s" % ", ".join(stopped))
+    lines.append("  2. give this lane's networks subnets of their own, outside the pools — local to this worktree, "
+                 "never committed:\n       python3 %s up --own-subnet" % os.path.realpath(__file__))
+    return "\n".join(lines)
+
+
+def link_storage(lane, sail, env):
+    """public/storage is git-ignored, so a new worktree has none: in an otaje lane Backpack's /storage/basset/… assets
+    answered 403 — the admin without its styles, and without common.js, which sets jQuery's CSRF header
+    (2026-10-21). The project's own command makes every link config/filesystems.php names, and relative ones: a link
+    made in the container names /var/www/html, which the host does not have."""
+    link = os.path.join(lane, "public", "storage")
+    if not os.path.isdir(os.path.join(lane, "public")) or not os.path.isdir(os.path.join(lane, "storage", "app", "public")) \
+            or os.path.lexists(link):
+        return
+    _, out = run([sail, "artisan", "storage:link", "--relative"], cwd=lane, env=env, timeout=120)
+    if os.path.isdir(link):
+        say("public/storage linked to storage/app/public, relative (artisan storage:link --relative)")
+        return
+    if not os.path.lexists(link):   # --relative needs symfony/filesystem, which not every project installs
+        try:
+            os.symlink(os.path.join("..", "storage", "app", "public"), link)
+        except OSError:
+            pass
+    say("public/storage %s — artisan storage:link --relative failed:\n%s" % (
+        "linked to storage/app/public, relative, from the host" if os.path.isdir(link) else "NOT linked",
+        out.strip()[-600:]))
+
+
+def generate_openapi(lane, sail, env):
+    """The OpenAPI document is usually git-ignored (storage/api-docs in 6 of the 7 projects with l5-swagger,
+    2026-10-21), so a new lane had none and every contract test failed on «Generate the spec first»: 91 failures
+    and 4 errors in an otaje lane, 59 on 2026-10-13. The project's `commands.openapi_generate` runs, else
+    l5-swagger's own command where it is installed. A committed file the command rewrites is put back — as
+    committed, or as the lane had it — so the step never changes the lane's tracked tree."""
+    try:
+        cmd = (json.load(open(os.path.join(lane, ".groundwork.json"), encoding="utf-8")).get("commands") or {}).get("openapi_generate")
+    except Exception:
+        cmd = None
+    if not cmd and not os.path.isdir(os.path.join(lane, "vendor", "darkaonline", "l5-swagger")):
+        return
+
+    def changed():   # tracked files that differ from the index
+        return [p for p in (stdout_of(["git", "-C", lane, "diff", "--name-only", "-z"], timeout=20) or "").split("\0") if p]
+
+    def content(path):
+        try:
+            return open(os.path.join(lane, path), "rb").read()
+        except OSError:
+            return None
+
+    before = {p: content(p) for p in changed()}
+    code, out = run(cmd, cwd=lane, env=env, shell=True, timeout=600) if cmd else \
+        run([sail, "artisan", "l5-swagger:generate"], cwd=lane, env=env, timeout=600)
+    kept = []
+    for path in sorted(set(changed()) | set(before)):
+        if path not in before:
+            run(["git", "-C", lane, "checkout", "--", path], timeout=20)
+        elif content(path) == before[path]:
+            continue
+        elif before[path] is None:
+            os.remove(os.path.join(lane, path))
+        else:
+            with open(os.path.join(lane, path), "wb") as fh:
+                fh.write(before[path])
+        kept.append(path)
+    how = cmd or "artisan l5-swagger:generate — no commands.openapi_generate"
+    say("OpenAPI document %s (%s)%s" % (
+        "generated" if code == 0 else "NOT generated", how,
+        ("; %s kept as it was — the command rewrote %s" % (", ".join(kept), "it" if len(kept) == 1 else "them")) if kept else "")
+        + ("" if code == 0 else ":\n" + out.strip()[-800:]))
+
+
+def up(refresh_data=False, full=False, own_subnet=False):
     lane, main = contexts(os.getcwd())
     slug = lane_slug(lane)
     main_env, main_lines = read_env(os.path.join(main, ".env"))
@@ -249,6 +491,28 @@ def up(refresh_data=False, full=False):
     write_env(os.path.join(lane, ".env"), main_lines, updates)
     say(".env written — project %s, %s, database %s" % (updates["COMPOSE_PROJECT_NAME"], lane_domain,
                                                           updates.get("DB_DATABASE", "—")))
+    # Once Docker's predefined pools are used up no new network starts (otaje, 2026-10-21). The lane's own subnets
+    # live in a Compose file under .claude/ that COMPOSE_FILE names — never an override in the project root, which
+    # a commit could carry.
+    files, own = compose_files(lane, main_env), os.path.join(lane, LANE_COMPOSE)
+    if files and (own_subnet or os.path.isfile(own)):
+        try:
+            subnets, moved = own_subnets(lane, slug, dict(env_for(lane), COMPOSE_PROJECT_NAME=updates["COMPOSE_PROJECT_NAME"]),
+                                         files, updates["COMPOSE_PROJECT_NAME"])
+            say("networks on subnets of their own, outside Docker's pools: %s — %s, named by COMPOSE_FILE in .env; "
+                "local to this worktree, never committed%s" % (
+                    ", ".join("%s %s" % kv for kv in subnets.items()) or "none", LANE_COMPOSE,
+                    "".join("; %s moved off %s, which another network uses now" % kv for kv in moved.items())))
+        except RuntimeError as exc:
+            say("networks: no subnet of their own — %s%s" % (exc, "; %s kept as it was" % LANE_COMPOSE if os.path.isfile(own) else ""))
+        if os.path.isfile(own):
+            updates["COMPOSE_FILE"] = os.pathsep.join(files + [LANE_COMPOSE])
+            if main_env.get("SAIL_FILES"):   # Sail turns SAIL_FILES into -f flags, which outrank COMPOSE_FILE
+                updates["SAIL_FILES"] = ":".join([f for f in main_env["SAIL_FILES"].split(":") if f and f != LANE_COMPOSE]
+                                                 + [LANE_COMPOSE])
+            write_env(os.path.join(lane, ".env"), main_lines, updates)
+    elif own_subnet:
+        say("networks: no subnet of their own — this lane has no compose file")
 
     test_env, test_lines = read_env(os.path.join(main, ".env.testing"))
     # Where there is no .env.testing (4 of 5 projects measured on 2026-10-06) the test database is named only
@@ -293,19 +557,27 @@ def up(refresh_data=False, full=False):
             say("%s cloned from the main checkout%s" % (d, "" if code == 0 else " — FAILED, run composer/npm install"))
 
     env = env_for(lane)
-    services = []
+    services, problem = [], "no vendor/bin/sail, the stack was not started"   # why the lane is not ready
     sail = os.path.join(lane, "vendor", "bin", "sail")
     if os.path.isfile(sail):
         # Background workers are left out unless asked for: tests run the queue synchronously, and six lanes
         # each idling a Horizon (~440 MiB) and a scheduler put the host into swap (7.9 of 9.2 GB, 2026-10-06).
-        code, out = run(["docker", "compose", "config", "--services"], cwd=lane, env=env, timeout=60)
-        services = [l.strip() for l in out.splitlines() if l.strip()] if code == 0 else []
+        out = stdout_of(["docker", "compose", "config", "--services"], cwd=lane, env=env) or ""
+        services = [l.strip() for l in out.splitlines() if l.strip()]
         workers = [x for x in services if BACKGROUND.search(x)]
         wanted = services if (full or not workers) else [x for x in services if x not in workers]
         code, out = run([sail, "up", "-d"] + ([] if wanted == services else wanted), cwd=lane, env=env, timeout=900)
         errors = "\n".join(l for l in out.splitlines() if l.strip() and "level=warning" not in l)
-        say("stack %s%s" % ("started" if code == 0 else "did NOT start:\n" + errors[-1500:],
-                            "" if wanted == services else " without %s (lane.py up --full starts them)" % ", ".join(workers)))
+        if code == 0:
+            problem = ""
+            say("stack started%s" % ("" if wanted == services else
+                                     " without %s (lane.py up --full starts them)" % ", ".join(workers)))
+        elif POOLS_USED_UP.search(out):
+            problem = "Docker's address pools are used up; two ways out above"
+            say(pools_used_up(updates["COMPOSE_PROJECT_NAME"], POOLS_USED_UP.search(out).group(0)))
+        else:
+            problem = "the stack did not start; its errors are above"
+            say("stack did NOT start:\n" + errors[-1500:])
     else:
         say("no vendor/bin/sail — stack not started")
 
@@ -317,7 +589,8 @@ def up(refresh_data=False, full=False):
     if connection not in ("mysql", "mariadb"):
         say("database clone is MySQL/MariaDB only — %s: the lane database was not cloned; create and migrate it yourself" % connection)
     elif not src_server or not dst_server:
-        say("database server not reachable (source %s, lane %s) — databases not provisioned" % (src_server or "?", dst_server or "?"))
+        say("database server not reachable (source %s, lane %s) — databases not provisioned%s" % (
+            src_server or "?", dst_server or "?", "" if external or not problem else "; the lane's server runs in its own stack, which is not up"))
     else:
         user = main_env.get("DB_USERNAME", "")
         for name in [n for n in (updates.get("DB_DATABASE"), test_db) if n]:
@@ -345,7 +618,9 @@ def up(refresh_data=False, full=False):
             say("dev database %s cloned from %s%s" % (lane_db, db, "" if code == 0 else " — FAILED:\n" + out[-800:]))
         else:
             say("dev database %s already has data — kept (use --refresh-data to re-clone)" % lane_db)
-        if os.path.isfile(sail):
+        if os.path.isfile(sail) and problem:   # `sail` would only answer "Sail is not running"
+            say("this branch's migrations: not run — the stack is not up; lane.py up runs them once it starts")
+        elif os.path.isfile(sail):
             code, out = run([sail, "artisan", "migrate", "--force"], cwd=lane, env=env, timeout=600)
             say("this branch's migrations on the lane database: %s" % ("applied" if code == 0 else "FAILED:\n" + out[-800:]))
             # Tests that do not refresh the database (unit tests reading a migrated schema) rely on a test
@@ -362,23 +637,22 @@ def up(refresh_data=False, full=False):
                 say("test database %s migrated: %s" % (test_db, ("yes, %s tables" % tables) if code == 0 and tables not in ("0", "?")
                                                        else "FAILED (%s tables):\n%s" % (tables, out[-800:])))
 
+    if not problem:
+        link_storage(lane, sail, env)
+        generate_openapi(lane, sail, env)
+
     code, out = run(["docker", "compose", "ps", "--format", "{{.Name}}"], cwd=lane, env=env, timeout=30)
     containers = [l.strip() for l in out.splitlines() if l.strip()] if code == 0 else []
     os.makedirs(os.path.join(lane, ".claude"), exist_ok=True)
-    exclude = os.path.join(git(lane, "rev-parse", "--path-format=absolute", "--git-common-dir"), "info", "exclude")
-    try:
-        os.makedirs(os.path.dirname(exclude), exist_ok=True)
-        current = open(exclude, encoding="utf-8").read() if os.path.isfile(exclude) else ""
-        if ".claude/lane.json" not in current:
-            with open(exclude, "a", encoding="utf-8") as fh:
-                fh.write("\n# groundwork lanes — local to each worktree, never committed\n.claude/lane.json\n")
-    except Exception:
-        pass
+    keep_out_of_git(lane, ".claude/lane.json")
     with open(os.path.join(lane, LANE_FILE), "w", encoding="utf-8") as fh:
         json.dump({"compose_project": updates["COMPOSE_PROJECT_NAME"], "domain": lane_domain,
                    "databases": [n for n in (updates.get("DB_DATABASE"), test_db) if n],
                    "db_server": dst_server, "containers": containers,
                    "ports": [updates[v] for v in sorted(published_port_vars(compose)) if v in updates]}, fh, indent=2)
+    if problem:
+        say("lane NOT ready: %s (%s)" % (lane_domain, problem))
+        sys.exit(1)
     say("lane ready: %s · containers: %s" % (lane_domain, ", ".join(containers) or "none"))
 
 
@@ -452,7 +726,7 @@ if __name__ == "__main__":
     args = sys.argv[1:]
     cmd = args[0] if args else "status"
     if cmd == "up":
-        up(refresh_data="--refresh-data" in args, full="--full" in args)
+        up(refresh_data="--refresh-data" in args, full="--full" in args, own_subnet="--own-subnet" in args)
     elif cmd == "down":
         down(purge="--purge" in args)
     else:

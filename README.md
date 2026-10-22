@@ -454,8 +454,15 @@ two lanes ran the same 989 tests at the same time, 989 of 989 each, no deadlock 
 database gave 167 and 123 failures on the same run. `lane.py down [--purge]` stops the lane and, with
 `--purge`, drops its databases and volumes. A lane starts without Horizon, scheduler or queue workers
 (`lane.py up --full` adds them), and `lane-idle.py` stops its containers when the last session in the worktree
-closes. Every hook runs in the session's own directory (`in-cwd.sh`), so a session opened in the main
-checkout and working in a worktree is judged on the worktree.
+closes. Once its stack is up, a new lane gets what git does not carry: `public/storage` as a relative link
+from `artisan storage:link --relative`, and the generated OpenAPI document its contract tests read
+(`commands.openapi_generate`, else l5-swagger's own command). When Docker's predefined address pools are used up —
+about 30 networks on Docker Desktop, one per Compose project, stopped ones included — `up` says so, names
+the networks no container uses for the owner to remove, and offers `lane.py up --own-subnet`: the lane's
+networks take a /24 of their own in 10.213.0.0/16 from `.claude/lane-compose.yml`, which the lane's
+`COMPOSE_FILE` names, never committed. A lane whose stack did not start ends on `lane NOT ready`, exit
+status 1. Every hook runs where the work is (`in-cwd.sh`), so a session opened in the main checkout and
+working in a worktree is judged on the worktree — see «The gates judge where the work is».
 
 ## Companion plugins — `groundwork-pack`
 

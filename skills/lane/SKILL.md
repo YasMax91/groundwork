@@ -24,6 +24,25 @@ dev database — that is how a lane ended up testing another session's code (ota
      fix is `${COMPOSE_PROJECT_NAME}_<service>` in that file — propose it as its own change.
    - Postgres projects get no clone (named in the output); create and migrate the lane DB with the
      runner.
+   - It ends on `lane ready` only when the stack started; otherwise on `lane NOT ready` (exit status 1),
+     and the migrations wait for the next `up`.
+   - **Docker's address pools used up** ("all predefined address pools have been fully subnetted" —
+     Docker Desktop has about 30, and every Compose project holds one, a stopped one too): the output
+     names two ways out. (1) The Compose networks on Docker's pools that no container uses, and the
+     stacks only stopped containers hold: they belong to other projects, so they go only on the owner's
+     explicit yes — ask with the list; auto mode refuses it anyway. (2) `lane.py up --own-subnet`: this
+     lane's networks get a /24 of their own in 10.213.0.0/16 from `.claude/lane-compose.yml`, which
+     `COMPOSE_FILE` in the lane's `.env` names — both local to the worktree, never committed; later runs
+     keep the subnet. It touches nothing outside the worktree, so it may go ahead at once. Never write a
+     `docker-compose.override.yml` into the project root for this: a commit could carry it. Delete the
+     file and run `up` to go back to the pools.
+   - A new worktree has no `public/storage` (git-ignored): once the stack is up, `up` links it with
+     `artisan storage:link --relative` — relative, so it resolves on the host as well as in the
+     container — or from the host when artisan cannot.
+   - Nor its generated OpenAPI document (`storage/api-docs`, git-ignored in most projects), without
+     which every contract test fails: once the stack is up, `up` runs `commands.openapi_generate`, or
+     `artisan l5-swagger:generate` where l5-swagger is installed and no command is named. A committed
+     file the command rewrites is put back as it was.
 3. **Open the lane** at the domain the script printed and log in with the project's `dev_login`.
 4. **Fresh data on request:** `lane.py up --refresh-data` re-clones the dev database from the main
    checkout and re-applies this branch's migrations.
