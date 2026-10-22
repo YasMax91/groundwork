@@ -112,11 +112,28 @@ def _is_genuine_user(entry):
     return text
 
 
+def first_prompt(transcript_path):
+    """The first message the person typed in this session — the task a registry entry carries."""
+    try:
+        with open(transcript_path, encoding="utf-8", errors="ignore") as fh:
+            for line in fh:
+                try:
+                    text = _is_genuine_user(json.loads(line))
+                except Exception:
+                    continue
+                if text:
+                    return text.replace("\n", " ")[:140]
+    except Exception:
+        pass
+    return ""
+
+
 def current_turn(transcript_path):
     """(last user text, [tool_use dicts in order]) for the turn that is ending.
 
     The turn starts at the last message the person typed. Tool uses are collected from the main
-    thread only."""
+    thread only, each with the `cwd` its message was written in — where the shell keeps a `cd`
+    between calls, the next command runs there."""
     user_text, tools = "", []
     try:
         with open(transcript_path, encoding="utf-8", errors="ignore") as fh:
@@ -139,7 +156,8 @@ def current_turn(transcript_path):
             continue
         for item in content:
             if isinstance(item, dict) and item.get("type") == "tool_use":
-                tools.append({"name": item.get("name", ""), "input": item.get("input") or {}})
+                tools.append({"name": item.get("name", ""), "input": item.get("input") or {},
+                              "cwd": entry.get("cwd") if isinstance(entry.get("cwd"), str) else ""})
     return user_text, tools
 
 

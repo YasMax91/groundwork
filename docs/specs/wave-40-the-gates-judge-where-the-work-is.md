@@ -147,7 +147,7 @@ path (`bootstrap/app.php` four times), every command a `cd <lane> && …`, one a
   session starts.
 - follow-through, the other plugin in this repository, reads the session's folder the same way
   (`guard.py:154`, `stop_gate.py:303`, `post_tool.py:48`) — its status-file gate and its destructive-command
-  prompt do not follow a `cd`.
+  prompt do not follow a `cd`. Changed in follow-through v0.4.0: `wave-41-follow-through-judges-where-the-work-is.md`.
 - A push that runs through a script, a `make` target or an alias is not visible on the line — as before.
 - An unknown directory refuses a push to `main` / `master` / `development` in any repository, a Groundwork one
   or not: the author's decision (2026-10-21) — the line has to name the folder.

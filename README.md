@@ -360,7 +360,10 @@ common dir shows each session the others (branch, task, files, progress) and how
 branch moved; an empty worktree starts from the freshest `origin/development` (the app branches from
 `origin/HEAD`); a file another live session is editing stops once with that session's name; a
 `docs/ai/status.md` (created by `follow-through:status`, mirrored to a «Ревизия» artifact) must move in
-the same turn as a commit, merge, push or deploy. Details: [follow-through/README.md](follow-through/README.md).
+the same turn as a commit, merge, push or deploy. Since v0.4.0 every check judges the tree each command or
+edited file is in, not the folder the session was opened in: `cd <lane> && git reset --hard` asks when the
+lane has uncommitted changes, `cd <lane> && git commit` needs the lane's status, and a session working in a
+lane from outside is registered there. Details: [follow-through/README.md](follow-through/README.md).
 
 Stop checks block with one re-entry; the destructive check only ever asks, never allows or denies.
 Every trigger is logged to `~/.claude/follow-through/triggers.log`. Each check is switched off in
@@ -428,7 +431,8 @@ changed `bootstrap/app.php`, and no gate ran. Now (`gw_repo.py`, `session-repos.
   opened in: the Stop hook passes it on, and `estimate-ledger.sh --record` run in a lane finds it through the
   registry.
 
-Details: `docs/specs/wave-40-the-gates-judge-where-the-work-is.md`.
+Details: `docs/specs/wave-40-the-gates-judge-where-the-work-is.md`. follow-through follows the command the same
+way since its v0.4.0 — `docs/specs/wave-41-follow-through-judges-where-the-work-is.md`.
 
 ## Models and effort — by the agent's role, by the task's level
 
@@ -644,7 +648,7 @@ once with `claude --debug` in your project before enabling.
 ```
 .claude-plugin/   plugin.json · marketplace.json
 pack/             groundwork-pack — dependency-only bundle (this plugin + follow-through + companion plugins)
-follow-through/   the project-agnostic plugin — hooks/ (stop_gate.py · guard.py · session_start.py · prompt_submit.py · post_tool.py · session_end.py · lanes.py · render_status.py · ft.py · tests/) · skills/status
+follow-through/   the project-agnostic plugin — hooks/ (stop_gate.py · guard.py · session_start.py · prompt_submit.py · post_tool.py · session_end.py · lanes.py · render_status.py · ft.py · gw_repo.py (groundwork's, copied) · tests/) · skills/status
 skills/           start-task · spec · implement-approved · lane · risk-review · final-check · estimate · ground-integration · frontend-handoff · install-portal · client-doc · openapi-audit · grill · init · deep-grounding · deep-discovery · deep-review
 agents/           impact-mapper · blind-spot-mapper · grounded-researcher · adversarial-verifier · conformance-reviewer
 hooks/            hooks.json · lib.sh (shared resolvers) · session-start.sh · pre-compact.sh · task-intent.sh · format-on-edit.sh · done-gate.sh · test-gate.sh · openapi-gate.sh · slice-gate.sh · coverage-claim.sh · plain-language.sh · defect-scan.sh · estimate-claim.sh · estimate-docs.py · estimate-ledger.sh · lane.py · lane-guard.py · lane-idle.py · in-cwd.sh · gw_repo.py · session-repos.py · effort.ts (mod) · gw_tests.py · test-select.py · test-run.py · suite-record.py · push-gate.py · ledger-record.sh · agent-contract.sh · trim-output.sh · pre-tool-guard.sh · stdin-guard.sh · statusline.sh · tests/all.sh

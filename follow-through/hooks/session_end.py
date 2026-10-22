@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""follow-through :: SessionEnd — take this session out of the shared registry."""
+"""follow-through :: SessionEnd — take this session out of the shared registry, and out of the registries
+of the repositories it worked in from outside its folder (wave 41)."""
 
 import os
 import sys
@@ -15,6 +16,8 @@ def main():
     sid = payload.get("session_id") or ""
     if sid and lanes.common_dir(cwd):
         lanes.remove(cwd, sid)
+    if sid:
+        lanes.forget_outside(sid)
 
 
 if __name__ == "__main__":

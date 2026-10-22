@@ -277,77 +277,170 @@ def check_ui_proof(msg, tools):
     )
 
 
-STATUS_EVENT = re.compile(r"\bgit\s+(commit|merge|push|cherry-pick|rebase)\b|\bgh\s+pr\s+merge\b")
 STATUS_UNCHANGED = re.compile(r"статус не меняется\s*:|status unchanged\s*:", re.I)
+STATUS_FILE = re.compile(r"(^|/)docs/ai/status\.md$")
+COMMIT = re.compile(r"\bgit\s+(commit|cherry-pick)\b")
+PUSH = re.compile(r"\bgit\s+push\b|\bgh\s+pr\s+merge\b")
+OUTSIDE = "In %s — a tree this session works in outside its folder: "
 
 
 def check_freshness(msg, cwd, sid, cfg):
-    """LN-AC3: claiming completion while the base moved under files this lane changed."""
-    if not sid or not lanes.common_dir(cwd) or not DONE_CLAIM.search(strip_code(msg)):
-        return None
-    me = lanes.load(cwd, sid)
-    n, subjects, touching = lanes.base_drift(cwd, lanes.base_ref(cwd, cfg), me.get("files", []))
-    if not touching:
-        return None
-    return (
-        "freshness",
-        ", ".join(touching[:4]),
-        "The base moved by %d commits since this lane forked, and they change files you changed (%s). Rebase on the "
-        "base and re-run the checks before calling it done." % (n, ", ".join(touching[:6])),
-    )
-
-
-def check_status(msg, cwd, tools, cfg):
-    """ST-AC2/ST-AC3, wave 36: a commit or deploy updates docs/ai/status.md; the mirror follows the
-    integration branch and is republished by the session whose push changed the status there."""
-    root = lanes.toplevel(cwd) or cwd
-    text = lanes.read_status(root)
-    if not text:
+    """LN-AC3: claiming completion while the base moved under files this lane changed — and, since wave 41,
+    under the files it changed in a lane of another repository, by that lane's own switch."""
+    if not sid or not DONE_CLAIM.search(strip_code(msg)):
         return []
+    lanes_here = [(cwd, cfg, lanes.load(cwd, sid), "")] if lanes.common_dir(cwd) else []
+    seen = set()
+    for top, _ in lanes.outside_trees(sid):
+        me = lanes.load(top, sid)
+        tree = me.get("cwd") or top
+        if tree not in seen and me.get("files") and os.path.isdir(tree) and not lanes.same_repo(cwd, tree):
+            seen.add(tree)
+            lanes_here.append((tree, ft.config(tree), me, OUTSIDE % tree))
     found = []
-    status_abs = os.path.realpath(os.path.join(root, lanes.STATUS_REL))
-    status_re = re.compile(r"(^|/)docs/ai/status\.md$")
-    cmds = [(i, str(t["input"].get("command") or "")) for i, t in enumerate(tools) if t["name"] == "Bash"]
-    commits = [c for _, c in cmds if re.search(r"\bgit\s+(commit|cherry-pick)\b", c)]
-    envs = lanes.front_matter(text).get("environments") or {}
-    deploys = []
-    for _, c in cmds:
-        for spec in envs.values():
-            pat = spec.get("deploy_cmd")
-            try:
-                if pat and re.search(pat, c):
-                    deploys.append(c)
-            except re.error:
-                pass
-    edited = False
-    for t in tools:
-        p = edited_path(t)
-        if p and os.path.realpath(p if os.path.isabs(p) else os.path.join(cwd, p)) == status_abs:
-            edited = True
-        if t["name"] == "Bash" and lanes.shell_writes(str(t["input"].get("command") or ""), status_re):
-            edited = True
-    if (commits or deploys) and not edited and not STATUS_UNCHANGED.search(msg):
-        found.append((
-            "status_event",
-            (commits or deploys)[0][:80],
-            "This turn committed or deployed, and %s was not updated. Mark what moved (status, lane, proof = the "
-            "commit or deploy) — or, if nothing in the plan changed, add a line «статус не меняется: <почему>»." % lanes.STATUS_REL,
-        ))
-    base = lanes.base_ref(root, cfg)
-    mirror = lanes.front_matter(lanes.status_at(root, base) or text).get("mirror")
-    pushed = [i for i, c in cmds if re.search(r"\bgit\s+push\b|\bgh\s+pr\s+merge\b", c)]
-    if mirror and pushed and base:
-        blob = lanes.status_blob(root, base)
-        published_after = any(t["name"] == "Artifact" and str(t["input"].get("url") or "").rstrip("/") == mirror.rstrip("/")
-                              for t in tools[pushed[-1] + 1:])
-        if blob and blob != lanes.mirror_published_blob(root) and not published_after:
+    for tree, tcfg, me, head in lanes_here:
+        if not ft.gate_on(tcfg, "freshness"):
+            continue
+        n, subjects, touching = lanes.base_drift(tree, lanes.base_ref(tree, tcfg), me.get("files", []))
+        if touching:
             found.append((
-                "status_mirror",
-                mirror,
-                "Your push changed %s on %s, and its mirror %s still shows the previous version. Render it from the "
-                "integration branch — python3 <follow-through>/hooks/render_status.py %s <out.html> --ref %s — and publish "
-                "with url = the mirror. Never render from a lane's own copy." % (lanes.STATUS_REL, base, mirror, root, base),
+                "freshness",
+                ", ".join(touching[:4]),
+                head + "The base moved by %d commits since this lane forked, and they change files you changed (%s). "
+                "Rebase on the base and re-run the checks before calling it done." % (n, ", ".join(touching[:6])),
             ))
+    return found
+
+
+def status_writes(c, default):
+    """The trees whose status file a parsed command writes (lanes.written_paths: a `|` inside a quoted sed
+    script, `s/| doing |/| done |/`, is no pipe); `default` where the command's folder is unknown."""
+    out = []
+    for word, path in lanes.written_paths(c):
+        if STATUS_FILE.search(word):
+            top = lanes.top_of(path) if path else default
+            if top:
+                out.append(top)
+    return out
+
+
+def turn_work(tools, cwd):
+    """(own tree, {tree: what this turn did there}, {call index: its parsed parts}) — commits, pushes, status
+    edits, the last call there. Each command counts in the tree it runs in (wave 41), read from the folder its
+    call was made in; one whose folder the line does not name counts in that folder's tree, and so does what
+    the line shows only as text (a git that ssh runs, a here-document) — the session's own, as before."""
+    own, work, parsed = lanes.top_of(cwd), {}, {}
+
+    def at(top):
+        return work.setdefault(top, {"commits": [], "pushes": [], "edited": False, "last": -1, "changed": -1})
+
+    for i, t in enumerate(tools):
+        here = t.get("cwd") if t.get("cwd") and os.path.isdir(t["cwd"]) else cwd     # a folder removed since: ours
+        default = own if here == cwd else lanes.top_of(here)
+        p = edited_path(t)
+        if p:
+            p = p if os.path.isabs(p) else os.path.join(here, p)
+            top = lanes.top_of(p)
+            if top:
+                w = at(top)
+                w["last"] = w["changed"] = i
+                w["edited"] = w["edited"] or os.path.relpath(os.path.realpath(p), top) == lanes.STATUS_REL
+            continue
+        if t["name"] != "Bash":
+            continue
+        line = str(t["input"].get("command") or "")
+        parsed[i] = lanes.call_parts("Bash", t["input"], here)
+        tops, committed, pushed, wrote = [], False, False, False
+        for top, changes, c in parsed[i]:
+            top = default if top is None else top
+            if not top:
+                continue
+            tops.append(top)
+            w = at(top)
+            w["last"] = i
+            w["changed"] = i if changes else w["changed"]
+            sub = (c.git or {}).get("sub") or ""
+            if sub in ("commit", "cherry-pick"):
+                w["commits"].append(line[:80])
+                committed = True
+            if sub == "push" or [os.path.basename(a or "") for a in c.argv[:3]] == ["gh", "pr", "merge"]:
+                w["pushes"].append(i)
+                pushed = True
+            for written in status_writes(c, default):
+                at(written)["edited"] = wrote = True
+        if default and COMMIT.search(line) and not committed:
+            at(default)["commits"].append(line[:80])
+        if default and PUSH.search(line) and not pushed:
+            at(default)["pushes"].append(i)
+        if lanes.shell_writes(line, STATUS_FILE) and not wrote:
+            for top in set(tops + ([default] if default else [])):
+                at(top)["edited"] = True
+    return own, work, parsed
+
+
+def check_status(msg, cwd, tools, cfg, sid=""):
+    """ST-AC2/ST-AC3, wave 36: a commit or deploy updates docs/ai/status.md; the mirror follows the
+    integration branch and is republished by the session whose push changed the status there.
+
+    Wave 41: wherever the turn worked, each tree by its own switch. A commit needs the status of the tree it
+    was made in. A deploy names no tree (`ssh … deploy.sh`): it is read against the status of every
+    repository the turn worked in and every one the session worked in before from outside its folder, and
+    answers to that repository's tree — the session's own, else the one worked in last."""
+    own, work, parsed = turn_work(tools, cwd)
+    order = sorted(work, key=lambda t: (work[t]["changed"], work[t]["last"]), reverse=True)
+    groups = list(lanes.by_repo([own] + order + [t for t, _ in lanes.outside_trees(sid)]).values())
+
+    def status_on(t):
+        tcfg = cfg if t == own else ft.config(t)
+        text = lanes.read_status(t) if t else ""
+        return (text, tcfg) if text and ft.gate_on(tcfg, "status") else ("", tcfg)
+
+    roots = []
+    for trees in groups:
+        current = lanes.current_tree(trees[0], sid)
+        roots.append(next((t for t in [own] + order + [current] + trees if t in trees and lanes.read_status(t)), ""))
+    need = {}
+    for t in order:
+        if work[t]["commits"]:
+            need.setdefault(t, work[t]["commits"][0])
+    for i, parts in parsed.items():
+        line = str(tools[i]["input"].get("command") or "")
+        for root, _ in lanes.deploy_targets(line, parts, roots, own):
+            need.setdefault(root, line)
+    found = []
+    for t, line in need.items():
+        if status_on(t)[0] and not work.get(t, {}).get("edited") and not STATUS_UNCHANGED.search(msg):
+            head = "" if t == own else OUTSIDE % t
+            found.append((
+                "status_event",
+                line[:80],
+                head + "This turn committed or deployed%s, and %s was not updated. Mark what moved (status, lane, proof "
+                "= the commit or deploy) — or, if nothing in the plan changed, add a line «статус не меняется: "
+                "<почему>»." % (" there" if head else "", lanes.STATUS_REL),
+            ))
+    # The mirror shows the repository's integration branch: it answers to the tree the push was made from.
+    for trees in groups:
+        pushes = sorted((i, t) for t in trees for i in work.get(t, {}).get("pushes", []))
+        root = next((t for t in [pushes[-1][1], own] + trees if t in trees and lanes.read_status(t)), "") if pushes else ""
+        text, rcfg = status_on(root)
+        if not text:
+            continue
+        head = "" if root == own else OUTSIDE % root
+        base = lanes.base_ref(root, rcfg)
+        mirror = lanes.front_matter(lanes.status_at(root, base) or text).get("mirror")
+        if mirror and base:
+            blob = lanes.status_blob(root, base)
+            published_after = any(t["name"] == "Artifact" and str(t["input"].get("url") or "").rstrip("/") == mirror.rstrip("/")
+                                  for t in tools[pushes[-1][0] + 1:])
+            if blob and blob != lanes.mirror_published_blob(root) and not published_after:
+                found.append((
+                    "status_mirror",
+                    mirror,
+                    head + "Your push changed %s on %s, and its mirror %s still shows the previous version. Render it "
+                    "from the integration branch — python3 <follow-through>/hooks/render_status.py %s <out.html> --ref "
+                    "%s — and publish with url = the mirror. Never render from a lane's own copy."
+                    % (lanes.STATUS_REL, base, mirror, root, base),
+                ))
     return found
 
 
@@ -380,10 +473,9 @@ def main():
             found.append(check_outbound(msg, cfg))
         if ft.gate_on(cfg, "ui_proof"):
             found.append(check_ui_proof(msg, tools))
-        if ft.gate_on(cfg, "freshness"):
-            found.append(check_freshness(msg, cwd, payload.get("session_id") or "", cfg))
-    if ft.gate_on(cfg, "status"):
-        found.extend(check_status(msg, cwd, tools, cfg))
+        # Since wave 41 each tree answers to its own switch: these two read `cfg` for the session's own.
+        found.extend(check_freshness(msg, cwd, payload.get("session_id") or "", cfg))
+    found.extend(check_status(msg, cwd, tools, cfg, payload.get("session_id") or ""))
     found = [f for f in found if f]
     if not found:
         return
