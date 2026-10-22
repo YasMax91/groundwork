@@ -431,9 +431,16 @@ changed `bootstrap/app.php`, and no gate ran. Now (`gw_repo.py`, `session-repos.
 - **The ledger finds the transcript where it is.** A session files its transcript under the folder it was
   opened in: the Stop hook passes it on, and `estimate-ledger.sh --record` run in a lane finds it through the
   registry.
+- **A lane stops when the last session working in it closes.** Before each call `session-repos.py` also notes when
+  the session last called into each project (`gw_activity.py`; a subagent's calls are its session's). At a
+  session's end `lane-idle.py` judges its folder's lane and every lane it worked in, and stops a lane's stack
+  (`docker compose stop`) unless another session works there: a call there in the last 30 minutes, a fresh
+  follow-through entry there, or a `claude` process — the app's or the CLI's — with its folder there. `/clear` and
+  `/resume` keep the folder's lane.
 
-Details: `docs/specs/wave-40-the-gates-judge-where-the-work-is.md`. follow-through follows the command the same
-way since its v0.4.0 — `docs/specs/wave-41-follow-through-judges-where-the-work-is.md`.
+Details: `docs/specs/wave-40-the-gates-judge-where-the-work-is.md`; the lanes at a session's end:
+`docs/specs/wave-42-lane-idle-follows-the-work.md`. follow-through follows the command the same way since its
+v0.4.0 — `docs/specs/wave-41-follow-through-judges-where-the-work-is.md`.
 
 ## Models and effort — by the agent's role, by the task's level
 
@@ -458,8 +465,9 @@ lives in the git common dir, keyed by the test database, so every worktree sees 
 two lanes ran the same 989 tests at the same time, 989 of 989 each, no deadlock — the shared test
 database gave 167 and 123 failures on the same run. `lane.py down [--purge]` stops the lane and, with
 `--purge`, drops its databases and volumes. A lane starts without Horizon, scheduler or queue workers
-(`lane.py up --full` adds them), and `lane-idle.py` stops its containers when the last session in the worktree
-closes. Once its stack is up, a new lane gets what git does not carry: `public/storage` as a relative link
+(`lane.py up --full` adds them), and `lane-idle.py` stops its containers when the last session working in it
+closes — one opened there, or one that worked there from another folder. Once its stack is up, a new lane
+gets what git does not carry: `public/storage` as a relative link
 from `artisan storage:link --relative`, and the generated OpenAPI document its contract tests read
 (`commands.openapi_generate`, else l5-swagger's own command). When Docker's predefined address pools are used up —
 about 30 networks on Docker Desktop, one per Compose project, stopped ones included — `up` says so, names
@@ -652,7 +660,7 @@ pack/             groundwork-pack — dependency-only bundle (this plugin + foll
 follow-through/   the project-agnostic plugin — hooks/ (stop_gate.py · guard.py · session_start.py · prompt_submit.py · post_tool.py · session_end.py · lanes.py · render_status.py · ft.py · gw_repo.py (groundwork's, copied) · tests/) · skills/status
 skills/           start-task · spec · implement-approved · lane · risk-review · final-check · estimate · ground-integration · frontend-handoff · install-portal · client-doc · openapi-audit · grill · init · deep-grounding · deep-discovery · deep-review
 agents/           impact-mapper · blind-spot-mapper · grounded-researcher · adversarial-verifier · conformance-reviewer
-hooks/            hooks.json · lib.sh (shared resolvers) · session-start.sh · pre-compact.sh · task-intent.sh · format-on-edit.sh · done-gate.sh · test-gate.sh · openapi-gate.sh · slice-gate.sh · coverage-claim.sh · plain-language.sh · defect-scan.sh · estimate-claim.sh · estimate-docs.py · estimate-ledger.sh · lane.py · lane-guard.py · lane-idle.py · in-cwd.sh · gw_repo.py · session-repos.py · effort.ts (mod) · gw_tests.py · test-select.py · test-run.py · suite-record.py · push-gate.py · ledger-record.sh · agent-contract.sh · trim-output.sh · pre-tool-guard.sh · stdin-guard.sh · statusline.sh · tests/all.sh
+hooks/            hooks.json · lib.sh (shared resolvers) · session-start.sh · pre-compact.sh · task-intent.sh · format-on-edit.sh · done-gate.sh · test-gate.sh · openapi-gate.sh · slice-gate.sh · coverage-claim.sh · plain-language.sh · defect-scan.sh · estimate-claim.sh · estimate-docs.py · estimate-ledger.sh · lane.py · lane-guard.py · lane-idle.py · in-cwd.sh · gw_repo.py · session-repos.py · gw_activity.py · effort.ts (mod) · gw_tests.py · test-select.py · test-run.py · suite-record.py · push-gate.py · ledger-record.sh · agent-contract.sh · trim-output.sh · pre-tool-guard.sh · stdin-guard.sh · statusline.sh · tests/all.sh
 workflows/        deep-review-run.js · deep-discovery-run.js · deep-grounding-run.js — the multi-agent orchestration, executed by the runtime
 guidelines/       ai-sdd-process · grounding-protocol · blind-spot-protocol · clarify-protocol · plain-language · openapi-protocol · laravel-standards · tdd-protocol · writing-standards · working-memory
 docs/             skill-hygiene (author-facing) · specs/

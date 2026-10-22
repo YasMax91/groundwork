@@ -182,7 +182,8 @@ main checkout's file).
   /tmp/x.patch`); a session that only reads a tree for 30 minutes drops out of its siblings' list.
 - groundwork's `lane-idle.py` stops a lane's stack when the last session in its tree closes; a session that
   worked in the lane from outside now counts as one there while it is live, and at its own end nothing stops
-  the stack (its SessionEnd runs in its own folder).
+  the stack (its SessionEnd runs in its own folder). Changed in groundwork v0.51.0:
+  `wave-42-lane-idle-follows-the-work.md`.
 
 ## 0.4.2 (2026-10-22) — a status moved by perl or a Python script counts; a gate config behind a quoted `|` asks
 

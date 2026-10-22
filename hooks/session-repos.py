@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Groundwork plugin :: remember the Groundwork repositories a session changes outside its own folder (wave 40).
 
-    (no arguments)                PreToolUse(Bash|Edit|Write|MultiEdit|NotebookEdit): record them (gw_repo.remember)
+    (no arguments)                PreToolUse(Bash|Edit|Write|MultiEdit|NotebookEdit): record them (gw_repo.remember),
+                                  and the time of the call in each project it works in (gw_activity.record, wave 42)
     --hook-dirs tool|each|first   in-cwd.sh: the directories to run a hook in, one per line (stdin: the payload)
     --transcripts <dir>           estimate-ledger.sh: transcripts of the sessions that worked in <dir>'s project
                                   from outside it, one per line
@@ -17,6 +18,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import gw_activity as activity  # noqa: E402
 import gw_repo as repo  # noqa: E402
 
 
@@ -38,7 +40,9 @@ if __name__ == "__main__":
         elif a[:1] == ["--list"] and len(a) > 1:
             print("\n".join(repo.remembered(a[1])))
         elif not a:
-            repo.remember(payload())
+            p = payload()
+            repo.remember(p)
+            activity.record(p)
     except Exception:
         pass
     sys.exit(0)

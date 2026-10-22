@@ -180,6 +180,31 @@ eq "the session's own folder is not"                 "" "$(listed s-home)"
 pre s-other "$E" "{tool_name:\"Write\", tool_input:{file_path:\"$E/notes.md\"}}"
 eq "nor a folder that is no Groundwork project"      "" "$(listed s-other)"
 
+echo "the activity file — when the session last called into each project (wave 42):"
+active() { python3 -c 'import json, sys
+try: d = json.load(open(sys.argv[1]))
+except Exception: d = {}
+print(" ".join(sorted(k.replace(sys.argv[2], "R") for k in d)))' "$GW_SESSIONS_DIR/$1.activity.json" "$ROOT"; }
+at() { python3 -c 'import json, sys; print(int(json.load(open(sys.argv[1])).get(sys.argv[2], 0)))' "$GW_SESSIONS_DIR/$1.activity.json" "$2"; }
+eq "reading the lane counts"                         "$w" "$(active s-read)"
+eq "so does an Edit there"                           "$w" "$(active s-edit)"
+eq "and the session's own folder"                    "$w" "$(active s-home)"
+eq "not a folder that is no Groundwork project"      "" "$(active s-other)"
+pre s-dark "$E" '{tool_name:"Bash", tool_input:{command:"cd \"$LANE\" && ./vendor/bin/sail artisan test"}}'
+eq "nor a directory the line does not name"          "none" "$([ -e "$GW_SESSIONS_DIR/s-dark.activity.json" ] && echo file || echo none)"
+pre s-sub "$E" "{tool_name:\"Bash\", tool_input:{command:\"cd $W && ls\"}, agent_id:\"a1\", agent_type:\"Explore\"}"
+eq "a subagent's call is its session's"              "$w" "$(active s-sub)"
+back() { python3 -c 'import json, sys; p = sys.argv[1]; d = json.load(open(p)); d[sys.argv[2]] -= int(sys.argv[3]); json.dump(d, open(p, "w"))' \
+  "$GW_SESSIONS_DIR/$1.activity.json" "$2" "$3"; }
+t1="$(at s-sub "$W")"; back s-sub "$W" 30; pre s-sub "$E" "{tool_name:\"Bash\", tool_input:{command:\"cd $W && ls\"}}"
+eq "a call within the minute keeps the time"         "$((t1 - 30))" "$(at s-sub "$W")"
+back s-sub "$W" 90
+pre s-sub "$E" "{tool_name:\"Bash\", tool_input:{command:\"cd $W && ls\"}}"
+eq "…a call after it moves it on"                    "moved" "$([ "$(at s-sub "$W")" -ge "$t1" ] && echo moved || echo stale)"
+printf '{}\n' > "$GW_SESSIONS_DIR/old.activity.json"; touch -t 202001010000 "$GW_SESSIONS_DIR/old.activity.json"
+pre s-new "$E" "{tool_name:\"Edit\", tool_input:{file_path:\"$W/app/A.php\"}}"
+eq "a new session drops the month-old files"         "gone" "$([ -e "$GW_SESSIONS_DIR/old.activity.json" ] && echo kept || echo gone)"
+
 echo "the Stop gates run where the session worked:"
 stop() { # mode hook session folder session [extra jq] -> stderr/stdout, then "rc=N"
   local out extra="${5:-}"; [ -n "$extra" ] || extra='{}'

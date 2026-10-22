@@ -143,7 +143,8 @@ path (`bootstrap/app.php` four times), every command a `cd <lane> && …`, one a
 
 - SessionStart, UserPromptSubmit, PreCompact, SessionEnd (`lane-idle.py`), the status line and the effort mod
   still read the session's folder: they carry neither a command nor a path, and the registry is empty when a
-  session starts.
+  session starts. Changed for `lane-idle.py` in groundwork v0.51.0 — it also judges the lanes the registry
+  remembers for the session: `wave-42-lane-idle-follows-the-work.md`.
 - follow-through, the other plugin in this repository, reads the session's folder the same way
   (`guard.py:154`, `stop_gate.py:303`, `post_tool.py:48`) — its status-file gate and its destructive-command
   prompt do not follow a `cd`. Changed in follow-through v0.4.0: `wave-41-follow-through-judges-where-the-work-is.md`.
