@@ -172,9 +172,10 @@ main checkout's file).
 - The status gate needs a repository: a `docs/ai/status.md` in a folder outside git is no longer read (0.3.1 read
   it, and a `git commit` there fails anyway).
 - A commit, push or deploy that runs through a script, a `make` target or an alias is not visible on the line;
-  a status update by `perl -pi` or a Python here-document is not recognised; `git merge`, `rebase`, `am` and
-  `gh pr merge` are no commits; a line that only mentions `git commit` (`echo`, `git log --grep`) still counts
-  as one; one «статус не меняется: …» line answers for every tree of the turn — as before.
+  a status update by `perl -pi` or a Python here-document is not recognised (it is since 0.4.2, below); `git
+  merge`, `rebase`, `am` and `gh pr merge` are no commits; a line that only mentions `git commit` (`echo`, `git
+  log --grep`) still counts as one; one «статус не меняется: …» line answers for every tree of the turn — as
+  before.
 - The parser's limits are groundwork's: a folder handed in through `{}` (`xargs -I{} git -C {}`, `find -exec
   git -C {}`) is not followed, and a git that `ssh` or `docker exec` runs is elsewhere.
 - A command the parser does not know as a reader registers the session in that tree (`npm test`, `git diff >
@@ -182,3 +183,97 @@ main checkout's file).
 - groundwork's `lane-idle.py` stops a lane's stack when the last session in its tree closes; a session that
   worked in the lane from outside now counts as one there while it is live, and at its own end nothing stops
   the stack (its SessionEnd runs in its own folder).
+
+## 0.4.2 (2026-10-22) — a status moved by perl or a Python script counts; a gate config behind a quoted `|` asks
+
+- Source: the «Not changed» line above, and `guard.py` still finding a gate-config write with `lanes.shell_writes`,
+  which cuts the line on every `|`, so `sed -i 's/a|b/c/' .groundwork.json` was never asked about.
+- What the log shows. The two `status_event` refusals of 2026-10-14 in `triggers.log` (project A, the excerpt
+  starting `perl -0pi -e 's{- Mode: Releasing`) were not perl's: that perl rewrote `.claude/groundwork/task-state.md`
+  on the commit's line, and the status had been moved earlier in the turn by `sed -i '' 's/… | blocked/…/'
+  docs/ai/status.md`, which the line reading of that time cut on its `|`. Replayed, both turns pass since 0.4.0.
+  The perl and Python forms are real all the same: between 2026-10-05 and 10-16 project A's sessions moved the
+  status 30 times by a Python script on the line (`p = 'docs/ai/status.md'` … `open(p, 'w')`,
+  `pathlib.Path(…).write_text`) and 5 times by `perl -pi`.
+
+### Changes
+
+- **`lanes.written_paths`** reads two more writers from the command's own words.
+  - `perl -i`, its switches bundled or not (`-pi`, `-0pi`, `-0777 -pi`, `-pi.bak`, `-i -pe`): the files are the
+    words after the switches and the program — never the `-e` code, never the program file when there is no
+    `-e`. Without `-i` perl writes nothing there.
+  - A Python script the line holds — `python3 -c CODE`, or a here-document for `python3 -` or a `python3` with no
+    script — read with Python's `ast`, imported only for such a line: what it opens to write by a path it spells
+    out. `open(p, …)` with `w`, `a`, `x` or `+` in its mode (also `io.open`, `codecs.open`); `Path.write_text`,
+    `write_bytes`, `touch`, `unlink`, `open('w')`; `x.replace(p)` / `x.rename(p)` with one argument (a str's
+    `replace` takes two); the destination of `os.replace`, `os.rename`, `shutil.copy*`, `shutil.move`;
+    `os.remove`, `os.unlink`, `os.truncate`. `p` is a literal, `Path(…)`, `os.path.join(…)`, `/`, `+`, an
+    f-string of them, or a name bound to one where the call runs — the statements are read in the order they
+    run, so one `p` that holds a spec and then the status writes each in turn. A name bound inside a function, a
+    lambda, a class or a comprehension is unknown there. `os.chdir` to a path the script spells out moves the
+    relative paths after it; after one it does not spell out they are in no known folder and count where a
+    command's folder is unknown. In an unquoted here-document (`<<PY`) a path with `$` or a backquote is the
+    shell's, not spelled out. A script file the line only runs (`python3 tools/x.py`), `python3 -m`, a script
+    that does not parse: nothing.
+  - A caller after one file names it (`written_paths(c, named)`), and a Python script that never spells that name
+    is not read: the Stop gate passes `status.md`, so the scripts of a turn that never touch the status cost
+    nothing.
+- **`stop_gate.turn_work`**: a status write counts in the tree of the file it writes also when the command runs
+  in a folder outside git — `Path('<lane>/docs/ai/status.md').write_text(…)`, or `sed -i … <lane>/docs/ai/status.md`,
+  from the empty folder of wave 40. 0.4.1 skipped every command whose own folder was outside git, and its
+  writes with it.
+- **`guard.py`**: a gate-config write asks when a command's own words write one (`lanes.written_paths`) — `sed -i
+  's/a|b/c/' .groundwork.json`, `sed -i '' 's|"test": …|…|' .groundwork.json`, `perl -pi … .claude/follow-through.json`,
+  a Python script writing `.groundwork.json` or `Path('.claude') / 'settings.json'` — by the switch of the tree
+  the file is in, as since 0.4.0. The line cut on `|` and `;` (`lanes.shell_writes`) still answers for what no
+  command shows: `echo '{}' > "$CFG/.groundwork.json"`, a write inside `ssh '…'`. A line that names no gate-config
+  file is not parsed for it.
+
+### Acceptance criteria
+
+- **FT41-AC6** A commit after `perl -pi -e 's/\| doing \|/| done |/' docs/ai/status.md` (also `-0pi`, `-0777 -i -pe`),
+  or after a Python here-document or `python3 -c` that opens the status to write (`open(p, 'w')`,
+  `pathlib.Path(…).write_text`), passes. After `perl -ne …`, `perl -pe … > /tmp/x`, a perl that rewrites another
+  file on a line that only stages the status, a script that reads the status and writes another file, or a
+  script file, it is refused as before. The write counts in the tree of the file — from a folder outside git
+  too — and never for another worktree.
+- **FT41-AC7** `sed -i 's/a|b/c/' .groundwork.json`, `sed -i '' …` on `.claude/settings.json`, `perl -pi` on
+  `.claude/follow-through.json`, and a Python script writing `.groundwork.json` or `Path('.claude') /
+  'settings.json'` ask. Reading a gate config with `grep`, `jq` in a pipeline, `perl -ne`, `sed -n` or a Python
+  script does not. `echo '{}' > "$CFG/.groundwork.json"` still asks. A script writing a lane's gate config asks
+  by the lane's switch.
+
+### Verification
+
+- `follow-through/hooks/tests/test_writes.py` (new): 15 of 15. Against the 0.4.1 hooks 9 of the 15 fail; the other
+  six hold that a read stays a read and a script file stays unseen. follow-through 120 of 120; `bash
+  hooks/tests/all.sh` green.
+- Replayed on the author's machine, 0.4.1 against 0.4.2 run at one moment (the mirror check reads the live
+  `origin/development`): every turn of every transcript with a Bash line that
+  names `docs/ai/status.md` (160 turns), and every Bash line that names a gate-config file (493 lines). No
+  turn loses a status edit 0.4.1 counted, no line 0.4.1 asked on passes. 11 turns 0.4.1 refused pass now,
+  each a script that moved the status (read one by one: 10 Python, 1 perl). 15 lines ask now, each a
+  real write of a file named as a gate config: 3 `sed -i '' 's|…|…|' .groundwork.json` in project A lanes,
+  the rest Python scripts writing a project's `.groundwork.json` or groundwork's own template.
+- 26 mutations — each fix undone in a copy of the hooks, the name filter inverted or pointed at another file —
+  each fail at least one case.
+- Cost, measured on the author's Mac: `guard.py` per call 82–91 ms against 79–86 ms on 0.4.1 (Python's start-up;
+  a line that names a gate config and runs a Python script reads the script, +5–9 ms); the Stop gate on a
+  401-call turn with 100 Python scripts 184 ms against 182 ms. On the 40 largest real turns the reader ran on 6
+  scripts, 3 ms in all; without the name filter it read 2034 of them, ~0.8 s.
+
+### Changed on purpose
+
+- A Python script writing another tree's gate config answers to that tree's `gates.destructive`, as every other
+  write has since 0.4.0 (`echo '{}' > <lane>/.groundwork.json`). 0.4.1 asked it by the session folder's switch,
+  since it could not see where the script wrote: off in the lane now silences it from outside, and off in the
+  session's folder no longer does. No such line is in the replay.
+
+### Not changed
+
+- `sed` in place is read as before, `-i…` only as its own word: `sed -Ei`, `sed --in-place` are not seen (none in
+  the transcripts touches the status).
+- Not seen: a script file the line only runs, `python3 -m`, a script fed through a pipe (`cat x.py | python3 -`),
+  `xargs perl -pi`, a path from `sys.argv`, the environment or a function's parameter, perl's own `open(F, '>',
+  …)` without `-i`. The status gate refuses as before; the gate-config prompt asks only when the line shows the
+  write.

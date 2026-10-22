@@ -46,6 +46,8 @@ GATE_CONFIG = re.compile(
 GATE_CONFIG_IN_SHELL = re.compile(
     r"\.groundwork\.json|\.claude/settings(\.local)?\.json|\.claude/follow-through\.json"
 )
+# A line that can write one — a script may join the folder and the name: `Path(".claude") / "settings.json"`.
+GATE_CONFIG_NAMED = re.compile(r"\.groundwork\.json|settings(\.local)?\.json|follow-through\.json")
 
 
 def dirty(cwd):
@@ -139,9 +141,12 @@ def reason_for_bash(cmd, cwd, own_on=True):
         return "it drops this lane's databases (dev data cloned into the lane is lost)"
     if PROCESS_KILL.search(cmd) and on(PROCESS_KILL):
         return "it stops processes (workers, servers) that are not restarted by this command"
-    if lanes.shell_writes(cmd, GATE_CONFIG_IN_SHELL):
+    if GATE_CONFIG_NAMED.search(cmd):
+        # Each command's own words (lanes.written_paths), so `sed -i 's/a|b/c/' .groundwork.json` is one command and
+        # no pipe; the line cut on `|` and `;` still answers for what no command shows (a here-document to a shell).
         written = [path for _, _, c in parts() for word, path in lanes.written_paths(c) if GATE_CONFIG_IN_SHELL.search(word)]
-        if held([lanes.top_of(tree_path(p)) if p else "" for p in written]):
+        if (written or lanes.shell_writes(cmd, GATE_CONFIG_IN_SHELL)) and \
+                held([lanes.top_of(tree_path(p)) if p else "" for p in written]):
             return "it rewrites a gate or permission config — the checks that hold the work"
     return ""
 

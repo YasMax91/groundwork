@@ -345,19 +345,249 @@ def current_tree(top, sid):
     return load(top, sid).get("cwd") or ""
 
 
-def written_paths(c):
-    """[(word, path)] the files a parsed command writes — a redirect, `tee`, `sed -i`, `rm`, `truncate`, the
-    destination of `mv` / `cp` / `install` (shell_writes' rules, read from the command's own words, so a `|`
-    inside a quoted sed script is no pipe); the path absolute, or None where the command's folder is unknown."""
+def written_paths(c, named=""):
+    """[(word, path)] the files a parsed command writes — a redirect, `tee`, `sed -i`, `perl -i`, `rm`, `truncate`,
+    the destination of `mv` / `cp` / `install`, a file a Python script on the line writes by a path it spells out
+    (shell_writes' rules, read from the command's own words, so a `|` inside a quoted sed or perl script is no
+    pipe); the path absolute, or None where the command's folder is unknown. A caller after one file passes its
+    name as `named`: a script that never spells it is not read — the one reader here that costs."""
     words = [a or "" for a in c.argv]
     words = words[1:] if words[:1] == ["sudo"] else words
     name = os.path.basename(words[0]) if words else ""
-    found = [o for o in c.outputs if o not in ("/dev/null", "/dev/stdout", "/dev/stderr", "/dev/tty")]
+    found = [(o, True) for o in c.outputs if o not in ("/dev/null", "/dev/stdout", "/dev/stderr", "/dev/tty")]
     if name in ("tee", "rm", "truncate") or (name == "sed" and any(w.startswith("-i") for w in words[1:])):
-        found += words[1:]
+        found += [(w, True) for w in words[1:]]
+    elif PERL.fullmatch(name):
+        found += [(w, True) for w in perl_in_place(words[1:])]
     elif name in ("mv", "cp", "install"):
-        found += words[-1:]                             # only the destination is written
-    return [(w, w if os.path.isabs(w) else (os.path.join(c.dir, w) if c.dir else None)) for w in found if w]
+        found += [(w, True) for w in words[-1:]]        # only the destination is written
+    elif PYTHON.fullmatch(name):
+        code, expanded = python_source(c, words[1:])
+        found += python_writes(code, expanded) if named in code else []
+    return [(w, w if os.path.isabs(w) else (os.path.join(c.dir, w) if c.dir and here else None))
+            for w, here in found if w]
+
+
+# --- what `perl -i` and a Python script write (follow-through 0.4.2) ---------------------------------------------
+# Project A's sessions moved docs/ai/status.md with `perl -pi -e … docs/ai/status.md` and with `python3 - <<'PY' … p =
+# 'docs/ai/status.md' … open(p, 'w').write(s)`, and neither counted: the turn's commit was refused for a status that
+# had moved. The script is read, not grepped — one that reads the status and writes another file has not moved it.
+
+PERL = re.compile(r"perl[0-9.]*")
+PYTHON = re.compile(r"python[0-9.]*")
+
+
+def perl_in_place(args):
+    """The files `perl -i` edits: the words after its switches and its program (`-e CODE`, else the first word); []
+    without -i. Switches bundle (`-0pi`, `-0777pi`, `-pi.bak`); after -i, -e, -M, -I … the rest of the word is their
+    value, and -e / -I with nothing after them take the next word."""
+    in_place, code, i = False, False, 0
+    while i < len(args) and args[i].startswith("-") and args[i] != "-":
+        a, k = args[i], 1
+        if a == "--":
+            i += 1
+            break
+        while k < len(a):
+            ch = a[k]
+            in_place, code = in_place or ch == "i", code or ch in "eE"
+            if ch in "eEI" and k + 1 == len(a):
+                i += 1                                  # the value is the next word
+            if ch in "eEICdDFiMmVx":
+                break                                   # the rest of the word is the value
+            k += 1
+        i += 1
+    if not in_place:
+        return []
+    return args[i:] if code else args[i + 1:]
+
+
+def python_source(c, args):
+    """(code, expanded) of a python command whose code is on the line — `-c CODE`, or a here-document on its standard
+    input for `-` or no script; ("", False) for a script file or a module. `expanded`: the shell expands `$` in it
+    (`<<EOF` unquoted), so a path spelled with `$` or a backquote is not the one Python opens."""
+    i = 0
+    while i < len(args) and args[i].startswith("-") and args[i] != "-":
+        a = args[i]
+        if a == "--":
+            i += 1
+            break
+        if not a.startswith("--"):
+            for k, ch in enumerate(a[1:], 1):
+                if ch in "cmWX":                        # an option with a value: the rest of the word, else the next
+                    if ch in "cm":
+                        return (a[k + 1:] or (args[i + 1] if i + 1 < len(args) else "")) if ch == "c" else "", False
+                    i += 0 if a[k + 1:] else 1
+                    break
+        i += 2 if a == "--check-hash-based-pycs" else 1
+    if i < len(args) and args[i] != "-":
+        return "", False                                # a script file: not on this line
+    for op, w, body in c.redirs:
+        if op in ("<<", "<<-") and body is not None:
+            return body, not any(q in w.raw for q in "'\"\\")
+    return "", False
+
+
+PY_OPEN = ("open", "io.open", "codecs.open")
+PY_PATH = ("pathlib.Path", "pathlib.PurePath", "pathlib.PosixPath", "pathlib.PurePosixPath")
+PY_STR = ("str", "os.fspath", "os.path.abspath", "os.path.realpath", "os.path.normpath", "os.path.expanduser")
+PY_TO = ("shutil.copy", "shutil.copy2", "shutil.copyfile", "shutil.move", "os.rename", "os.replace")
+PY_GONE = ("os.remove", "os.unlink", "os.truncate")
+PY_WRITE = re.compile(r"[wax+]")
+
+
+def python_writes(source, expanded=False):
+    """[(path, known)] the files a Python script writes by a path it spells out — `open(p, 'w')`, `p.write_text(…)`,
+    `p.open('a')`, `p.touch()`, `p.unlink()`, `x.replace(p)` / `x.rename(p)`, `os.replace(tmp, p)`, `shutil.copy(src,
+    p)`, `os.remove(p)` — with `p` a literal, `Path(…)` / `os.path.join(…)` / `/` / `+` / an f-string of literals, or a
+    name bound to one where the call runs. Statements are read in the order they run; a name bound inside a
+    function, a lambda, a class or a comprehension is unknown there. A relative path is relative to the folder the
+    script started in, or to the one an `os.chdir` to such a path moved it to; after an `os.chdir` to a path the
+    script does not spell out, its folder is unknown (`known` False)."""
+    import ast                                          # only a line that runs Python pays for the parser
+    try:
+        tree = ast.parse(source)
+    except Exception:                                   # not Python this hook can read: nothing counts
+        return []
+    scopes = (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda, ast.ClassDef, ast.ListComp, ast.SetComp,
+              ast.DictComp, ast.GeneratorExp)
+    names, alias, cwd, out, events = {}, {}, [""], [], []
+
+    def dotted(n, shadow):
+        parts = []
+        while isinstance(n, ast.Attribute):
+            parts.insert(0, n.attr)
+            n = n.value
+        return ".".join([alias.get(n.id, n.id)] + parts) if isinstance(n, ast.Name) and n.id not in shadow else ""
+
+    def value(n, shadow):
+        """("str" | "path", text) of an expression the script spells out, else None."""
+        if isinstance(n, ast.Constant):
+            return ("str", n.value) if isinstance(n.value, str) else None
+        if isinstance(n, ast.Name):
+            return None if n.id in shadow else names.get(n.id)
+        if isinstance(n, ast.FormattedValue):
+            return value(n.value, shadow) if n.format_spec is None and n.conversion in (-1, ord("s")) else None
+        if isinstance(n, ast.JoinedStr):
+            parts = [value(v, shadow) for v in n.values]
+            return None if None in parts else ("str", "".join(p[1] for p in parts))
+        if isinstance(n, ast.BinOp) and isinstance(n.op, (ast.Add, ast.Div)):
+            a, b = value(n.left, shadow), value(n.right, shadow)
+            if not (a and b):
+                return None
+            if isinstance(n.op, ast.Add):
+                return ("str", a[1] + b[1]) if a[0] == b[0] == "str" else None
+            return ("path", os.path.join(a[1], b[1])) if "path" in (a[0], b[0]) else None
+        if not isinstance(n, ast.Call):
+            return None
+        f, args = dotted(n.func, shadow), [value(a, shadow) for a in n.args]
+        if None in args:
+            return None
+        if f in PY_PATH:
+            return "path", os.path.join(*[a[1] for a in args]) if args else "."
+        if f == "os.path.join" and args:
+            return "str", os.path.join(*[a[1] for a in args])
+        if f in PY_STR and len(args) == 1:
+            return "str", os.path.expanduser(args[0][1]) if f == "os.path.expanduser" else args[0][1]
+        if f in ("os.getcwd", "pathlib.Path.cwd"):
+            return ("path" if f.startswith("pathlib") else "str"), "."
+        if isinstance(n.func, ast.Attribute) and n.func.attr in ("resolve", "absolute", "expanduser") and not args:
+            base = value(n.func.value, shadow)
+            if base and base[0] == "path":
+                return "path", os.path.expanduser(base[1]) if n.func.attr == "expanduser" else base[1]
+        return None
+
+    def arg(n, pos, key, shadow):
+        if len(n.args) > pos:
+            return value(n.args[pos], shadow)
+        kw = next((k.value for k in n.keywords if k.arg == key), None)
+        return value(kw, shadow) if kw is not None else None
+
+    def spelled(v):
+        return v and not (expanded and re.search(r"[$`]", v[1]))
+
+    def wrote(v):
+        if spelled(v):
+            path = os.path.normpath(v[1])
+            if os.path.isabs(path) or cwd[0] is None:
+                out.append((path, os.path.isabs(path)))
+            else:
+                out.append((os.path.normpath(os.path.join(cwd[0], path)), True))
+
+    def call(n, shadow, nested):
+        f, m = dotted(n.func, shadow), getattr(n.func, "attr", "")
+        if f == "os.chdir":
+            to = arg(n, 0, "path", shadow)
+            if nested or not spelled(to):
+                cwd[0] = None                           # the folder after it is not one the script spells out
+            elif os.path.isabs(to[1]) or cwd[0] is not None:
+                cwd[0] = os.path.normpath(os.path.join(cwd[0] or "", to[1]))
+        elif f in PY_OPEN:
+            mode = arg(n, 1, "mode", shadow)
+            if mode and PY_WRITE.search(mode[1]):
+                wrote(arg(n, 0, "file", shadow) or arg(n, 0, "filename", shadow))
+        elif f in PY_TO:
+            wrote(arg(n, 1, "dst", shadow))
+        elif f in PY_GONE:
+            wrote(arg(n, 0, "path", shadow))
+        elif m in ("rename", "replace") and len(n.args) + len(n.keywords) == 1:
+            wrote(arg(n, 0, "target", shadow))          # Path.replace(target); a str's replace takes two
+        elif m in ("write_text", "write_bytes", "touch", "unlink", "open"):
+            base, mode = value(n.func.value, shadow), arg(n, 0, "mode", shadow)
+            if base and base[0] == "path" and (m != "open" or (mode and PY_WRITE.search(mode[1]))):
+                wrote(base)
+
+    def bound(n):
+        """The names a statement binds to something that is no path the script spells out."""
+        if isinstance(n, ast.Global):
+            return n.names
+        if isinstance(n, (ast.ExceptHandler, ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            return [n.name] if n.name else []
+        targets = getattr(n, "targets", []) + [getattr(n, "target", None)] + \
+            [i.optional_vars for i in getattr(n, "items", [])]
+        return [x.id for t in targets if t is not None for x in ast.walk(t) if isinstance(x, ast.Name)]
+
+    def scan(n, shadow, nested):
+        """Each call and binding, at the position it runs: an assignment after the value it binds."""
+        if isinstance(n, scopes):
+            shadow, nested = shadow | {x.arg for x in ast.walk(n) if isinstance(x, ast.arg)} | {
+                x.id for x in ast.walk(n) if isinstance(x, ast.Name) and isinstance(x.ctx, ast.Store)}, True
+        if isinstance(n, ast.Call):
+            events.append(((n.lineno, n.col_offset), 1, n, shadow, nested))
+        elif isinstance(n, (ast.Assign, ast.AnnAssign, ast.AugAssign, ast.NamedExpr)) and not nested:
+            events.append(((n.end_lineno, n.end_col_offset), 0, n, shadow, nested))
+        elif isinstance(n, (ast.For, ast.AsyncFor, ast.With, ast.AsyncWith, ast.ExceptHandler, ast.Delete, ast.Global,
+                            ast.Import, ast.ImportFrom, ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            events.append(((n.lineno, n.col_offset), 0, n, shadow, nested))
+        for child in ast.iter_child_nodes(n):
+            scan(child, shadow, nested)
+
+    try:
+        scan(tree, frozenset(), False)
+        for _, _, n, shadow, nested in sorted(events, key=lambda e: (e[0], e[1])):
+            if isinstance(n, ast.Call):
+                call(n, shadow, nested)
+            elif isinstance(n, (ast.Assign, ast.AnnAssign, ast.AugAssign, ast.NamedExpr)):
+                v = value(n.value, shadow) if n.value is not None and not isinstance(n, ast.AugAssign) else None
+                for t in getattr(n, "targets", [getattr(n, "target", None)]):
+                    if isinstance(t, ast.Name):
+                        names[t.id] = v
+                    else:                               # a, b = … · *rest · x.attr = …: no one path
+                        for x in ast.walk(t):
+                            if isinstance(x, ast.Name) and isinstance(x.ctx, ast.Store):
+                                names.pop(x.id, None)
+            elif isinstance(n, (ast.Import, ast.ImportFrom)):
+                for a in n.names:
+                    local = a.asname or a.name.split(".")[0]
+                    alias[local] = ((n.module or "") + "." + a.name if isinstance(n, ast.ImportFrom)
+                                    else a.name if a.asname else local)
+                    names.pop(local, None)
+            else:
+                for name in bound(n):
+                    if name not in shadow or isinstance(n, ast.Global):
+                        names.pop(name, None)
+    except Exception:                                   # RecursionError on a deep expression, an AST of another version
+        return []
+    return out
 
 
 # Commands that act on another machine: a deploy through them runs from no tree here.

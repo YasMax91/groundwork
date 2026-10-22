@@ -71,6 +71,14 @@ folder the line does not name counts in the session's own folder, as before; eac
 folder its call was made in, so a `cd` the shell kept from an earlier call is followed. Specification:
 [wave 41](../docs/specs/wave-41-follow-through-judges-where-the-work-is.md).
 
+What a command writes is read from its own words: a redirect, `tee`, `sed -i`, `perl -i`, `rm`, `truncate`, the
+destination of `mv` / `cp` / `install`, and (v0.4.2) a Python script the line holds — `python3 -c`, a
+here-document — where it opens a path it spells out to write (`open(p, 'w')`, `Path(p).write_text(…)`,
+`os.replace(tmp, p)` …), with `p` read where the call runs. So `sed -i 's/| doing |/| done |/'` is one command,
+not a pipe; a script that only reads `docs/ai/status.md` has not updated it; and the write counts in the tree
+of the file it writes, also from a folder outside git. The gate-config prompt asks for every such write and
+still reads the whole line for what no command shows (`echo '{}' > "$CFG/.groundwork.json"`).
+
 ## Outbound fence options
 
 ```` ```outbound BA lists max=1500 ids-ok ai-ok ```` — `lists` allows bullets, `max=` changes the 900

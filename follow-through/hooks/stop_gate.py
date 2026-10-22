@@ -313,10 +313,11 @@ def check_freshness(msg, cwd, sid, cfg):
 
 
 def status_writes(c, default):
-    """The trees whose status file a parsed command writes (lanes.written_paths: a `|` inside a quoted sed
-    script, `s/| doing |/| done |/`, is no pipe); `default` where the command's folder is unknown."""
+    """The trees whose status file a parsed command writes (lanes.written_paths: a `|` inside a quoted sed or perl
+    script, `s/| doing |/| done |/`, is no pipe; a Python script writes the file only where it opens it to write);
+    `default` where the command's folder is unknown."""
     out = []
-    for word, path in lanes.written_paths(c):
+    for word, path in lanes.written_paths(c, "status.md"):
         if STATUS_FILE.search(word):
             top = lanes.top_of(path) if path else default
             if top:
@@ -352,6 +353,8 @@ def turn_work(tools, cwd):
         parsed[i] = lanes.call_parts("Bash", t["input"], here)
         tops, committed, pushed, wrote = [], False, False, False
         for top, changes, c in parsed[i]:
+            for written in status_writes(c, default):  # by the file's path: from a folder outside git too
+                at(written)["edited"] = wrote = True
             top = default if top is None else top
             if not top:
                 continue
@@ -366,8 +369,6 @@ def turn_work(tools, cwd):
             if sub == "push" or [os.path.basename(a or "") for a in c.argv[:3]] == ["gh", "pr", "merge"]:
                 w["pushes"].append(i)
                 pushed = True
-            for written in status_writes(c, default):
-                at(written)["edited"] = wrote = True
         if default and COMMIT.search(line) and not committed:
             at(default)["commits"].append(line[:80])
         if default and PUSH.search(line) and not pushed:
