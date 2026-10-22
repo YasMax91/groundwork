@@ -135,6 +135,9 @@ dedup, so run it only when `--report` shows the row is absent:
 ${CLAUDE_PLUGIN_ROOT}/hooks/estimate-ledger.sh --record --kind=<one word> --promised=<minutes, if one was given>
 ```
 
+Run it in the task's project — `cd <lane> && …` when the session was opened in another folder: the ledger
+finds this session's transcript there through the session registry (`hooks/session-repos.py`).
+
 Skip at L0. Everything from L1 up is worth a row: the corpus is what stops the next estimate from being
 an opinion.
 

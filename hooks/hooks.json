@@ -38,7 +38,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/in-cwd.sh\" agent-contract.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/in-cwd.sh\" --first-repo agent-contract.sh",
             "statusMessage": "Groundwork: checking the agent's output contract…"
           }
         ]
@@ -82,6 +82,16 @@
           }
         ]
       }
+,
+      {
+        "matcher": "Bash|Edit|Write|MultiEdit|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/in-cwd.sh\" session-repos.py"
+          }
+        ]
+      }
     ],
     "PostToolUse": [
       {
@@ -108,7 +118,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/in-cwd.sh\" plain-language.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/in-cwd.sh\" --first-repo plain-language.sh"
           }
         ]
       },
@@ -127,51 +137,51 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/in-cwd.sh\" done-gate.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/in-cwd.sh\" --each-repo done-gate.sh",
             "statusMessage": "Groundwork: static analysis…"
           },
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/in-cwd.sh\" test-gate.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/in-cwd.sh\" --each-repo test-gate.sh",
             "statusMessage": "Groundwork: running tests…"
           },
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/in-cwd.sh\" openapi-gate.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/in-cwd.sh\" --each-repo openapi-gate.sh",
             "statusMessage": "Groundwork: checking OpenAPI…"
           },
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/in-cwd.sh\" slice-gate.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/in-cwd.sh\" --each-repo slice-gate.sh",
             "statusMessage": "Groundwork: checking the slice ledger…"
           },
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/in-cwd.sh\" coverage-claim.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/in-cwd.sh\" --first-repo coverage-claim.sh",
             "statusMessage": "Groundwork: checking the coverage claim…"
           },
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/in-cwd.sh\" defect-scan.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/in-cwd.sh\" --each-repo defect-scan.sh",
             "statusMessage": "Groundwork: scanning for defect classes…"
           },
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/in-cwd.sh\" estimate-claim.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/in-cwd.sh\" --first-repo estimate-claim.sh",
             "statusMessage": "Groundwork: checking the estimate…"
           },
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/in-cwd.sh\" estimate-docs.py"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/in-cwd.sh\" --first-repo estimate-docs.py"
           },
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/in-cwd.sh\" plain-language.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/in-cwd.sh\" --first-repo plain-language.sh",
             "statusMessage": "Groundwork: checking the wording…"
           },
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/in-cwd.sh\" ledger-record.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/in-cwd.sh\" --each-repo ledger-record.sh",
             "statusMessage": "Groundwork: recording what the task took…"
           }
         ]
@@ -180,7 +190,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/in-cwd.sh\" handoff-gate.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/in-cwd.sh\" --each-repo handoff-gate.sh",
             "statusMessage": "Groundwork: checking the frontend handoff…"
           }
         ]

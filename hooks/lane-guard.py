@@ -8,6 +8,10 @@ written, the shared test database raced. Observed on 2026-10-05 in 4 (stack) and
 
 Denies such a runner command with the fix (`lane.py up`). Inert in the main checkout, outside a
 Groundwork project, and under `gates.lane_guard: false`. Any error → allow.
+
+Each runner command is judged in the worktree it runs in, read off the line (gw_repo.py, wave 40): a session
+opened elsewhere reaches a lane through `cd <lane> && ./vendor/bin/sail …`. A directory the line does not name
+falls back to the session's folder, as before.
 """
 
 import json
@@ -15,6 +19,9 @@ import os
 import re
 import subprocess
 import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import gw_repo as repo  # noqa: E402
 
 RUNNER = re.compile(r"(^|[\s;&|(])(\./)?vendor/bin/sail\b|(^|[\s;&|(])(php\s+)?artisan\b|\bsail\s+(artisan|test|composer|php|up|pint|npm)\b")
 LANE_TOOL = re.compile(r"\blane\.py\b")
@@ -50,23 +57,53 @@ def main():
     if not RUNNER.search(cmd) or LANE_TOOL.search(cmd):
         return
     cwd = payload.get("cwd") or os.getcwd()
-    top = git(cwd, "rev-parse", "--show-toplevel")
-    if not top or not os.path.isfile(os.path.join(top, ".groundwork.json")):
+    tops = []
+    for c in repo.commands(cmd, cwd):
+        if not RUNNER.search(" ".join(a or "" for a in c.argv)):
+            continue
+        top, known = repo.command_top(c)
+        top = top if known else git(cwd, "rev-parse", "--show-toplevel")
+        if top and top not in tops:
+            tops.append(top)
+    here = git(cwd, "rev-parse", "--show-toplevel")
+    if not tops:                                        # matched as a whole line only: the session's folder
+        tops = [here]
+    lane_py = os.path.join(os.path.dirname(os.path.abspath(__file__)), "lane.py")
+    found, fixes = [], []
+    for top in tops:
+        problems = lane_problems(top)
+        if problems:
+            found.append(("%s — " % top if top != here else "") + "; ".join(problems))
+            fixes.append("cd \"%s\" && python3 %s up" % (top, lane_py))
+    if not found:
         return
+    print(json.dumps({"hookSpecificOutput": {
+        "hookEventName": "PreToolUse", "permissionDecision": "deny",
+        "permissionDecisionReason": (
+            "groundwork lane-guard: this command would run in the MAIN checkout's stack — %s. Its code is another "
+            "session's, and its databases are shared. Provision this worktree as its own lane first: "
+            "`%s` (own stack, own domain, dev DB cloned, own test DB), then rerun." % (" | ".join(found), " && ".join(fixes)))
+    }}, ensure_ascii=False))
+
+
+def lane_problems(top):
+    """Why `top`'s runner would reach the main checkout's stack; [] when it would not, or `top` is no lane."""
+    if not top or not os.path.isfile(os.path.join(top, ".groundwork.json")):
+        return []
     try:
         cfg = json.load(open(os.path.join(top, ".groundwork.json"), encoding="utf-8"))
         if (cfg.get("gates") or {}).get("lane_guard") is False:
-            return
+            return []
     except Exception:
         pass
-    common = git(cwd, "rev-parse", "--path-format=absolute", "--git-common-dir")
-    gitdir = git(cwd, "rev-parse", "--path-format=absolute", "--git-dir")
+    common = git(top, "rev-parse", "--path-format=absolute", "--git-common-dir")
+    gitdir = git(top, "rev-parse", "--path-format=absolute", "--git-dir")
     if not common or os.path.realpath(common) == os.path.realpath(gitdir):
-        return  # the main checkout owns the main stack
+        return []  # the main checkout owns the main stack
     main_root = os.path.dirname(common)
     lane_env, main_env = os.path.join(top, ".env"), os.path.join(main_root, ".env")
     if not os.path.isfile(main_env):
-        return
+        return []
     problems = []
     if not os.path.isfile(lane_env):
         problems.append("this worktree has no .env")
@@ -75,16 +112,7 @@ def main():
             mine, theirs = env_value(lane_env, key), env_value(main_env, key)
             if theirs and (mine == theirs or mine == ""):
                 problems.append("its %s is the main checkout's (%s=%s)" % (what, key, theirs))
-    if not problems:
-        return
-    lane_py = os.path.join(os.path.dirname(os.path.abspath(__file__)), "lane.py")
-    print(json.dumps({"hookSpecificOutput": {
-        "hookEventName": "PreToolUse", "permissionDecision": "deny",
-        "permissionDecisionReason": (
-            "groundwork lane-guard: this command would run in the MAIN checkout's stack — %s. Its code is another "
-            "session's, and its databases are shared. Provision this worktree as its own lane first: "
-            "`python3 %s up` (own stack, own domain, dev DB cloned, own test DB), then rerun." % ("; ".join(problems), lane_py))
-    }}, ensure_ascii=False))
+    return problems
 
 
 if __name__ == "__main__":

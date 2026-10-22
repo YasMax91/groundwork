@@ -23,6 +23,7 @@ set -uo pipefail
 
 LEDGER="${GW_LEDGER:-$HOME/.claude/groundwork/estimates.tsv}"
 PROJECTS_DIR="${GW_PROJECTS_DIR:-$HOME/.claude/projects}"
+HOOKS_DIR="$(cd "$(dirname "$0")" 2>/dev/null && pwd)"
 HEADER='finished_at	project	level	kind	slug	active_min	calendar_min	promised_min	source	branch'
 
 # --- configuration (absent keys mean the defaults) -------------------------------------------
@@ -59,10 +60,9 @@ gw_transcript_dirs() { # project_key
 #
 # Reads `timestamp` from each line and tolerates every unknown record type: a transcript format
 # whose records carry no timestamp yields no rows rather than wrong ones.
-gw_active_minutes() { # start_iso end_iso dir...
+gw_active_minutes() { # start_iso end_iso paths — one per line: a transcript directory, or one transcript
   command -v python3 >/dev/null 2>&1 || { printf '\t'; return 0; }
-  local s="$1" e="$2"; shift 2
-  GW_START="$s" GW_END="$e" GW_IDLE="$IDLE" GW_DIRS="$*" python3 - <<'PY' 2>/dev/null || printf '\t'
+  GW_START="$1" GW_END="$2" GW_IDLE="$IDLE" GW_DIRS="$3" python3 - <<'PY' 2>/dev/null || printf '\t'
 import os, glob, datetime
 
 def parse(s):
@@ -75,20 +75,26 @@ start = parse(os.environ.get("GW_START", "")) or datetime.datetime.min.replace(t
 end = parse(os.environ.get("GW_END", "")) or datetime.datetime.max.replace(tzinfo=datetime.timezone.utc)
 idle = float(os.environ.get("GW_IDLE", "120"))
 
+files = set()
+for p in os.environ.get("GW_DIRS", "").split("\n"):
+    if p and os.path.isfile(p):
+        files.add(os.path.realpath(p))
+    elif p:
+        files.update(os.path.realpath(f) for f in glob.glob(os.path.join(p, "*.jsonl")))
+
 ts = []
-for d in os.environ.get("GW_DIRS", "").split():
-    for f in glob.glob(os.path.join(d, "*.jsonl")):
-        try:
-            with open(f, errors="ignore") as fh:
-                for line in fh:
-                    i = line.find('"timestamp":"')
-                    if i < 0:
-                        continue
-                    t = parse(line[i + 13:i + 37].split('"')[0])
-                    if t is not None and start <= t <= end:
-                        ts.append(t)
-        except Exception:
-            continue
+for f in sorted(files):
+    try:
+        with open(f, errors="ignore") as fh:
+            for line in fh:
+                i = line.find('"timestamp":"')
+                if i < 0:
+                    continue
+                t = parse(line[i + 13:i + 37].split('"')[0])
+                if t is not None and start <= t <= end:
+                    ts.append(t)
+    except Exception:
+        continue
 
 if len(ts) < 2:
     print("\t")
@@ -141,7 +147,7 @@ mode_record() { # promised_min kind_override
   [ -n "$slug" ] || slug="$(slugify "$(head -1 "$state" 2>/dev/null | sed -E 's/^#+[[:space:]]*(Task:)?[[:space:]]*//')")"
   now="$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || printf '')"
 
-  measured="$(gw_active_minutes "$started" "$now" $TRANSCRIPT_DIRS)"
+  measured="$(gw_active_minutes "$started" "$now" "$TRANSCRIPTS")"
   active="$(printf '%s' "$measured" | cut -f1)"
   calendar="$(printf '%s' "$measured" | cut -f2)"
   [ -n "$active" ] || { printf 'groundwork: no transcript events in the task window — nothing recorded.\n' >&2; return 0; }
@@ -328,7 +334,17 @@ fi
 PROJECT_ABS="$(pwd)"
 PROJECT_KEY="$(gw_project_key "$PROJECT_ABS")"
 PROJECT_NAME="$(basename "$(printf '%s' "$PROJECT_ABS" | sed -E 's#--claude-worktrees-.*$##')")"
-TRANSCRIPT_DIRS="$(gw_transcript_dirs "$PROJECT_KEY" | tr '\n' ' ')"
+# Where the task's transcript is, one path per line. A session files its transcript under the folder it was
+# opened in, so a session that worked here from another folder is under that folder's key, where this project's
+# own directories never look (2026-10-21: «no transcript events in the task window — nothing recorded» for a
+# task done entirely from `ra-devs-laravel-back`). So: this project's directories, worktrees included; the
+# session that is stopping (ledger-record.sh passes its transcript); and every session that worked in this
+# project from outside it (session-repos.py remembers them).
+TRANSCRIPTS="$(
+  gw_transcript_dirs "$PROJECT_KEY"
+  [ -n "${GW_SESSION_TRANSCRIPT:-}" ] && [ -f "$GW_SESSION_TRANSCRIPT" ] && printf '%s\n' "$GW_SESSION_TRANSCRIPT"
+  command -v python3 >/dev/null 2>&1 && python3 "$HOOKS_DIR/session-repos.py" --transcripts "$PROJECT_ABS" 2>/dev/null
+)"
 BRANCH="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || printf '')"
 
 GW_RECORDED=0

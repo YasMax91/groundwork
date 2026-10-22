@@ -14,6 +14,10 @@ An agent's whole-suite run (`artisan test` / `composer test`, no paths, no filte
 failures is a whole pass. An agent's run of named test files or folders with a green summary records those
 files as passed on this code, so neither the Stop gate nor the push check repeats them. `--filter` runs are
 never recorded: which files they covered is not knowable from the command.
+
+The code a run proved is the tree of the repository the run happened in, read off the line (gw_repo.py,
+wave 40): `cd <lane> && ./vendor/bin/sail artisan test` from a session opened in the main checkout used to
+record the MAIN checkout's tree as green. A run whose directory the line does not name is not recorded.
 """
 
 import json
@@ -22,6 +26,7 @@ import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import gw_repo as repo  # noqa: E402
 import gw_tests as gw  # noqa: E402
 
 FULL = re.compile(r"(artisan\s+test|composer\s+(run\s+)?test)(?![^\n;&|]*(--filter|--group|--testsuite|tests/|\.php\b))")
@@ -34,16 +39,16 @@ def green_summary(out):
     return bool(summary) and bool(GREEN.search(summary[-1])) and not re.search(r"\b(failed|errors?)\b", summary[-1])
 
 
-def expand(paths, top):
-    out = []
+def expand(paths, top, base=None):
+    out, real = [], os.path.realpath(top)
     for p in paths:
-        full = os.path.join(top, p)
+        full = os.path.realpath(os.path.join(base or top, p))
         if p.endswith(".php") and os.path.isfile(full):
-            out.append(os.path.relpath(full, top))
+            out.append(os.path.relpath(full, real))
         elif os.path.isdir(full):
             for root, _, names in os.walk(full):
-                out += [os.path.relpath(os.path.join(root, n), top) for n in names if n.endswith("Test.php")]
-    return sorted(set(out))
+                out += [os.path.relpath(os.path.join(root, n), real) for n in names if n.endswith("Test.php")]
+    return sorted(f for f in set(out) if not f.startswith(".."))
 
 
 def record_run(status, junit, files, top):
@@ -76,18 +81,23 @@ def post_tool():
     out = resp if isinstance(resp, str) else (str(resp.get("stdout") or "") + str(resp.get("stderr") or ""))
     if not green_summary(out):
         return
-    top = gw.toplevel(payload.get("cwd")) or gw.toplevel()
-    if not top:
+    for c in repo.commands(cmd, payload.get("cwd") or os.getcwd()):
+        text = " ".join(a if a is not None else "$?" for a in c.argv)
+        full, m = FULL.search(text), TARGETED.search(text)
+        if not (full or m):
+            continue
+        top, known = repo.command_top(c)
+        if not known or not top or "$?" in text:
+            return                                      # which code ran, or which tests, is unknown: record nothing
+        if full:
+            gw.record_whole(gw.worktree_tree(top), cwd=top)
+            return
+        if "--filter" in m.group(2) or any(x in cmd for x in ("$(", "`", "xargs", " < ")):
+            return
+        files = expand(re.findall(r"(?<!\S)['\"]?(tests/[\w./-]+?)['\"]?(?=\s|$)", m.group(2)), top, c.dir)
+        if files:
+            gw.record_files(gw.worktree_tree(top), files, top)
         return
-    if FULL.search(cmd):
-        gw.record_whole(gw.worktree_tree(top), cwd=top)
-        return
-    m = TARGETED.search(cmd)
-    if not m or "--filter" in m.group(2) or any(x in cmd for x in ("$(", "`", "xargs", " < ")):
-        return
-    files = expand(re.findall(r"(?<!\S)['\"]?(tests/[\w./-]+?)['\"]?(?=\s|$)", m.group(2)), top)
-    if files:
-        gw.record_files(gw.worktree_tree(top), files, top)
 
 
 if __name__ == "__main__":

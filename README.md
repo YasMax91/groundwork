@@ -400,6 +400,36 @@ Measured on otaje, 2026-10-06 – 10-21 (0.47.0): 30 Stop runs took 5+ minutes, 
 needed a whole run; 15 questions asked the owner to record a lane's pass by hand. The old selection on 81
 commits: median 62 of 849 files, p90 679 — see `docs/specs/wave-38-tests-by-what-changed.md` for the new one.
 
+## The gates judge where the work is
+
+A session need not be opened in the repository it works in: it can `cd` into a lane, call `git -C <lane>`, or
+edit files there by absolute path. The hooks used to judge the folder the session was opened in — on otaje,
+2026-10-21, a session opened in an empty folder pushed `cd <lane> && git push origin HEAD:development` with a
+changed `bootstrap/app.php`, and no gate ran. Now (`gw_repo.py`, `session-repos.py`, `in-cwd.sh`):
+
+- **A tool call is judged where it works.** The Bash line is read for `cd` / `pushd` / `popd`, `git -C`,
+  `--git-dir` / `--work-tree`, `NAME=value` then `$NAME`, subshells, `$(…)`, `bash -c` and `bash <<EOF`, and a
+  git that `sudo`, `xargs` or `gtimeout` runs; an Edit or a Write by its path. A `cd` that may not happen —
+  after `&&` or `||`, inside an `if` or a loop, into a folder that does not exist yet — holds only for what `&&`
+  chains after it, and a function's body runs where it is called. `push-gate.py`, `lane-guard.py` and
+  `suite-record.py` judge each command in its own repository; the other tool hooks run in the call's
+  repository. Every hook runs at the root of the project the session's folder is in, a subfolder included.
+- **A push the line does not place is refused.** `cd "$LANE" && git push origin HEAD:development`, with a
+  `$LANE` the line does not set, is denied when it may reach a shared branch, with the request to write the
+  path out; a branch the line does not name is judged as a shared one.
+- **The Stop gates run where the session worked.** Before each call, `session-repos.py` remembers every
+  Groundwork repository the session changes outside its own folder (`~/.claude/groundwork/sessions/`);
+  reading — `git status/log/diff`, `cat`, `grep`, `ls` — is not remembered. At Stop, the gates that judge a
+  working tree (analysis, tests, OpenAPI, slices, defects, handoff, the ledger) run in the session's folder and
+  in each remembered repository, each verdict headed with its path — shown without blocking while another live
+  session works there; the gates that judge the reply run in the session's project or, outside one, in the
+  first remembered repository.
+- **The ledger finds the transcript where it is.** A session files its transcript under the folder it was
+  opened in: the Stop hook passes it on, and `estimate-ledger.sh --record` run in a lane finds it through the
+  registry.
+
+Details: `docs/specs/wave-40-the-gates-judge-where-the-work-is.md`.
+
 ## Models and effort — by the agent's role, by the task's level
 
 Each agent's file sets its model: `grounded-researcher` on Sonnet; the three checkers (`conformance-reviewer`,
@@ -610,7 +640,7 @@ pack/             groundwork-pack — dependency-only bundle (this plugin + foll
 follow-through/   the project-agnostic plugin — hooks/ (stop_gate.py · guard.py · session_start.py · prompt_submit.py · post_tool.py · session_end.py · lanes.py · render_status.py · ft.py · tests/) · skills/status
 skills/           start-task · spec · implement-approved · lane · risk-review · final-check · estimate · ground-integration · frontend-handoff · install-portal · client-doc · openapi-audit · grill · init · deep-grounding · deep-discovery · deep-review
 agents/           impact-mapper · blind-spot-mapper · grounded-researcher · adversarial-verifier · conformance-reviewer
-hooks/            hooks.json · lib.sh (shared resolvers) · session-start.sh · pre-compact.sh · task-intent.sh · format-on-edit.sh · done-gate.sh · test-gate.sh · openapi-gate.sh · slice-gate.sh · coverage-claim.sh · plain-language.sh · defect-scan.sh · estimate-claim.sh · estimate-docs.py · estimate-ledger.sh · lane.py · lane-guard.py · lane-idle.py · in-cwd.sh · effort.ts (mod) · gw_tests.py · test-select.py · test-run.py · suite-record.py · push-gate.py · ledger-record.sh · agent-contract.sh · trim-output.sh · pre-tool-guard.sh · stdin-guard.sh · statusline.sh · tests/all.sh
+hooks/            hooks.json · lib.sh (shared resolvers) · session-start.sh · pre-compact.sh · task-intent.sh · format-on-edit.sh · done-gate.sh · test-gate.sh · openapi-gate.sh · slice-gate.sh · coverage-claim.sh · plain-language.sh · defect-scan.sh · estimate-claim.sh · estimate-docs.py · estimate-ledger.sh · lane.py · lane-guard.py · lane-idle.py · in-cwd.sh · gw_repo.py · session-repos.py · effort.ts (mod) · gw_tests.py · test-select.py · test-run.py · suite-record.py · push-gate.py · ledger-record.sh · agent-contract.sh · trim-output.sh · pre-tool-guard.sh · stdin-guard.sh · statusline.sh · tests/all.sh
 workflows/        deep-review-run.js · deep-discovery-run.js · deep-grounding-run.js — the multi-agent orchestration, executed by the runtime
 guidelines/       ai-sdd-process · grounding-protocol · blind-spot-protocol · clarify-protocol · plain-language · openapi-protocol · laravel-standards · tdd-protocol · writing-standards · working-memory
 docs/             skill-hygiene (author-facing) · specs/
