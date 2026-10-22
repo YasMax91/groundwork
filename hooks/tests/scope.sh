@@ -21,6 +21,11 @@ cd "$P" && git config user.email t@t && git config user.name t
 mkdir -p app/Services app/Models app/Http/Controllers app/Http/Requests tests/Feature tests/Unit \
          database/migrations config routes bin lang/en bootstrap docs/ai/frontend/handoff
 w() { mkdir -p "$(dirname "$1")"; printf '%s\n' "$2" > "$1"; }
+# A fixture edited in place, through a temp file: `sed -i ''` is BSD sed's form — GNU sed reads the '' as the script
+# and the expression as a file name, so on Linux the fixture stayed as written and every check after it ran on an
+# unchanged tree. An edit that changes nothing is a failure of its own, never a silent no-op.
+edit() { if sed "$1" "$2" > "$ROOT/edit.tmp" && ! cmp -s "$ROOT/edit.tmp" "$2"; then cat "$ROOT/edit.tmp" > "$2"
+         else fail=$((fail+1)); printf '  FAIL %-56s %s\n' "the fixture edit changed nothing" "$2: $1"; fi; }
 w app/Services/OrderService.php '<?php
 class OrderService {
     public function total() { return 1; }
@@ -147,28 +152,28 @@ F=tests/Feature; U=tests/Unit
 
 echo "selection — the close circle and the wide one:"
 eq "nothing changed: nothing selected"                    ""   "$(sel)"
-sed -i '' 's/return 2;/return 3;/' app/Services/OrderService.php            # inside refund()
+edit 's/return 2;/return 3;/' app/Services/OrderService.php            # inside refund()
 eq "a class: its own tests, by name"                      "$F/OrderServiceRefundTest.php $F/OrderServiceTest.php" "$(sel)"
 eq "…tests merely naming it are the wide circle"          "$F/AuditTest.php $F/ReportTest.php" "$(selj wide)"
-reset_tree; sed -i '' 's/return 1;/return 9;/' app/Services/OrderService.php   # inside total()
+reset_tree; edit 's/return 1;/return 9;/' app/Services/OrderService.php   # inside total()
 eq "a changed method adds the tests calling it"           "$F/OrderServiceRefundTest.php $F/OrderServiceTest.php $F/ReportTest.php" "$(sel)"
-reset_tree; sed -i '' 's/return 1;/return 9;/' app/Models/Product.php
+reset_tree; edit 's/return 1;/return 9;/' app/Models/Product.php
 eq "a model's method: its tests and its callers"          "$U/ProductTest.php $U/CartTest.php" "$(sel)"
 eq "…a model's mere mentions stay wide"                   "$U/WishlistTest.php" "$(selj wide)"
-reset_tree; sed -i '' "s/'show'\]/'view']/" routes/web.php
+reset_tree; edit "s/'show'\]/'view']/" routes/web.php
 eq "a routes file: only the changed route's tests"        "$F/BasketTest.php" "$(sel)"
-reset_tree; sed -i '' "s/'update'\])/'save'])/" routes/web.php
+reset_tree; edit "s/'update'\])/'save'])/" routes/web.php
 eq "a route named only by a common word selects nothing" "" "$(sel)"
-reset_tree; sed -i '' 's/return 1;/return 7;/' app/Http/Controllers/OrderController.php
+reset_tree; edit 's/return 1;/return 7;/' app/Http/Controllers/OrderController.php
 eq "a controller method: the tests of its route"          "$F/CheckoutTest.php" "$(sel)"
-reset_tree; sed -i '' 's/return \[\];/return ["a" => 1];/' app/Http/Requests/StoreOrderRequest.php
+reset_tree; edit 's/return \[\];/return ["a" => 1];/' app/Http/Requests/StoreOrderRequest.php
 eq "a form request: no close test…"                       "" "$(sel)"
 eq "…the route of the action using it is wide"            "$F/CheckoutTest.php" "$(selj wide)"
-reset_tree; sed -i '' "s/'ttl' => 30/'ttl' => 60/" config/promo.php
+reset_tree; edit "s/'ttl' => 30/'ttl' => 60/" config/promo.php
 eq "a config file: only the changed key's tests"          "$U/PromoTest.php" "$(sel)"
-reset_tree; sed -i '' "s/'Hi'/'Hello'/" lang/en/custom.php
+reset_tree; edit "s/'Hi'/'Hello'/" lang/en/custom.php
 eq "a lang file: the key, not the file's name as a word"  "$U/CustomKeyTest.php" "$(sel)"
-reset_tree; sed -i '' 's/\$table->id();/$table->id(); $table->integer("discount_cents")->nullable();/' database/migrations/2026_01_01_create_coupons.php
+reset_tree; edit 's/\$table->id();/$table->id(); $table->integer("discount_cents")->nullable();/' database/migrations/2026_01_01_create_coupons.php
 eq "a migration: no close test of its own"                 "" "$(sel)"
 eq "…tests naming its table or new column are wide"       "$F/CouponTest.php $F/DiscountColumnTest.php" "$(selj wide)"
 eq "…and a column on its own new table is not shared"     "" "$(selj shared)"
@@ -214,7 +219,7 @@ eq "…and the Stop gate runs nothing, says so"             "rc=0 args=" "$(gate
 has "…visibly"                                            "none run now" "$(cat "$ROOT/gate.err")"
 
 echo "the Stop gate — budget, records, watchdog:"
-reset_tree; reset_records; sed -i '' 's/return 1;/return 9;/' app/Services/OrderService.php
+reset_tree; reset_records; edit 's/return 1;/return 9;/' app/Services/OrderService.php
 eq "runs the close circle only"                           "rc=0 args=$F/OrderServiceRefundTest.php $F/OrderServiceTest.php $F/ReportTest.php" "$(gate)"
 eq "the same code again: nothing re-run"                  "rc=0 args=" "$(gate)"
 has "…and it says why"                                    "already passed on this exact code" "$(cat "$ROOT/gate.err")"
@@ -270,7 +275,7 @@ eq "a document a test reads: deny"                        deny  "$(push 'git pus
 has "…naming that test"                                   "KitsDocTest" "$(reason 'git push origin development')"
 post "./vendor/bin/sail artisan test $F/KitsDocTest.php" "  Tests:    1 passed (1 assertions)"
 eq "…allowed once it passed on this code"                 allow "$(push 'git push origin development')"
-sed -i '' 's/return 2;/return 5;/' app/Services/OrderService.php; git commit -qam "refund"
+edit 's/return 2;/return 5;/' app/Services/OrderService.php; git commit -qam "refund"
 eq "a class change: deny until its tests pass"            deny  "$(push 'git push origin development')"
 eq "test-run.py --for-push: green, exit 0"                0     "$(tr_run --for-push HEAD)"
 eq "…it ran close + wide, not the suite"                  "$F/OrderServiceRefundTest.php $F/OrderServiceTest.php $F/AuditTest.php $F/ReportTest.php" "$(sed '/^$/d' "$ROOT/runs.log")"
@@ -308,7 +313,7 @@ cfg; git commit -qam "back to default"
 
 echo "a lane's run is the commit's run:"
 python3 "$HOOKS/suite-record.py" --record >/dev/null
-sed -i '' 's/shop_test/shop_test_lane1/' phpunit.xml; git update-index --skip-worktree phpunit.xml
+edit 's/shop_test/shop_test_lane1/' phpunit.xml; git update-index --skip-worktree phpunit.xml
 eq "skip-worktree phpunit.xml: the working-tree id is the commit's" "$(git rev-parse 'HEAD^{tree}')" "$(python3 "$HOOKS/suite-record.py" --check WORKTREE)"
 eq "…so the push is allowed"                              allow "$(push 'git push origin development')"
 git update-index --no-skip-worktree phpunit.xml; git checkout -q -- phpunit.xml
@@ -334,7 +339,7 @@ printf '<?php class Mailer { function send() { return 4; } }\n' > app/Services/M
 eq "--for-push on a tree that is not HEAD: refused"       1     "$(tr_run --for-push HEAD)"
 reset_tree
 lockd="$(git rev-parse --git-common-dir)/groundwork/locks/test-db-shop_test"; mkdir -p "$lockd"; printf 'test-run.py --whole, started 10:00 UTC\n' > "$lockd/label"
-sed -i '' 's/return 1;/return 8;/' app/Services/OrderService.php
+edit 's/return 1;/return 8;/' app/Services/OrderService.php
 eq "a busy test database: not run"                        1     "$(tr_run --close --lock-wait 1)"
 has "…naming what holds it"                               "started 10:00 UTC" "$(cat "$ROOT/tr.out")"
 printf 'run-999999\n' > "$lockd/owner"

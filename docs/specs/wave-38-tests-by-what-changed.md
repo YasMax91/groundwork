@@ -137,6 +137,21 @@
   `composer install` there; a whole run whose `commands.test_full` runs no test now falls back to the serial
   parts and says so, instead of refusing the push as an environment problem.
 - Suites: `scope.sh` 91 of 91 (0.48.1), `test-gate.sh` 23 of 23, `lane.sh` 33 of 33; all groundwork suites green.
+- **2026-10-22 — `scope.sh` on Linux.** From v0.48.0 the `hook suites (ubuntu-latest)` job failed on every push —
+  ten runs, on `scope` alone, 28 checks each — while macOS and the author's Mac passed all of them. Every
+  release since, up to groundwork v0.51.0 and follow-through 0.4.2, shipped with it, recorded as expected on
+  Linux; its cause was not looked for. The cause was the suite, not the hooks: this wave's fixtures change one
+  method inside a file with `sed -i '' 's/…/…/' <file>`, BSD sed's form. GNU sed takes the `''` as its script
+  and the expression as a file name (`sed: can't read s/return 2;/return 3;/`), so on Linux all 14 edits left
+  their fixture as written. Every selection that needed one came back empty, and the checks that expect nothing
+  passed without testing anything — a route named only by a common word, a form request's close circle, the
+  lane's skip-worktree `phpunit.xml`. Reproduced in an `ubuntu:24.04` container (GNU sed 4.9, git 2.43,
+  Python 3.12, `LANG=C.UTF-8`): the same 28 failures; with the edits in GNU's form, 91 of 91, so the hooks
+  behave the same on both systems. Fix: `edit <expression> <file>` in the suite writes the fixture through a
+  temp file, and an edit that changes nothing is a failure of its own, so no check passes on a fixture that
+  was never set up — one expression swapped for one that matches nothing fails the suite on both systems,
+  naming the edit. `all.sh` green on macOS and in the container (`effort` skipped there: no Node 22.6+). No
+  hook changed.
 
 ## Not in this wave
 
