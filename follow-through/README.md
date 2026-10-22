@@ -79,6 +79,17 @@ not a pipe; a script that only reads `docs/ai/status.md` has not updated it; and
 of the file it writes, also from a folder outside git. The gate-config prompt asks for every such write and
 still reads the whole line for what no command shows (`echo '{}' > "$CFG/.groundwork.json"`).
 
+## An out-of-date hook list (v0.5.0)
+
+Claude Code reads `hooks/hooks.json` when a session starts and on `/reload-plugins`, and each hook script at every
+call. A session opened before a release that changed the list runs the new scripts with the old list. The list
+names itself: its UserPromptSubmit command carries `--registration <id>`, the id of the file's content. When the id
+on disk is another one, or the command carries none, the next prompt tells the user and the agent once:
+`/reload-plugins`, or reopen the session. The module, `hooks/gw_registration.py`, is groundwork's, copied byte for
+byte (a test fails when the copies differ). A change to `hooks.json` ships with its new id:
+`python3 hooks/gw_registration.py stamp follow-through/hooks/hooks.json` — the tests fail without it.
+Specification: [wave 43](../docs/specs/wave-43-an-out-of-date-hook-list-says-so.md).
+
 ## Outbound fence options
 
 ```` ```outbound BA lists max=1500 ids-ok ai-ok ```` — `lists` allows bullets, `max=` changes the 900

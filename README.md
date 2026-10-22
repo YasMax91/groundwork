@@ -553,6 +553,18 @@ receives the project's errors. The optional pair needs `semgrep` on `PATH` (Home
 
 Versioned with semver in `.claude-plugin/plugin.json` — projects update when you bump it.
 
+A session open during an update keeps the hook list it loaded: Claude Code reads `hooks/hooks.json` and the
+`effort.ts` module when a session starts and on `/reload-plugins`, and each hook script at every call — so a
+session opened before a release that changed the list runs the new scripts with the old list (on project A, a
+session opened the day before v0.50.0 pushed to `development` and `staging` after it with the v0.49.1 list), and
+nothing said so. Since v0.52.0 the list names itself: its
+UserPromptSubmit command carries `--registration <id>`, the id of the file's content and of the module. When the id
+on disk is another one, or the command carries none, the session's next prompt tells the user and the agent once:
+`/reload-plugins`, or reopen the session; a current session pays a bash read of the file, no program started. A
+change to `hooks.json` or `effort.ts` ships with its new id — `python3 hooks/gw_registration.py stamp
+hooks/hooks.json`; the suites fail without it. follow-through does the same for its own list. Details:
+`docs/specs/wave-43-an-out-of-date-hook-list-says-so.md`.
+
 ## Develop locally
 
 ```
@@ -660,7 +672,7 @@ pack/             groundwork-pack — dependency-only bundle (this plugin + foll
 follow-through/   the project-agnostic plugin — hooks/ (stop_gate.py · guard.py · session_start.py · prompt_submit.py · post_tool.py · session_end.py · lanes.py · render_status.py · ft.py · gw_repo.py (groundwork's, copied) · tests/) · skills/status
 skills/           start-task · spec · implement-approved · lane · risk-review · final-check · estimate · ground-integration · frontend-handoff · install-portal · client-doc · openapi-audit · grill · init · deep-grounding · deep-discovery · deep-review
 agents/           impact-mapper · blind-spot-mapper · grounded-researcher · adversarial-verifier · conformance-reviewer
-hooks/            hooks.json · lib.sh (shared resolvers) · session-start.sh · pre-compact.sh · task-intent.sh · format-on-edit.sh · done-gate.sh · test-gate.sh · openapi-gate.sh · slice-gate.sh · coverage-claim.sh · plain-language.sh · defect-scan.sh · estimate-claim.sh · estimate-docs.py · estimate-ledger.sh · lane.py · lane-guard.py · lane-idle.py · in-cwd.sh · gw_repo.py · session-repos.py · gw_activity.py · effort.ts (mod) · gw_tests.py · test-select.py · test-run.py · suite-record.py · push-gate.py · ledger-record.sh · agent-contract.sh · trim-output.sh · pre-tool-guard.sh · stdin-guard.sh · statusline.sh · tests/all.sh
+hooks/            hooks.json · lib.sh (shared resolvers) · session-start.sh · pre-compact.sh · task-intent.sh · format-on-edit.sh · done-gate.sh · test-gate.sh · openapi-gate.sh · slice-gate.sh · coverage-claim.sh · plain-language.sh · defect-scan.sh · estimate-claim.sh · estimate-docs.py · estimate-ledger.sh · lane.py · lane-guard.py · lane-idle.py · in-cwd.sh · gw_registration.py · gw_repo.py · session-repos.py · gw_activity.py · effort.ts (mod) · gw_tests.py · test-select.py · test-run.py · suite-record.py · push-gate.py · ledger-record.sh · agent-contract.sh · trim-output.sh · pre-tool-guard.sh · stdin-guard.sh · statusline.sh · tests/all.sh
 workflows/        deep-review-run.js · deep-discovery-run.js · deep-grounding-run.js — the multi-agent orchestration, executed by the runtime
 guidelines/       ai-sdd-process · grounding-protocol · blind-spot-protocol · clarify-protocol · plain-language · openapi-protocol · laravel-standards · tdd-protocol · writing-standards · working-memory
 docs/             skill-hygiene (author-facing) · specs/

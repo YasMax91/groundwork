@@ -16,7 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/prompt_submit.py\""
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/prompt_submit.py\" --registration c3f5e85f9792"
           }
         ]
       }

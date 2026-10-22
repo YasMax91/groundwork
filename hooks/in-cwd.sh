@@ -24,12 +24,24 @@
 #     is none — in the first repository it worked in.
 # A hook run for another directory gets that directory as the payload's `cwd`.
 #
+# Wave 43: `--registration <id>` (the UserPromptSubmit command) is the id of the hooks.json this session loaded —
+# Claude Code reads that file at a session's start and on /reload-plugins only, this script at every call. When the
+# id hooks.json carries on disk is another one, or the command carries none (a list loaded before 0.52.0), the
+# prompt's answer gets a notice that the session runs an out-of-date list (gw_registration.py), once per change.
+#
 # Fail-safe: no payload, no python3, or no answer → the hook runs in the payload's `cwd`, exactly as before; no
 # `cwd`, or one that is not a directory → where it was started.
 set -uo pipefail
 
 mode=''
-case "${1:-}" in --each-repo|--first-repo) mode="${1#--}"; mode="${mode%-repo}"; shift ;; esac
+loaded=''
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --each-repo|--first-repo) mode="${1#--}"; mode="${mode%-repo}"; shift ;;
+    --registration) loaded="${2:-}"; shift; [ $# -gt 0 ] && shift ;;
+    *) break ;;
+  esac
+done
 hook="${1:-}"
 dir="$(cd "$(dirname "$0")" && pwd)"
 [ -n "$hook" ] && [ -f "$dir/$hook" ] || exit 0
@@ -51,6 +63,35 @@ run() { # payload -> the hook, with its own stdout, stderr and exit code
   esac
 }
 
+# Wave 43: is the list this session runs the one on disk? Read by bash itself (`$(<file)`, under a millisecond), so a
+# current session's prompt starts no program for it; a session already told about this list passes by its marker.
+stale=''
+sessions="${GW_SESSIONS_DIR:-${HOME:-}/.claude/groundwork/sessions}"
+if [ "$hook" = task-intent.sh ] && [ -z "$mode" ] && [ -n "${CLAUDE_PLUGIN_ROOT:-}" ] && [ -r "$dir/hooks.json" ]; then
+  text="$(<"$dir/hooks.json")"; re='--registration ([0-9a-f]+)'
+  if [[ $text =~ $re ]] && [ "${BASH_REMATCH[1]}" != "$loaded" ]; then
+    stale="${BASH_REMATCH[1]}"
+    re='"session_id"[[:space:]]*:[[:space:]]*"([A-Za-z0-9._-]+)"'
+    said=''
+    if [[ $payload =~ $re ]]; then
+      marker="$sessions/${BASH_REMATCH[1]}.registration"
+      [ -r "$marker" ] && { IFS= read -r said < "$marker" || true; }
+      [ "$said" = "$stale" ] && stale=''
+    fi
+  fi
+fi
+
+run_checked() { # payload -> the hook; its answer carries the notice when the list is out of date and not yet told
+  [ -n "$stale" ] || { run "$1"; return $?; }
+  local out rc merged=''
+  out="$(run "$1")"; rc=$?
+  [ "$rc" -eq 0 ] && merged="$(printf '%s' "$1" | GW_HOOK_OUTPUT="$out" \
+    python3 "$dir/gw_registration.py" warn groundwork "$dir/hooks.json" "$loaded" "$sessions" 2>/dev/null)"
+  [ -n "$merged" ] || merged="$out"
+  [ -z "$merged" ] || printf '%s\n' "$merged"
+  return "$rc"
+}
+
 # The payload as the hook in another directory should see it: that directory is its `cwd`.
 for_dir() { # payload dir
   printf '%s' "$1" | python3 -c 'import json,sys; d=json.load(sys.stdin); d["cwd"]=sys.argv[1]; print(json.dumps(d))' "$2" 2>/dev/null \
@@ -64,7 +105,7 @@ fi
 
 if [ -z "$targets" ]; then
   [ -n "$cwd" ] && [ -d "$cwd" ] && cd "$cwd"
-  run "$payload"
+  run_checked "$payload"
   exit $?
 fi
 
@@ -73,7 +114,7 @@ if [ "$(printf '%s\n' "$targets" | grep -c .)" -le 1 ]; then
   p="$payload"
   [ -n "$mode" ] && [ "$t" != "$cwd" ] && p="$(for_dir "$payload" "$t")"
   cd "$t" 2>/dev/null || cd "$cwd"
-  run "$p"
+  run_checked "$p"
   exit $?
 fi
 

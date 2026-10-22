@@ -27,7 +27,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/in-cwd.sh\" task-intent.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/in-cwd.sh\" --registration d9c0c2492acd task-intent.sh"
           }
         ]
       }
