@@ -146,7 +146,7 @@ and whenever a claim about an external capability is made** (is the claim true?)
 
 **Model and effort by role and level** (wave 39). An agent's own file sets its model: `grounded-researcher`
 on Sonnet; `conformance-reviewer`, `adversarial-verifier` and `blind-spot-mapper` on Opus, whatever the
-session runs; `impact-mapper` on the session's model — on six otaje tasks Sonnet named 71 % of the files the
+session runs; `impact-mapper` on the session's model — on six project A tasks Sonnet named 71 % of the files the
 Opus maps named, 47 % on the deepest, against a 95 % bar. The level sets the effort: pass it as `effort` on
 each `Agent` call and as `args.level` to the deep workflows (the plugin's mod sets the same where the app
 loads mods):

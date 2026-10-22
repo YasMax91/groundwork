@@ -4,25 +4,24 @@
   **L3** (it decides whether anything checks code that reaches a shared branch).
 - Author: Max Yastremskyi (YasMax91).
 - Source: the author, 2026-10-21 — the gates are enforcement, not prose, and a gate that skips in silence looks
-  the same as one that passed. Found by the otaje session «Проверить две находки в сессии админки otaje».
+  the same as one that passed. Found by a project A session that was checking two findings of another session.
 - Decisions taken with the author on 2026-10-21: the Stop gates remember the repositories a session changed
   from outside its folder and check them (not a warning only); a push whose directory the line does not name
   is refused when it may reach a shared branch, from any session folder, a Groundwork project included.
 - Status: **implemented** (2026-10-21).
 
-## What happened (otaje, 2026-10-21)
+## What happened (project A, 2026-10-21)
 
-A session opened in `/Users/kalbasus/Development/Projects/ra-devs-laravel-back` — an empty folder, not a git
-repository — worked in the otaje lane `admin-session-findings` and ran
+A session opened in an empty folder — not a git repository — worked in the project A lane
+`admin-session-findings` and ran
 `cd <lane> && git push origin HEAD:development 2>&1 | tail -8`. The change (E8) touched `bootstrap/app.php`,
 a shared file that needs the whole suite. `push-gate.py` read the payload's `cwd`, found no repository there
 and returned: the push went to `development` with nothing checked. The whole suite (6088 tests) was run by
 hand afterwards (`test-run.py --for-push HEAD`, green), before the deploy.
 
 The same session's Stop gates never saw the lane, and `estimate-ledger.sh --record` run in the lane answered
-«no transcript events in the task window — nothing recorded»: the transcript is filed under
-`~/.claude/projects/-Users-kalbasus-Development-Projects-ra-devs-laravel-back/`, and the ledger looked under
-otaje's key only.
+«no transcript events in the task window — nothing recorded»: the transcript is filed under the empty
+folder's key in `~/.claude/projects/`, and the ledger looked under project A's key only.
 
 ## Where the hooks found their project (groundwork 0.49.0)
 

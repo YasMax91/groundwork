@@ -7,7 +7,7 @@
 #
 # BLOCKING since v0.44.0 (GW34-AC1). It was warn-only from v0.24.0, and the warning went to
 # `systemMessage` — the user's screen, never the model's — so the agent that made the claim never
-# learned of it (2 logged triggers in otaje while denominator complaints continued). The verdict is now
+# learned of it (2 logged triggers in project A while denominator complaints continued). The verdict is now
 # `decision: block` with the reason fed back to the model; one re-entry, then the loop guard lets go.
 # Every trigger is still logged.
 set -uo pipefail

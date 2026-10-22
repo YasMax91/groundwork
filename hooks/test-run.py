@@ -6,7 +6,7 @@
     test-run.py --whole            the whole suite on the working tree
 
 Start --for-push and --whole with `run_in_background: true` and wait for the notification: a whole run of
-otaje (5944 tests on 2026-10-20) no longer fits one 10-minute Bash call. Agents used to cut it by hand into
+project A (5944 tests on 2026-10-20) no longer fits one 10-minute Bash call. Agents used to cut it by hand into
 3-5 folder chunks, which nothing recorded, and then asked the owner to record the pass by hand (15 such
 questions in two weeks). This runner cuts the suite itself — chunks of at most ~8 minutes by recorded
 duration, or one `commands.test_full` run (parallel) — re-runs once the files that failed only because the
@@ -113,7 +113,7 @@ class Lock:
                 return True            # cannot manage locks here: run unlocked, never stall
 
     def owner_is_gone(self):
-        """The holder died without releasing — a session restarted mid-run (otaje, 2026-10-21: the host-side
+        """The holder died without releasing — a session restarted mid-run (project A, 2026-10-21: the host-side
         runner was killed, the suite went on inside the container, and the lock would have held for 30 min)."""
         try:
             pid = int(re.sub(r"\D", "", open(os.path.join(self.path, "owner")).read()) or "0")
@@ -261,7 +261,7 @@ def whole(top, cfg, runner):
         env, passed, failed = runner.run_set(full, [], "whole suite (%s)" % full)
         if env or (not passed and all(f.startswith("(") for f in failed)):
             # The parallel command never ran a test: a lane whose vendor/ was cloned before brianium/paratest
-            # was added (otaje, 2026-10-21) gets "requires brianium/paratest". The serial parts still prove it.
+            # was added (project A, 2026-10-21) gets "requires brianium/paratest". The serial parts still prove it.
             say("commands.test_full did not run any test — running the whole suite in serial parts instead")
             full = None
     if not full:

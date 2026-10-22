@@ -17,7 +17,7 @@
 
 ## What happened
 
-The otaje incident of wave 40: a session opened in an empty folder with no git worked in a lane through
+The project A incident of wave 40: a session opened in an empty folder with no git worked in a lane through
 `cd <lane> && …` and Edit / Write by absolute path. follow-through 0.3.1 judged the empty folder. Reproduced
 on 2026-10-22 with throwaway repositories: from the empty folder, `cd <lane> && git reset --hard` with an
 uncommitted change in the lane passed without a prompt, and `cd <lane> && git commit -am x` without a

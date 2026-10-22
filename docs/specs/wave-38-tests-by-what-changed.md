@@ -7,14 +7,14 @@
   надо»*.
 - Decisions taken with the author on 2026-10-21: the whole suite only when something shared changed or the
   last green whole run is older than a day; otherwise the tests of everything that changed since the last
-  verified code · paratest in otaje.
+  verified code · paratest in project A.
 - Status: **implemented** (2026-10-21).
 
 ## What was measured (2026-10-06 12:17 UTC – 2026-10-21, 783 transcripts, groundwork 0.47.0)
 
 - **Stop gate.** 436 stops checked tests; 54 actually ran some; 30 of those took ≥ 5 min (268 min in
-  total), 12 reached the 10-minute hook limit and verified nothing. Median of the 54: 386 s. All in otaje.
-- **Why the selection is wide.** Replayed on otaje's 81 PHP commits since 2026-10-06 against its 849 test
+  total), 12 reached the 10-minute hook limit and verified nothing. Median of the 54: 386 s. All in project A.
+- **Why the selection is wide.** Replayed on project A's 81 PHP commits since 2026-10-06 against its 849 test
   files: median 62 files, p75 395, p90 679, max 791; 36 commits select ≥ 100 files. A routes file
   contributes every URI and name in the file, not the changed ones (`product` 418 files, `order` 346,
   `update` 233); a PHP file that is not a class contributes its basename (`bootstrap/app.php` → `app`, 257;
@@ -24,16 +24,16 @@
   tests naming the class *and* a method changed on the diff's lines, route names/URIs/controllers on changed
   lines, changed config/lang keys, changed tests → median 5, p75 22, p90 86, max 195 (6 commits ≥ 100).
   Adding the tests that merely name the class or a migration's table/columns → median 15, p75 178, p90 424.
-- **Whole-suite runs by agents in otaje:** 51 episodes in 37 sessions, ~1049 min, median 17 min. The suite
+- **Whole-suite runs by agents in project A:** 51 episodes in 37 sessions, ~1049 min, median 17 min. The suite
   grew from 4542 to 5944 tests in the period and no longer fits one 10-minute Bash call, so agents split it
   by hand into 3–5 folder chunks — which `suite-record.py` never records.
-- **Push gate:** 56 denials (53 otaje) in 31 sessions; 15 AskUserQuestions to the owner about recording a
+- **Push gate:** 56 denials (53 in project A) in 31 sessions; 15 AskUserQuestions to the owner about recording a
   pass by hand. Two causes: a lane's `phpunit.xml` is skip-worktree with the lane's DB name, so the tree id
   built with `git add -A` never equals the commit's; and a docs-only commit needs a whole run again — 96 of
-  the 180 non-merge commits on otaje's development since 2026-10-06 changed only `docs/` or `*.md`.
-- otaje tests that read documents: 5 files (`DocsPortalTest`, `KitContractTest`, `StoreReservationContractTest`,
+  the 180 non-merge commits on project A's development since 2026-10-06 changed only `docs/` or `*.md`.
+- Project A tests that read documents: 5 files (`DocsPortalTest`, `KitContractTest`, `StoreReservationContractTest`,
   `ImagePresetSlotTest`, `LegalPagesDescribeVisitsTest`).
-- otaje has no `brianium/paratest` (the 2026-10-06 rollout stopped after the measurement: 397 s → 203 s on
+- Project A has no `brianium/paratest` (the 2026-10-06 rollout stopped after the measurement: 397 s → 203 s on
   4 processes, the same failures). PCOV is enabled in its Sail image (not used by this wave).
 
 ## Changes
@@ -58,7 +58,7 @@
     the wide circle, one needle at a time — found by the first replay of the real module, where a migration
     column (`position`), a common seeder and a central model's family of test names (`Product*Test`, 70-90
     files) each pulled 50-470 files into the close circle.
-  - Replay on the same 81 otaje commits is part of the verification: close median ≤ 10 and p90 ≤ 100.
+  - Replay on the same 81 project A commits is part of the verification: close median ≤ 10 and p90 ≤ 100.
 - **GW38-AC2 — the Stop gate runs the close circle within a budget** (`hooks/test-gate.sh`):
   `gates.test_budget_seconds` (default 180). Files are ordered changed tests → name match → method match →
   the rest of the close circle and taken while their recorded durations (AC4) fit the budget (1.5 s per file
@@ -74,7 +74,7 @@
   the log is removed after.
 - **GW38-AC5 — a lane's run is the commit's run**: the tree id takes skip-worktree files from the index, so a
   green run in a lane with its own `DB_DATABASE` in `phpunit.xml` counts for the commit. The hand record and
-  the `phpunit.xml` swap the otaje memories describe stop being necessary.
+  the `phpunit.xml` swap the project A memories describe stop being necessary.
 - **GW38-AC6 — the push check asks only for what changed since verified code** (`hooks/push-gate.py`,
   `gates.full_suite_before_push`: `"when-needed"` default, `"always"` = the 0.47.0 behaviour, `false` = off):
   - a *verified tree* is a tree with a green whole run, or one that this check accepted; each carries the
@@ -97,7 +97,7 @@
   `guidelines/tdd-protocol.md`, the session-start line): while working, the change's own file or
   `test-run.py --close`; no hand-picked folders as a regression sweep (the push check runs the wide circle);
   the whole suite only through `test-run.py`, only when the push check asks.
-- **GW38-AC9 — otaje runs in parallel**: `brianium/paratest` as a dev dependency and
+- **GW38-AC9 — project A runs in parallel**: `brianium/paratest` as a dev dependency and
   `commands.test_full: "./vendor/bin/sail artisan test --parallel --processes=4"`, from a lane, through the
   new push check. Accepted only if the parallel run fails exactly the tests the serial run fails.
 - **GW38-AC10 — the 2026-10-06 `lane.py` fixes land as their own commit**: the test database named from
@@ -111,14 +111,14 @@
   not recorded), the lane tree id, the push check (docs-only with and without a test reading it, a shared
   file, a stale root, a chain of two pushes, a merge onto a moved branch, `"always"`, `false`), the runner's
   chunking and its 2002 re-run. All groundwork suites green.
-- Replay of AC1 on the 81 otaje commits, numbers in the commit message.
-- otaje: one whole run through `test-run.py --whole` serial and one parallel; failures compared file by file.
+- Replay of AC1 on the 81 project A commits, numbers in the commit message.
+- Project A: one whole run through `test-run.py --whole` serial and one parallel; failures compared file by file.
 - A week after release: Stop-hook durations, whole-suite episodes and push denials recounted with the same
   scan as above.
 
 ## Result (2026-10-21)
 
-- **Selection, replayed on otaje's 79 PHP commits since 2026-10-06 at their own trees** (`gw_tests.select` on
+- **Selection, replayed on project A's 79 PHP commits since 2026-10-06 at their own trees** (`gw_tests.select` on
   `TreeDiff(parent, commit)`): close circle median **11** (target ≤ 10 — missed by one), p75 36, p90 **53**
   (≤ 100), max 107; one commit ≥ 100 files. Before: median 62, p90 679, max 791, 36 commits ≥ 100. Close + wide
   (what the push check runs): median 64, p90 486. 22 of 79 commits change a shared file — 20 of them a
@@ -128,7 +128,7 @@
   wide; a controller's routes are close only for a changed action a route names (it was 35 % of all close
   picks), migration columns are wide (13 %), and a test "reads" a file only through a quoted path in its code
   (a spec named in comments pulled 100 tests).
-- **otaje, lane `paratest-parallel`**, `brianium/paratest` ^7.8 added: `test-run.py --whole` serial — 6081
+- **Project A, lane `paratest-parallel`**, `brianium/paratest` ^7.8 added: `test-run.py --whole` serial — 6081
   tests green in 3 parts (788 + 421 + 224 s, the machine busy with twelve mapping agents); parallel
   (`commands.test_full`, 4 processes) — the same 6081 green, 288 s. Both recorded by the runner, no hand record.
 - A session restart mid-run killed the host-side runner while the suite went on in the container, holding the

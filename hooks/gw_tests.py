@@ -3,7 +3,7 @@
 Shared by test-select.py (the selection), test-gate.sh (the Stop gate), push-gate.py (the check before a
 shared branch), suite-record.py (what a run proved) and test-run.py (the one runner an agent calls).
 
-Measured on otaje, 2026-10-06 .. 2026-10-21, before this module: the 0.47.0 selection took a routes file's
+Measured on project A, 2026-10-06 .. 2026-10-21, before this module: the 0.47.0 selection took a routes file's
 every URI and name and a non-class PHP file's basename as needles, so a quarter of its commits selected
 395+ of 849 test files and the Stop gate hit the 10-minute hook limit 12 times. The rules below replayed on
 the same 81 commits select a median of 5 files for the close circle.
@@ -81,7 +81,7 @@ def worktree_tree(cwd=None):
 
     Built in a throwaway index (`git add -A` respects .gitignore). A skip-worktree file keeps the index's
     version: a lane's `phpunit.xml` carries the lane's own DB_DATABASE and is skip-worktree, so without
-    this a green run in a lane never matched the commit made from it (otaje, 2026-10-07 .. 10-20: 15
+    this a green run in a lane never matched the commit made from it (project A, 2026-10-07 .. 10-20: 15
     questions to the owner about recording such a run by hand).
     """
     top = toplevel(cwd)
@@ -392,7 +392,7 @@ SHARED_EXACT = {
 }
 SHARED_PREFIX = ("bootstrap/", "app/Providers/", "app/Http/Middleware/")
 
-# A word that names nothing on its own. `update` alone selected 233 otaje test files.
+# A word that names nothing on its own. `update` alone selected 233 test files in project A.
 GENERIC = {"index", "show", "store", "update", "destroy", "create", "edit", "list", "data", "item", "items",
            "value", "name", "type", "status", "search", "home", "login", "logout", "admin", "api", "web",
            "page", "view", "form", "save", "test", "user", "file", "files", "image", "images"}
@@ -513,7 +513,7 @@ def select(src):
     bodies = {t: src.read(t) for t in tests}
     test_set = set(tests)
     close, why, wide, shared = {}, {}, set(), []
-    # A needle found in more than 5 % of the tests (at least 20 files) narrows nothing: on otaje's 81 commits a
+    # A needle found in more than 5 % of the tests (at least 20 files) narrows nothing: on project A's 81 commits a
     # migration column (`position`, `description`), a common seeder and a central model's family of test names
     # each pulled 50-470 files into the close circle. Such a group still runs before the push, as wide.
     cap = max(20, len(tests) // 20)
@@ -570,7 +570,7 @@ def select(src):
             tables = set(re.findall(r"Schema::(?:create|table|rename|dropIfExists|drop)\(\s*['\"]([a-z0-9_]+)['\"]", src.read(f) + "\n" + changed))
             cols = {c for c in re.findall(r"->\w+\(\s*['\"]([a-z0-9_]{4,})['\"]", changed)
                     if c not in GENERIC and c not in tables and ("_" in c or len(c) >= 6)}
-            wide |= naming([_word(x) for x in tables | cols])     # 455 close picks on 81 otaje commits
+            wide |= naming([_word(x) for x in tables | cols])     # 455 close picks on 81 project A commits
         elif f.startswith("database/factories/") and stem.endswith("Factory"):
             to_close(naming([_word(stem)]), 2, "factory")
             wide |= naming([_word(stem[:-7])]) if len(stem) > 7 else set()
@@ -617,7 +617,7 @@ def select(src):
                         wide |= naming([_word(cb)])
         else:                                                             # a document, a stylesheet, a fixture
             # A test reads `f` when a quoted path in its code names it — `base_path('docs/ai/x.md')`,
-            # `public_path('css/admin.css')`, a glob. A file name in a comment is not a read: on otaje's commits
+            # `public_path('css/admin.css')`, a glob. A file name in a comment is not a read: on project A's commits
             # that rule pulled a spec's or api-reference.md's 100-170 mentioning tests into the close circle.
             readers = set()
             for t, b in bodies.items():

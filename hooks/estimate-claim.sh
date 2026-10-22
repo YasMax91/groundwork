@@ -10,7 +10,7 @@
 # over a large table, no wait on a person — and no measured median behind it.
 #
 # BLOCKING since v0.44.0 (GW34-AC1). Warn-only from v0.28.0, through `systemMessage`, which reaches
-# the user and never the model: otaje logged 25 triggers and next-lvl-backend 5 while person-hour
+# the user and never the model: project A logged 25 triggers and project B 5 while person-hour
 # complaints continued. The verdict is now `decision: block`, reason fed back to the model, one
 # re-entry. Every trigger is still logged.
 set -uo pipefail

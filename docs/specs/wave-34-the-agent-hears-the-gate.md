@@ -25,12 +25,12 @@
 | 1 | "Done", and the user finds the defect at first look — mostly UI checked by tests/compilation/exit code, one theme, one viewport, local instead of staging | 150 | 14 |
 | 2 | Partial coverage — ТЗ items and subtasks dropped, adjacent surfaces missed (gateway repo, exports, show pages, mobile), scope cut silently | 70 | 13 |
 | 3 | Text for a client/BA — long, bullet lists, «—», AI tone, field names, internal jargon | 70 | 8 |
-| 4 | Stops mid-plan — «Беру X» and the turn ends, "No response requested", «продолжать?» under an approved plan (≈30 «Продолжай» in radevs-commerce-core alone) | 65 | 10 |
+| 4 | Stops mid-plan — «Беру X» and the turn ends, "No response requested", «продолжать?» under an approved plan (≈30 «Продолжай» in project J alone) | 65 | 10 |
 | 5 | Work handed back — «залогинься», «пришли скрин», «запусти на dev сам», asking what is in `.env`/compose/memory | 55 | 12 |
 | 6 | Standing instructions lost — `AskUserQuestion`, Russian, sail, "update artifact X immediately" | 45 | 11 |
 | 7 | Estimates — person-hours, process stages missing, inflation, sums not re-added | 35 | 7 |
 | 8 | Claims without a source — «журнал 1С», «ювелирка», "Meta forbids wa.me", «выписать нельзя» | 30 | 7 |
-| 9 | Destructive actions — `migrate:fresh` wiped the dev DB, tests overwrote the working `crm_wigs` DB, `git checkout <file>` destroyed edits, the agent disabled a gate in `.company-sdd.json`, `horizon:terminate` left down, `pkill` dropped the stand | 15 | 6 |
+| 9 | Destructive actions — `migrate:fresh` wiped the dev DB, tests overwrote project C's working DB, `git checkout <file>` destroyed edits, the agent disabled a gate in the project's gate config, `horizon:terminate` left down, `pkill` dropped the stand | 15 | 6 |
 | 10 | Environment ignored — Docker in prod, no sudo, UTC timestamps, stale worker | 12 | 5 |
 
 Commit attribution (7 complaints, May–June) is already closed: `~/.claude/settings.json` has
@@ -41,13 +41,13 @@ Commit attribution (7 complaints, May–June) is already closed: `~/.claude/sett
 1. **The three gates that read what the agent says never reach the agent.** `coverage-claim.sh`,
    `estimate-claim.sh` and `plain-language.sh` answer with `systemMessage` only — shown to the user,
    not fed back to the model. Their logs prove they fired while the complaints continued:
-   otaje `plain-language.log` 149 lines, `estimate-claims.log` 25, `coverage-claims.log` 2;
-   next-lvl-backend `estimate-claims.log` 5.
+   project A `plain-language.log` 149 lines, `estimate-claims.log` 25, `coverage-claims.log` 2;
+   project B `estimate-claims.log` 5.
 2. **Every gate is inert outside a Laravel project with `.groundwork.json`.** Classes 1, 3, 4, 5, 9 hit
-   budget-hub (mobile), tiles-survive, three Python bots, fam-sync, portfolio-site and tatzaot (no
+   project E (mobile), project K, three Python bots, project D, a portfolio site and project I (no
    `.groundwork.json`) exactly as they hit the Laravel projects.
 3. **Browser proof is prose.** `skills/final-check/SKILL.md:52` asks for a real browser on Admin/UI/CSS
-   changes; nothing checks that a browser tool ran. September otaje sessions (v0.41+) still carry
+   changes; nothing checks that a browser tool ran. September project A sessions (v0.41+) still carry
    22 UI complaints.
 4. **No gate looks at a turn that ends on an announcement**, a request to the user, or a prose question.
 5. **`pre-tool-guard.sh` guards the runner and shipped migrations only** — none of the class-9 commands.
@@ -85,7 +85,7 @@ of the last message (code fences, inline code, URLs, paths and outbound blocks e
 blocks on: `—`; a line starting with `- `, `* `, `• ` or `\d+\.` (unless the addressee line says
 `lists`); a `snake_case` identifier, a `Model::` / table name, a file path or an AC/OQ/PB id (unless
 `ids-ok`); any of `AI|ИИ|Claude|LLM|GPT|нейросет` (unless `ai-ok`) — «агент» was dropped from the draft
-list because it is a domain term in next-lvl-backend (Field Agent); more than 900 characters (override `max=<n>` on the fence line); a
+list because it is a domain term in project B (Field Agent); more than 900 characters (override `max=<n>` on the fence line); a
 negative claim about an external service (`нельзя|невозможно|не поддерживает|cannot|not supported`)
 with no URL and no `проверено запросом` in the same block. The rule text ships in the plugin's
 `CLAUDE.md`-loaded guideline so the agent knows the format before the gate fires.
@@ -105,7 +105,7 @@ pass only if, after the last such edit, a browser or simulator tool ran
 `git checkout -- <path>`, `git checkout <ref> -- <path>`, `git restore`, `git reset --hard`,
 `git clean -f*`, `git stash drop|clear` while `git status --porcelain` is non-empty;
 `docker compose down -v`, `docker volume rm`; `horizon:terminate`, `pkill`, `killall`, `kill -9`;
-Edit/Write on `.groundwork.json`, `.company-sdd.json`, `.claude/settings*.json`,
+Edit/Write on `.groundwork.json`, `.claude/settings*.json`,
 `.claude/follow-through.json`, `.claude/hooks/**`, `.git/hooks/**`, `.husky/**`, and a shell write
 (`sed -i`, `>`, `tee`, `mv`, `rm`, `cp`) to the config files. Narrowed from the draft's `**/hooks/**`,
 which would prompt on every edit to a plugin's own hooks.

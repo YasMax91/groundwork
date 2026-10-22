@@ -3,7 +3,7 @@
 
 FT-AC8. Every pattern below comes from a real loss in the 2026-10-05 sweep: `migrate:fresh` wiped a
 dev database, tests overwrote a working one, `git checkout <file>` destroyed uncommitted edits, an
-agent switched off a gate in `.company-sdd.json`, `horizon:terminate` left the queue down, `pkill`
+agent switched off a gate in its project's gate config, `horizon:terminate` left the queue down, `pkill`
 dropped a stand.
 
 The verdict is `permissionDecision: "ask"`: the native permission prompt, with the reason on it. It
@@ -40,11 +40,11 @@ DOCKER_DATA = re.compile(
 )
 PROCESS_KILL = re.compile(r"\b(horizon:terminate|pkill|killall)\b|\bkill\s+-(9|KILL)\b")
 GATE_CONFIG = re.compile(
-    r"(^|/)\.groundwork\.json$|(^|/)\.company-sdd\.json$|/\.claude/settings(\.local)?\.json$|"
+    r"(^|/)\.groundwork\.json$|/\.claude/settings(\.local)?\.json$|"
     r"(^|/)\.claude/follow-through\.json$|/\.claude/hooks/|/\.git/hooks/|/\.husky/"
 )
 GATE_CONFIG_IN_SHELL = re.compile(
-    r"\.groundwork\.json|\.company-sdd\.json|\.claude/settings(\.local)?\.json|\.claude/follow-through\.json"
+    r"\.groundwork\.json|\.claude/settings(\.local)?\.json|\.claude/follow-through\.json"
 )
 
 

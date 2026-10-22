@@ -16,25 +16,25 @@
   знания об этих данных были максимально актуальными»* — decided: keep **plans («Ревизии»), repo
   documents, what is deployed where, and agent memory** current; the source of truth is a **file in the
   repo, mirrored** to the «Ревизия» artifact; updated **in the same turn** as the change.
-- Status: **implemented** (2026-10-05), approved by the author the same day; verified live on otaje (see
+- Status: **implemented** (2026-10-05), approved by the author the same day; verified live on project A (see
   **Verification — result**).
 
 ## What breaks today
 
 Evidence: ~500 mentions of a sibling session in agent replies across all main-session transcripts
 («соседняя сессия» 107, «параллельная сессия» 69, `deadlock` 33, «чужие изменения/правки/коммиты» 29,
-«порт занят / уже занят» 26), plus the state of otaje's 26 worktrees on 2026-10-05.
+«порт занят / уже занят» 26), plus the state of project A's 26 worktrees on 2026-10-05.
 
 | # | Failure | Evidence | Root cause |
 |---|---|---|---|
-| F1 | A lane's `sail` runs the **main checkout's code** | otaje: 15 phpstan errors and 91 failures from another session's promo-code work | 4 of 26 otaje worktrees carry `COMPOSE_PROJECT_NAME=otaje` — the main stack, whose volume is the main checkout |
-| F2 | **Shared test DB** collisions | `1213 Deadlock`, `1412 Table definition has changed`, `migrate:fresh` mid-run (otaje, next-lvl, coffee, asg) | one `*_test` DB per project; groundwork's lock lives in `.claude/groundwork/locks/` **inside each worktree**, so worktrees never see each other's lock, and it guards only the Stop gate |
-| F3 | **Shared dev DB** data destroyed | an agent deleted `promo-codes.*` permissions as "leftovers" — a sibling's working data | 9 of 26 otaje worktrees use `DB_DATABASE=otaje` |
-| F4 | **Same hostname, two stacks** | Traefik alternates requests between `otaje_app` and `otaje_wt4_app` | lanes copy `APP_SLUG`/`APP_DOMAIN` from main |
-| F5 | **Two sessions in one tree** | next-lvl, coffee, shlomi, ra-devs: «чужие правки в дереве», a red gate owned by the other session | the second session opened without a worktree; main checkouts sit on feature branches (`chore/docs-ai-portal` in 4 projects) |
-| F6 | **Stale base** | gateway lane on `2c103f7` without the needed code; vendor/.env missing in 2 otaje lanes | the app branches a worktree from `origin/HEAD` (`main`/`master`); 6 of 10 projects integrate on `development`; `worktree.baseRef` cannot name a branch (docs: worktrees.md#choose-the-base-branch) |
-| F7 | **Dev servers / ports** | tiles: one session stopped the other's API; fam-sync/medai: port 80, 6001 taken | one fixed port per project |
-| F8 | **Decisions not shared** | «видимо, это было в другой сессии» (next-lvl) | nothing tells a session what its siblings are doing; the app's `ListAgents`/`SendMessage` exist but nothing prompts their use |
+| F1 | A lane's `sail` runs the **main checkout's code** | project A: 15 phpstan errors and 91 failures from another session's promo-code work | 4 of 26 project A worktrees carry `COMPOSE_PROJECT_NAME=<project>` — the main stack, whose volume is the main checkout |
+| F2 | **Shared test DB** collisions | `1213 Deadlock`, `1412 Table definition has changed`, `migrate:fresh` mid-run (projects A, B, F, L) | one `*_test` DB per project; groundwork's lock lives in `.claude/groundwork/locks/` **inside each worktree**, so worktrees never see each other's lock, and it guards only the Stop gate |
+| F3 | **Shared dev DB** data destroyed | an agent deleted `promo-codes.*` permissions as "leftovers" — a sibling's working data | 9 of 26 project A worktrees use `DB_DATABASE=<project>` |
+| F4 | **Same hostname, two stacks** | Traefik alternates requests between `<project>_app` and `<project>_wt4_app` | lanes copy `APP_SLUG`/`APP_DOMAIN` from main |
+| F5 | **Two sessions in one tree** | projects B, F, G and an empty folder: «чужие правки в дереве», a red gate owned by the other session | the second session opened without a worktree; main checkouts sit on feature branches (`chore/docs-ai-portal` in 4 projects) |
+| F6 | **Stale base** | gateway lane on `2c103f7` without the needed code; vendor/.env missing in 2 project A lanes | the app branches a worktree from `origin/HEAD` (`main`/`master`); 6 of 10 projects integrate on `development`; `worktree.baseRef` cannot name a branch (docs: worktrees.md#choose-the-base-branch) |
+| F7 | **Dev servers / ports** | project K: one session stopped the other's API; project D, project C's second API: port 80, 6001 taken | one fixed port per project |
+| F8 | **Decisions not shared** | «видимо, это было в другой сессии» (project B) | nothing tells a session what its siblings are doing; the app's `ListAgents`/`SendMessage` exist but nothing prompts their use |
 
 ## Layer A — follow-through v0.2.0 (any git project)
 
@@ -104,11 +104,11 @@ main checkout, so a lane can catch up with data entered elsewhere.
 
 ## Layer C — status that does not go stale (follow-through, groundwork for the spec status)
 
-Evidence: «Отметь, что сделано по плану», «меняй состояние плана по-ходу» (budget-hub-api), «сразу
-обновляй Ревизия Commerce Core» and the agent asking again whether to update it (radevs-commerce-core),
-«api-reference актуальный?» (coffee), «на сервере все актуально?» twice (budget-hub-api), «актуальный ли
-код на сервере» (budget-hub). Three live trackers exist only as claude.ai artifacts (Ревизия Commerce
-Core, Budget Hub API, админка O.TAJE), which no hook and no sibling session can read.
+Evidence: «Отметь, что сделано по плану», «меняй состояние плана по-ходу» (project E), «сразу
+обновляй Ревизия …» and the agent asking again whether to update it (project J),
+«api-reference актуальный?» (project F), «на сервере все актуально?» twice (project E), «актуальный ли
+код на сервере» (project E). Three live trackers exist only as claude.ai artifacts (project J's «Ревизия»,
+project E's API tracker, project A's admin tracker), which no hook and no sibling session can read.
 
 **ST-AC1 — one status file per repository.** `docs/ai/status.md`: front-matter `mirror: <artifact url>`
 (optional) and `environments:` (below); a table per phase — `| ID | Item | Status | Lane | Proof | Updated |`,
@@ -142,19 +142,19 @@ a deploy is a status event (ST-AC2).
 repo paths, class and function names in backticks; any that no longer exist in the tree are listed in
 context as "possibly stale — verify and fix or delete in this session". The SessionStart rules add:
 a memory fact that the turn's change made wrong is fixed in the same turn. To verify during build: that
-worktree sessions resolve to the main repository's memory directory (the 26 otaje worktree project
+worktree sessions resolve to the main repository's memory directory (the 26 project A worktree project
 dirs hold 0 memory files; the main one holds the project's memories).
 
 ## Deviations found while building (each one found by the live run, not by the suites)
 
-1. **`phpunit.xml` beats `.env.testing`.** 6 of 10 projects set `DB_DATABASE` in `phpunit.xml`, otaje with
-   `force="true"`, so two provisioned lanes still ran on the one `otaje_test` (167 and 123 failures,
+1. **`phpunit.xml` beats `.env.testing`.** 6 of 10 projects set `DB_DATABASE` in `phpunit.xml`, project A with
+   `force="true"`, so two provisioned lanes still ran on the one `<project>_test` (167 and 123 failures,
    `1213 Deadlock`, `1412`). `lane.py up` now points the lane's working copy of `phpunit.xml` at the
    lane's test DB and marks it `skip-worktree` — never committed; only `lane.py down --purge` restores it
    (a plain `down` keeps it, so a stack restarted with `sail up` still tests on the lane's own DB). The
    test-gate lock reads the database name from `phpunit.xml` first for the same reason.
 2. **The test DB must be migrated at provision time.** Unit tests that do not refresh the database
-   (otaje: `PromoCodeStackingTest`, `DashboardStatsServiceTest`) relied on the shared test DB having
+   (project A: `PromoCodeStackingTest`, `DashboardStatsServiceTest`) relied on the shared test DB having
    tables from earlier runs. `lane.py up` runs `migrate --env=testing` on the lane's test DB.
 3. **SQL through `sh -c "…"` executed the backticks** around a database name as command substitution, so
    `CREATE DATABASE` silently did nothing. SQL now goes through stdin.
@@ -169,9 +169,9 @@ dirs hold 0 memory files; the main one holds the project's memories).
 
 ## Out of scope
 
-- Normalising the 26 existing otaje worktrees (deleting stale ones loses work) — offered separately
+- Normalising the 26 existing project A worktrees (deleting stale ones loses work) — offered separately
   after this ships, worktree by worktree.
-- Non-MySQL dev databases (Postgres in asg) for GW35-AC1 — the script reports "clone not supported"
+- Non-MySQL dev databases (Postgres in project L) for GW35-AC1 — the script reports "clone not supported"
   and provisions an empty migrated DB; Postgres clone next wave.
 - Port allocation for non-Docker dev servers beyond declaring them (LN-AC6).
 
@@ -183,20 +183,20 @@ dirs hold 0 memory files; the main one holds the project's memories).
 - Status: a commit with no status.md edit blocks once; the escape line passes; a status.md edit with a
   `mirror:` and no Artifact publish blocks once; a sibling's `doing` row appears in the other lane's
   context; a deploy command lands in deploys.json; a Done checkpoint with a draft spec blocks.
-- Live: two sessions in otaje — one in the main checkout, one in a new lane — run the full suite at the
+- Live: two sessions in project A — one in the main checkout, one in a new lane — run the full suite at the
   same time with no deadlock; each sees the other in its context; an edit to the same file stops once.
 
 ## Verification — result (2026-10-05)
 
 - Suites: groundwork 23 of 23 green (new `lane` 27 cases, `test-gate` 22 incl. 2 new, `slice-gate` 49
   incl. 2 new); follow-through 63 of 63 (19 new in `test_lanes.py`, real git repositories).
-- Live on otaje, two probe lanes created the way the app creates them (from `origin/main` `a4865d0`):
+- Live on project A, two probe lanes created the way the app creates them (from `origin/main` `a4865d0`):
   both moved to `origin/development` `edd221f` at session start; `sail` refused before provisioning;
   `lane.py up` 20–21 s each, own stack (5 containers each), own domain answering through Traefik (302),
   dev DB cloned, migrations applied. Concurrent run of the same 989 tests in both lanes:
   **989 of 989 passed in each, 0 deadlocks** — before deviations 1–2 the same run gave 167 and 123
   failures. Bravo's session start listed alpha; bravo's first edit of a file alpha had edited was
-  denied with alpha's name, the second passed; `docker stop otaje_probealph_app` from bravo asked.
+  denied with alpha's name, the second passed; `docker stop <project>_probealph_app` from bravo asked.
   The main checkout's `.env` and its 5 containers were untouched. Probes torn down: 0 containers,
   0 databases, 0 volumes, 0 registry entries left.
 - Not run live: SessionEnd/UserPromptSubmit inside a real app session (the scripts were driven with real

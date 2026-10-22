@@ -1,7 +1,7 @@
 """Groundwork plugin :: where a tool call works, and where a session has worked (wave 40).
 
 Every hook used to judge the session's own folder — `payload.cwd`, the directory in-cwd.sh entered. A session
-opened in `ra-devs-laravel-back` (an empty folder, not a git repository) that worked in an otaje lane through
+opened in an empty folder (not a git repository) that worked in a project A lane through
 `cd <lane> && git push origin HEAD:development` pushed to the shared branch with nothing checked (2026-10-21,
 E8): push-gate.py found no `.groundwork.json` in the session's folder and returned. The change touched
 `bootstrap/app.php` and needed the whole suite, which was run by hand afterwards; no Stop gate ever saw the

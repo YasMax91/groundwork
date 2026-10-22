@@ -58,7 +58,7 @@ Three consequences, each of which moved a decision:
 3. **`## Plan (slices)` is a work journal**, carrying commits, docs and live checks as rows beside
    slices. The parser must expect rows that are not slices and must not fail on them.
 
-A parallel trial — one L4 task in `otaje`, 11 slices, a per-slice runnable ledger written before the
+A parallel trial — one L4 task in project A, 11 slices, a per-slice runnable ledger written before the
 code — returned 11 gates, 10 runnable, 0 unmet, 0 blind misses. It is recorded in
 `~/.claude/wave-31-log.md` and it is **not** evidence that the discipline works: the agent authoring
 the ledger was the agent writing the code, and it knew all eleven checks in advance. A zero under

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Groundwork plugin :: executable proof for hooks/in-cwd.sh (wave 36).
-# Reproduces the otaje defect: a session opened in the main checkout works in a worktree; the main
+# Reproduces the project A defect: a session opened in the main checkout works in a worktree; the main
 # checkout's checkpoint is another task in Discovery mode; the gate must judge the worktree.
 # Run: bash hooks/tests/in-cwd.sh
 set -uo pipefail

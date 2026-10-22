@@ -28,7 +28,7 @@ Runtime facts established on 2026-08-11:
 | `groundwork` marketplace manifest passes `--strict` today | `claude plugin validate . --strict` → passed |
 | `workflowSizeGuideline` in settings needs 2.1.219 → **not available here** | Version comparison against the workflows doc |
 | Forked skills (`context: fork`) always block the turn on this build (background forking lands in 2.1.218) | Version comparison against the skills doc |
-| A real onboarded project (`next-lvl-backend`) runs **PHPUnit 11, no static-analysis tool**, and its `.groundwork.json` sets `commands.analyse` to an `echo` no-op with `analyse_on_stop: false` | Read `composer.json` and `.groundwork.json` |
+| A real onboarded project (project B) runs **PHPUnit 11, no static-analysis tool**, and its `.groundwork.json` sets `commands.analyse` to an `echo` no-op with `analyse_on_stop: false` | Read `composer.json` and `.groundwork.json` |
 
 That last row matters more than any new feature below: on that project the done-gate's static-analysis
 leg is inert by configuration, so E11 is scored above every platform item.
@@ -164,7 +164,7 @@ separately per item and never added into the agent figure.
   as a dev dependency) with a starting level and a generated baseline, and writes the real command into
   `commands.analyse`. When the user declines, `init` records the decline in `.groundwork.json` so the
   done-gate reports "static analysis declined by the project" instead of printing a fabricated pass.
-- **Why:** on `next-lvl-backend` the analyse command is `echo 'no static-analysis tool configured…'`
+- **Why:** on project B the analyse command is `echo 'no static-analysis tool configured…'`
   and `analyse_on_stop` is `false`. The Definition of Done claims a static-analysis leg that never
   runs. This is the one place where the plugin's own contract is currently untrue on a live project.
 - **Capability:** none — a step in `init` plus gate reporting. `runtime-verified` (the no-op was read

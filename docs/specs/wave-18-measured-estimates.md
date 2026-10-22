@@ -12,7 +12,7 @@
   **mixed**: AC1–AC6 and AC10–AC13 are proven by executable tests against synthetic transcripts; AC7,
   AC9, AC14 and AC15 are **structural only** — the rules are in the files that own them and no
   behavioural run has been recorded yet. The ledger was seeded on this machine: 562 `commit-window`
-  rows, median **12** active minutes per window across all projects (16 in `crm-wigs-back`, p75 27–40).
+  rows, median **12** active minutes per window across all projects (16 in project C, p75 27–40).
   Two defects were caught by the tests before shipping, both of the class this plugin exists to remove:
   `jq`'s `// empty` treats `false` as absent, so the `estimates.ledger` opt-out silently did nothing;
   and the backfill piped its commit list into a command whose stdin was already owned by a heredoc,
@@ -57,7 +57,7 @@ git log --format='%ad %s' --date=format:'%Y-%m-%d %H:%M' --since='2 months ago'
 ```
 
 and calls the gap between consecutive commits "the real cost of that slice". It is not. It is the rhythm
-at which a human presses commit. Measured on `crm-wigs-back`, 2026-08-20: four commits at `12:59`,
+at which a human presses commit. Measured on project C, 2026-08-20: four commits at `12:59`,
 `13:00`, `13:01`, `13:01` (a merge batch — near-zero gaps for real work), and a single 60-minute gap
 `11:59 → 12:59` that covers writing one spec. The procedure therefore produces both noise and
 hour-sized intervals, and the hour-sized ones **confirm** the inflated estimate instead of refuting it.
@@ -93,15 +93,15 @@ Per project (n ≥ 4), median active minutes against the median calendar span of
 
 | project | n | median active | median span |
 |---|---|---|---|
-| next-lvl-backend | 56 | 38 | 119 |
-| coffee-roasters-back | 53 | 41 | 82 |
-| crm-wigs-back | 53 | 23 | 80 |
-| maxsterling-back | 25 | 12 | 50 |
-| shlomi-mor-wigs-back | 24 | 13 | 25 |
+| project B | 56 | 38 | 119 |
+| project F | 53 | 41 | 82 |
+| project C | 53 | 23 | 80 |
+| project H | 25 | 12 | 50 |
+| project G | 24 | 13 | 25 |
 | groundwork | 14 | 21 | 54 |
-| budget-hub-api | 11 | 126 | 369 |
-| crm-wigs-ai-gateway | 8 | 32 | 101 |
-| ra-devs-laravel-back | 6 | 17 | 54 |
+| project E | 11 | 126 | 369 |
+| project C, gateway | 8 | 32 | 101 |
+| another folder | 6 | 17 | 54 |
 
 Three findings bind the design:
 
@@ -110,8 +110,8 @@ Three findings bind the design:
 2. **Calendar span overstates work by ~3×** (80–119 min span against 23–41 min active). Any estimate
    derived from wall-clock-between-events, including the current `git log` procedure, inherits that
    factor.
-3. **Worktree sessions live in sibling directories** (`…-crm-wigs-back--claude-worktrees-<name>`), 14 of
-   40 project directories. Without collapsing them into the parent, `crm-wigs-back` reports a fraction
+3. **Worktree sessions live in sibling directories** (`…-<project>--claude-worktrees-<name>`), 14 of
+   40 project directories. Without collapsing them into the parent, project C reports a fraction
    of its 53 sessions and the per-project median is computed from the wrong sample.
 
 ## Design — per item

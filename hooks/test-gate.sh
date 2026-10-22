@@ -80,7 +80,7 @@ if [ "$declared" != "sqlite" ]; then
 fi
 
 # --- scope: the close tests within a budget while working; the push check covers the rest (waves 37-38) ---
-# The whole suite on every Stop cost otaje 383 minutes in a week (wave 37). Its replacement ran whatever
+# The whole suite on every Stop cost project A 383 minutes in a week (wave 37). Its replacement ran whatever
 # test-select.py picked, and a routes file or a central class picked hundreds of files: from 2026-10-06 to
 # 10-21, 30 Stop runs took 5+ minutes and 12 hit the hook's 10-minute limit with nothing verified. Now the
 # selection keeps to the close circle (gw_tests.py), drops files already green on this exact code, and is
@@ -131,7 +131,7 @@ if [ "$scope" != "full" ] && printf '%s' "$cmd" | grep -qE 'artisan test|phpunit
 fi
 
 # Stop a run past its limit — and, under Sail, its PHP process inside the container, which outlives the
-# host-side client (otaje, 2026-09-25: an interrupted run kept going and held the test database).
+# host-side client (project A, 2026-09-25: an interrupted run kept going and held the test database).
 stop_container_tests() {
   case "$cmd" in *vendor/bin/sail*)
     svc="$(sed -n 's/^APP_SERVICE=//p' .env 2>/dev/null | tr -d '"' | head -1)"
@@ -196,7 +196,7 @@ if [ -f .groundwork.json ] && [ "$(jq -r '.gates.test_db_lock' .groundwork.json 
     fi
 
     # Its holder is dead (a session restarted mid-run): take it over now rather than in 30 minutes, and stop
-    # what the dead run left inside the container (otaje, 2026-10-21: the suite kept running there unowned).
+    # what the dead run left inside the container (project A, 2026-10-21: the suite kept running there unowned).
     holder_pid="$(tr -dc '0-9' < "$lock_dir/owner" 2>/dev/null || true)"
     if [ -n "$holder_pid" ] && ! ps -p "$holder_pid" >/dev/null 2>&1; then
       stop_container_tests

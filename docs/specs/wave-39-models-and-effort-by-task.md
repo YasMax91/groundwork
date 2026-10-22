@@ -43,7 +43,7 @@
   `conformance-reviewer`, `adversarial-verifier`, `blind-spot-mapper` `model: opus`, `effort: high` (opus
   even when the main session runs something else); `impact-mapper` `model: sonnet`, `effort: medium` **only
   if AC2 passes**, otherwise it stays on the session's model.
-- **GW39-AC2 — the mapping agent's measurement, before AC1 touches it**: six past otaje tasks whose cached
+- **GW39-AC2 — the mapping agent's measurement, before AC1 touches it**: six past project A tasks whose cached
   impact maps name their seeds; `impact-mapper` run on today's code with the same seeds once on Opus and once
   on Sonnet at `medium`; the files each map names are compared. Sonnet passes when it names ≥ 95 % of the
   files the Opus map names over the six, and ≥ 90 % in each. Recorded in this spec with time and tokens per
@@ -81,7 +81,7 @@
 
 ## Result (2026-10-21)
 
-- **AC2, the mapping agent's measurement** — `impact-mapper` with the same seeds on otaje origin/development
+- **AC2, the mapping agent's measurement** — `impact-mapper` with the same seeds on project A's origin/development
   (91f03bb7), once with `model: opus`, once with `model: sonnet` (both at the file's `medium`); files each map
   named in its `FILES:` list:
 

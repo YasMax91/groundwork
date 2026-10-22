@@ -14,12 +14,12 @@ push is never stopped.
   "always" — the 0.47.0 rule: a green whole run on this exact tree.
   false — off.
 
-Measured before this rule (otaje, 2026-10-06 .. 10-21): 51 whole-suite episodes, ~1049 minutes, median 17;
+Measured before this rule (project A, 2026-10-06 .. 10-21): 51 whole-suite episodes, ~1049 minutes, median 17;
 96 of 180 commits on development changed only documents and still needed a whole run each.
 The denial names one command, test-run.py --for-push, which runs exactly what is missing and records it.
 
 Each push is judged in the repository it runs in, read off the line itself (gw_repo.py, wave 40): a session
-opened in an empty folder pushed `cd <otaje lane> && git push origin HEAD:development` with nothing checked,
+opened in an empty folder pushed `cd <lane> && git push origin HEAD:development` with nothing checked,
 because this gate read the session's folder (2026-10-21). A push whose directory the line does not name —
 `cd "$LANE" && git push …` — is refused when it may reach a shared branch: which code it pushes is unknown.
 Inert outside a Groundwork project and on any error.

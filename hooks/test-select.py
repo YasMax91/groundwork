@@ -26,7 +26,7 @@ def arg(name, args):
 def plan_stop(top, cfg):
     """The close circle minus what already passed on this exact code, cut to the budget by recorded time.
 
-    The budget exists because the 0.47.0 gate ran whatever it selected: in otaje 30 Stop runs took 5+
+    The budget exists because the 0.47.0 gate ran whatever it selected: in project A 30 Stop runs took 5+
     minutes and 12 hit the 10-minute hook limit with nothing verified. What does not fit is named and left
     to the push check, which runs close + wide before code reaches a shared branch.
     """

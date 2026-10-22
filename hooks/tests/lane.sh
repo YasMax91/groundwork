@@ -183,11 +183,11 @@ printf '{"networks":{"sail":{"name":"x_sail","driver":"bridge","ipam":{}},"traef
 # 10.213.0.0/17 and .128.0/18, so a new lane subnet can only come from 10.213.192.0/18.
 BASE_NETS=$'bridge\t\t172.17.0.0/16 \nhost\t\t\nnone\t\t\ntraefik-network\t\t172.31.0.0/16 '
 BASE_NETS+=$'\ncafe_old_default\tcafe_old\t192.168.16.0/20 \nshop_gone_sail\tshop_gone\t172.21.0.0/16 '
-BASE_NETS+=$'\notaje_sweet_sail\totaje_sweet\t172.26.0.0/16 \notaje_sail\totaje\t192.168.128.0/20 '
+BASE_NETS+=$'\nstore_sweet_sail\tstore_sweet\t172.26.0.0/16 \nstore_sail\tstore\t192.168.128.0/20 '
 BASE_NETS+=$'\nlanes_own_sail\tlanes_own\t10.213.0.0/17 \nlanes_more_sail\tlanes_more\t10.213.128.0/18 fd00::/64 '
 nets() { printf '%s\n' "$BASE_NETS" "$@" > "$FAKE/nets"; }   # extra lines -> $FAKE/nets
 nets $'deli_bravec0ff_sail\tdeli_bravec0ff\t172.28.0.0/16 '
-printf 'running\totaje_sail,proxy_net\nexited\totaje_sweet_sail\nrunning\tdb_net\n' > "$FAKE/containers"
+printf 'running\tstore_sail,proxy_net\nexited\tstore_sweet_sail\nrunning\tdb_net\n' > "$FAKE/containers"
 lane_up() { # worktree log [args] -> exit status of lane.py up
   local wt="$1" log="$2"; shift 2
   ( cd "$wt" && PATH="$ROOT/bin:$PATH" LANE_FAKE="$FAKE" python3 "$HOOKS/lane.py" up "$@" > "$log" 2>&1 )
@@ -205,7 +205,7 @@ grep -q 'no address range left for a new network' "$ROOT/deli1.log"; eq "…says
 eq "…names the networks no container uses" "docker network rm cafe_old_default shop_gone_sail" \
   "$(grep -o 'docker network rm .*' "$ROOT/deli1.log")"
 grep -q "ONLY with the owner's consent" "$ROOT/deli1.log"; eq "…removing them is the owner's call" 0 $?
-grep -q 'stopped containers only.*otaje_sweet$' "$ROOT/deli1.log"; eq "…names the stack held by stopped containers" 0 $?
+grep -q 'stopped containers only.*store_sweet$' "$ROOT/deli1.log"; eq "…names the stack held by stopped containers" 0 $?
 grep -q 'traefik-network' "$ROOT/deli1.log"; eq "…never a network made by hand" 1 $?
 grep -q 'lanes_own_sail' "$ROOT/deli1.log"; eq "…never one outside the pools" 1 $?
 grep -q 'lane.py up --own-subnet' "$ROOT/deli1.log"; eq "…offers a subnet of its own" 0 $?

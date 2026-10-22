@@ -1,6 +1,6 @@
 """follow-through :: executable proof for wave 41 — the gates judge where the work is.
 
-Reproduces otaje, 2026-10-21: a session opened in an empty folder with no git worked in a lane through
+Reproduces project A, 2026-10-21: a session opened in an empty folder with no git worked in a lane through
 `cd <lane> && …` and Edit / Write by absolute path, and no follow-through gate saw the lane. Each case builds
 a real repository (test_lanes.Repo) and drives the real hook scripts in subprocesses with an isolated HOME.
 Run: python3 -m unittest discover -s follow-through/hooks/tests

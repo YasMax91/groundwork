@@ -398,15 +398,16 @@ table, a routes line changing middleware or a group — can only be checked by t
   test-database lock, and records the result by the exact code. A lane's skip-worktree `phpunit.xml` takes
   the committed version, so a lane's green run counts for the commit.
 
-Measured on otaje, 2026-10-06 – 10-21 (0.47.0): 30 Stop runs took 5+ minutes, 12 hit the 10-minute limit;
-51 whole-suite episodes took ~1049 minutes; 96 of 180 development commits changed only documents and still
-needed a whole run; 15 questions asked the owner to record a lane's pass by hand. The old selection on 81
-commits: median 62 of 849 files, p90 679 — see `docs/specs/wave-38-tests-by-what-changed.md` for the new one.
+Measured on a client project (project A in the specs), 2026-10-06 – 10-21 (0.47.0): 30 Stop runs took 5+
+minutes, 12 hit the 10-minute limit; 51 whole-suite episodes took ~1049 minutes; 96 of 180 development commits
+changed only documents and still needed a whole run; 15 questions asked the owner to record a lane's pass by
+hand. The old selection on 81 commits: median 62 of 849 files, p90 679 — see
+`docs/specs/wave-38-tests-by-what-changed.md` for the new one.
 
 ## The gates judge where the work is
 
 A session need not be opened in the repository it works in: it can `cd` into a lane, call `git -C <lane>`, or
-edit files there by absolute path. The hooks used to judge the folder the session was opened in — on otaje,
+edit files there by absolute path. The hooks used to judge the folder the session was opened in — on project A,
 2026-10-21, a session opened in an empty folder pushed `cd <lane> && git push origin HEAD:development` with a
 changed `bootstrap/app.php`, and no gate ran. Now (`gw_repo.py`, `session-repos.py`, `in-cwd.sh`):
 
@@ -438,7 +439,7 @@ way since its v0.4.0 — `docs/specs/wave-41-follow-through-judges-where-the-wor
 
 Each agent's file sets its model: `grounded-researcher` on Sonnet; the three checkers (`conformance-reviewer`,
 `adversarial-verifier`, `blind-spot-mapper`) on Opus whatever the session runs; `impact-mapper` stays on the
-session's model — on six otaje tasks Sonnet named 71 % of the files the Opus maps named (47 % on the deepest),
+session's model — on six project A tasks Sonnet named 71 % of the files the Opus maps named (47 % on the deepest),
 against a 95 % bar. The task's level sets the effort: the skills pass it on every `Agent` call, the deep
 workflows take `args.level`, and the mod `hooks/effort.ts` sets it per request — the main conversation by the
 level the checkpoint states (L0 medium, L1-L2 high, L3 xhigh, L4 max; no open task: the menu's effort) and
@@ -453,7 +454,7 @@ false` turns the mod off; `effort.table.<main|mapping|checkers>.<L0..L4>` overri
 migrated test database of its own (with the lane's working copy of `phpunit.xml` pointed at it and marked
 `skip-worktree`), and `vendor/`/`node_modules/` cloned copy-on-write. `lane-guard.py` refuses `sail …`
 from a worktree whose `.env` still points at the main stack or the main dev database. The test-gate lock
-lives in the git common dir, keyed by the test database, so every worktree sees it. Verified on otaje:
+lives in the git common dir, keyed by the test database, so every worktree sees it. Verified on project A:
 two lanes ran the same 989 tests at the same time, 989 of 989 each, no deadlock — the shared test
 database gave 167 and 123 failures on the same run. `lane.py down [--purge]` stops the lane and, with
 `--purge`, drops its databases and volumes. A lane starts without Horizon, scheduler or queue workers

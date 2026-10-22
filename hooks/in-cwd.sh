@@ -12,7 +12,7 @@
 # session actually is (wave 36).
 #
 # Wave 40: the session's folder is not where the work is either, when the session works elsewhere through
-# `cd <lane> && …` or edits files there by absolute path (otaje, 2026-10-21: a push to development from a session
+# `cd <lane> && …` or edits files there by absolute path (project A, 2026-10-21: a push to development from a session
 # opened in an empty folder, no check at all). So, through session-repos.py (gw_repo.py):
 #   * a Bash / Edit / Write hook runs in the repository the call works in — the line's own `cd` / `git -C`,
 #     or the file's path; the payload is passed unchanged;

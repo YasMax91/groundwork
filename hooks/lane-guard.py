@@ -3,7 +3,7 @@
 
 A worktree whose `.env` is missing, or carries the main checkout's COMPOSE_PROJECT_NAME or DB_DATABASE,
 sends every `sail …` into the MAIN stack: the main checkout's code under test, the shared dev database
-written, the shared test database raced. Observed on 2026-10-05 in 4 (stack) and 9 (dev DB) of otaje's
+written, the shared test database raced. Observed on 2026-10-05 in 4 (stack) and 9 (dev DB) of project A's
 26 worktrees, and behind «15 phpstan errors and 91 failures» that were another session's work.
 
 Denies such a runner command with the fix (`lane.py up`). Inert in the main checkout, outside a

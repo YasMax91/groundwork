@@ -251,7 +251,7 @@ class Guard(unittest.TestCase):
     def test_gate_config_edit_asks(self):
         env = Env()
         rc_out = env.run("guard.py", {"cwd": env.cwd, "tool_name": "Edit",
-                                      "tool_input": {"file_path": "/p/.company-sdd.json"}})
+                                      "tool_input": {"file_path": "/p/.groundwork.json"}})
         self.assertTrue(self.asks(rc_out))
 
     def test_gate_config_shell_write_asks(self):

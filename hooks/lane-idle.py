@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Groundwork plugin :: SessionEnd — stop a lane's stack when the last session in its worktree closes.
 
-Wave 36. Lanes outlive their sessions: on 2026-10-06 six otaje lanes were up (34 containers) with most of
+Wave 36. Lanes outlive their sessions: on 2026-10-06 six project A lanes were up (34 containers) with most of
 their sessions closed, and the host was 7.9 of 9.2 GB into swap. When the session that ends was the last
 live one in this worktree, the lane's containers are stopped — `docker compose stop`, so nothing is
 removed: data, volumes, `.env` and `phpunit.xml` stay, and `lane.py up` (or `sail up -d`) brings it back.

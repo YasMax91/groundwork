@@ -6,20 +6,20 @@
   постоянно ждать… может где не нужно, то и не нужно полный прогон запускать?»*
 - Decisions taken with the author on 2026-10-06: the whole suite only before a push to a shared branch ·
   wide changes (migrations, config, routes, providers) also targeted while working · parallel full runs
-  measured on otaje, then rolled out to every Laravel project.
+  measured on project A, then rolled out to every Laravel project.
 - Status: **implemented** (2026-10-06).
 
 ## What was measured (2026-09-29 – 2026-10-06, all main-session transcripts)
 
-- The Stop gate ran the whole suite **79 times — 383 minutes**, median 322 s, max 1230 s (otaje). It ran it
+- The Stop gate ran the whole suite **79 times — 383 minutes**, median 322 s, max 1230 s (project A). It ran it
   on every stop with PHP changed since the last push (`check_unpushed`), whatever the change was.
 - Agents ran the whole suite themselves **171 times** (and 747 targeted runs). `final-check` told them to:
   «`--filter=…`, then `composer test`».
-- No project's CI runs the tests (otaje, next-lvl-backend, coffee-roasters-back, crm-wigs-back,
-  radevs-commerce-core: 0 test steps) — the local full run is the only one, so it cannot be dropped.
-- Replayed on otaje's recent PHP commits: the change's own tests were a median of **2 of 647** files (max
+- No project's CI runs the tests (projects A, B, C, F and J: 0 test steps) — the local full run is the only
+  one, so it cannot be dropped.
+- Replayed on project A's recent PHP commits: the change's own tests were a median of **2 of 647** files (max
   7, one commit touching a widely used model: 106); selection takes 0.1–0.6 s.
-- Parallel on an otaje probe lane, the same 4277 tests: **397 s → 203 s** with `--parallel --processes=4`,
+- Parallel on a project A probe lane, the same 4277 tests: **397 s → 203 s** with `--parallel --processes=4`,
   peak lane memory 0.90 → 1.09 GiB, the same 40 failures in the same 7 classes in both runs.
 
 ## Changes

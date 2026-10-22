@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Groundwork plugin :: executable proof for wave 40 — the gates judge where the work is, not the session's folder.
-# Reproduces otaje, 2026-10-21 (E8): a session opened in `ra-devs-laravel-back`, an empty folder with no git,
-# ran `cd <otaje lane> && git push origin HEAD:development` with a changed bootstrap/app.php, and nothing
+# Reproduces project A, 2026-10-21 (E8): a session opened in an empty folder with no git,
+# ran `cd <lane> && git push origin HEAD:development` with a changed bootstrap/app.php, and nothing
 # checked it. gw_repo.py · session-repos.py · in-cwd.sh · push-gate.py · lane-guard.py · suite-record.py ·
 # pre-tool-guard.sh · the Stop gates · the estimate ledger. Run: bash hooks/tests/command-repo.sh
 set -uo pipefail
@@ -15,11 +15,11 @@ eq() { if [ "$2" = "$3" ]; then pass=$((pass+1)); printf '  ok   %-60s [%s]\n' "
 has() { if printf '%s' "$3" | grep -qF -- "$2"; then pass=$((pass+1)); printf '  ok   %-60s\n' "$1"
         else fail=$((fail+1)); printf '  FAIL %-60s no "%s" in: %s\n' "$1" "$2" "$(printf '%s' "$3" | head -c 400)"; fi; }
 
-# --- otaje in miniature: a bare origin, the main checkout, a lane under .claude/worktrees, an empty folder ---
+# --- project A in miniature: a bare origin, the main checkout, a lane under .claude/worktrees, an empty folder ---
 O="$ROOT/origin.git"; git init -q --bare -b development "$O"
 P="$ROOT/shop"; git clone -q "$O" "$P" 2>/dev/null
 W="$P/.claude/worktrees/admin-session-findings"
-E="$ROOT/ra-devs-laravel-back"; mkdir -p "$E"
+E="$ROOT/empty-folder"; mkdir -p "$E"
 cd "$P" && git config user.email t@t && git config user.name t && git symbolic-ref HEAD refs/heads/development
 mkdir -p app bootstrap bin tests/Feature database/migrations
 printf '<?php class A { function a() { return 1; } }\n' > app/A.php
@@ -55,7 +55,7 @@ for c in r.commands(sys.argv[2], sys.argv[1]):
     name = os.path.basename(c.argv[0] or "?") if c.argv else "-"
     out.append("%s@%s%s" % (name, (c.dir or "?").replace(os.environ["GW_ROOT"], "R"), "" if r.writes(c) else ":r"))
 print("|".join(out))' "$1" "$2"; }
-w="R/shop/.claude/worktrees/admin-session-findings"; e="R/ra-devs-laravel-back"; p="R/shop"
+w="R/shop/.claude/worktrees/admin-session-findings"; e="R/empty-folder"; p="R/shop"
 
 echo "the line says where it runs:"
 eq "cd <lane> && git push … | tail"                  "cd@$e:r|git@$w|tail@$w:r"     "$(dirs "$E" "cd $W && git push origin HEAD:development 2>&1 | tail -8")"
@@ -164,7 +164,7 @@ git -C "$W" checkout -q -- app/A.php; git -C "$P" checkout -q -- app/A.php
 
 echo "the registry — what the session changed outside its folder:"
 pre() { # session, session folder, payload fields (jq) -> runs session-repos.py through in-cwd.sh
-  jq -nc --arg s "$1" --arg c "$2" --arg t "$ROOT/projects/-x-ra-devs-laravel-back/$1.jsonl" "$3 + {session_id:\$s, cwd:\$c, transcript_path:\$t, hook_event_name:\"PreToolUse\"}" \
+  jq -nc --arg s "$1" --arg c "$2" --arg t "$ROOT/projects/-x-empty-folder/$1.jsonl" "$3 + {session_id:\$s, cwd:\$c, transcript_path:\$t, hook_event_name:\"PreToolUse\"}" \
     | ( cd "$2" && bash "$HOOKS/in-cwd.sh" session-repos.py ); }
 listed() { python3 "$HOOKS/session-repos.py" --list "$1" | sed "s#$ROOT#R#g" | tr '\n' ' ' | sed 's/ $//'; }
 pre s-read "$E" "{tool_name:\"Bash\", tool_input:{command:\"cd $W && git status && git log -1 && ls\"}}"
@@ -183,7 +183,7 @@ eq "nor a folder that is no Groundwork project"      "" "$(listed s-other)"
 echo "the Stop gates run where the session worked:"
 stop() { # mode hook session folder session [extra jq] -> stderr/stdout, then "rc=N"
   local out extra="${5:-}"; [ -n "$extra" ] || extra='{}'
-  out="$(jq -nc --arg s "$4" --arg c "$3" --arg t "$ROOT/projects/-x-ra-devs-laravel-back/$4.jsonl" \
+  out="$(jq -nc --arg s "$4" --arg c "$3" --arg t "$ROOT/projects/-x-empty-folder/$4.jsonl" \
     "{session_id:\$s, cwd:\$c, transcript_path:\$t, hook_event_name:\"Stop\", stop_hook_active:false} + $extra" \
     | ( cd "$3" && bash "$HOOKS/in-cwd.sh" "$1" "$2" 2>&1 ); echo "rc=$?")"; printf '%s' "$out"; }
 touch "$ROOT/analyse.fail"; printf '<?php class A { function a() { return 7; } }\n' > "$W/app/A.php"
@@ -214,7 +214,7 @@ eq "…not for one that never worked in a project"    "rc=0" "$(stop --first-rep
 echo "the estimate ledger finds the session's transcript where it is:"
 export GW_LEDGER="$ROOT/ledger.tsv" GW_PROJECTS_DIR="$ROOT/projects"
 now="$(date +%s)"; iso() { date -u -r "$1" +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -d "@$1" +%Y-%m-%dT%H:%M:%SZ; }
-T="$ROOT/projects/-x-ra-devs-laravel-back/s-edit.jsonl"; mkdir -p "$(dirname "$T")"
+T="$ROOT/projects/-x-empty-folder/s-edit.jsonl"; mkdir -p "$(dirname "$T")"
 i=0; while [ "$i" -lt 41 ]; do printf '{"type":"assistant","timestamp":"%s.000Z"}\n' "$(iso $((now - 2400 + i * 30)) | sed 's/Z$//')" >> "$T"; i=$((i + 1)); done
 mkdir -p "$W/.claude/groundwork"
 printf '# Task: E8 guest pages\n- Mode: Done\n- Level: L2\n- Kind: fix\n- Started: %s\n' "$(iso $((now - 3600)))" > "$W/.claude/groundwork/task-state.md"

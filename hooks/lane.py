@@ -9,7 +9,7 @@
 
 Why: a worktree that inherits the main checkout's `.env` runs `sail` inside the MAIN stack (whose volume
 is the main checkout — another session's code), writes the shared dev database, and races the shared
-test database. The 2026-10-05 audit found 4 of 26 otaje worktrees pointing at the main stack and 9 at
+test database. The 2026-10-05 audit found 4 of 26 project A worktrees pointing at the main stack and 9 at
 the main dev DB. A lane gets:
 
   * `.env` from the main checkout with COMPOSE_PROJECT_NAME / APP_SLUG / domain / DB_DATABASE of its own,
@@ -40,7 +40,7 @@ LANE_FILE = os.path.join(".claude", "lane.json")
 LANE_COMPOSE = ".claude/lane-compose.yml"
 BACKGROUND = re.compile(r"^(horizon|scheduler|schedule|queue|queue-worker|worker|cron)$")
 # Docker gives every new network a range from its predefined pools — about 30 on Docker Desktop (172.17–31/16 and
-# 192.168.x/20) — and every Compose project, a stopped one too, holds one (otaje, 2026-10-21: 30 of 30 taken).
+# 192.168.x/20) — and every Compose project, a stopped one too, holds one (project A, 2026-10-21: 30 of 30 taken).
 POOLS_USED_UP = re.compile(r"all predefined address pools have been fully subnetted"
                            r"|could not find an available, non-overlapping IPv4 address pool")
 OWN_SUBNETS = "10.213.%d.0/24"   # outside Docker's predefined pools
@@ -357,7 +357,7 @@ def pools_used_up(project, error):
 
 
 def link_storage(lane, sail, env):
-    """public/storage is git-ignored, so a new worktree has none: in an otaje lane Backpack's /storage/basset/… assets
+    """public/storage is git-ignored, so a new worktree has none: in a project A lane Backpack's /storage/basset/… assets
     answered 403 — the admin without its styles, and without common.js, which sets jQuery's CSRF header
     (2026-10-21). The project's own command makes every link config/filesystems.php names, and relative ones: a link
     made in the container names /var/www/html, which the host does not have."""
@@ -382,7 +382,7 @@ def link_storage(lane, sail, env):
 def generate_openapi(lane, sail, env):
     """The OpenAPI document is usually git-ignored (storage/api-docs in 6 of the 7 projects with l5-swagger,
     2026-10-21), so a new lane had none and every contract test failed on «Generate the spec first»: 91 failures
-    and 4 errors in an otaje lane, 59 on 2026-10-13. The project's `commands.openapi_generate` runs, else
+    and 4 errors in a project A lane, 59 on 2026-10-13. The project's `commands.openapi_generate` runs, else
     l5-swagger's own command where it is installed. A committed file the command rewrites is put back — as
     committed, or as the lane had it — so the step never changes the lane's tracked tree."""
     try:
@@ -491,7 +491,7 @@ def up(refresh_data=False, full=False, own_subnet=False):
     write_env(os.path.join(lane, ".env"), main_lines, updates)
     say(".env written — project %s, %s, database %s" % (updates["COMPOSE_PROJECT_NAME"], lane_domain,
                                                           updates.get("DB_DATABASE", "—")))
-    # Once Docker's predefined pools are used up no new network starts (otaje, 2026-10-21). The lane's own subnets
+    # Once Docker's predefined pools are used up no new network starts (project A, 2026-10-21). The lane's own subnets
     # live in a Compose file under .claude/ that COMPOSE_FILE names — never an override in the project root, which
     # a commit could carry.
     files, own = compose_files(lane, main_env), os.path.join(lane, LANE_COMPOSE)
@@ -534,7 +534,7 @@ def up(refresh_data=False, full=False, own_subnet=False):
         write_env(os.path.join(lane, ".env.testing"), test_lines, tu)
         say(".env.testing written — test database %s" % test_db)
 
-    # phpunit.xml usually forces DB_DATABASE (6 of 10 projects on 2026-10-05; otaje with force="true"),
+    # phpunit.xml usually forces DB_DATABASE (6 of 10 projects on 2026-10-05; project A with force="true"),
     # which beats .env.testing — so without this every lane still runs on the one shared test database.
     # The lane's working copy points at its own test DB and is marked skip-worktree, so the change can
     # never be committed; `lane.py down` restores the file.
@@ -627,7 +627,7 @@ def up(refresh_data=False, full=False, own_subnet=False):
             # DB that already has the tables — the shared one always did, a new lane's would not.
             if test_db:
                 # `artisan migrate --env=testing` is not enough: where `.env` wins over `.env.testing` it
-                # migrates the DEV database (otaje, verified 2026-09-18). The connection is named explicitly.
+                # migrates the DEV database (project A, verified 2026-09-18). The connection is named explicitly.
                 app = read_env(os.path.join(lane, ".env"))[0].get("APP_SERVICE") or (
                     "laravel.test" if "laravel.test" in services else next((x for x in services if "app" in x), "laravel.test"))
                 code, out = run(["docker", "compose", "exec", "-T", "-e", "DB_DATABASE=%s" % test_db, app,

@@ -15,10 +15,10 @@ run and reported success anyway.
 
 ## Problem (diagnosis)
 
-Read from `next-lvl-backend/.groundwork.json` on 2026-08-11:
+Read from project B's `.groundwork.json` on 2026-08-11:
 
 ```json
-"analyse": "echo 'no static-analysis tool configured (see CLAUDE.md) — no-op override for the ra-devs done-gate'",
+"analyse": "echo 'no static-analysis tool configured (see CLAUDE.md) — no-op override for the done-gate'",
 "analyse_on_stop": false
 ```
 
@@ -95,5 +95,5 @@ only the config — a gate that did not run has verified nothing, whatever its e
 - **The no-op list is deliberately short.** A shell function or an alias that exits 0 is not detected.
   The gate catches the placeholder people actually write, not every possible way to fake a pass.
 - **Existing projects are not migrated.** `.groundwork.json` files in other repositories are theirs;
-  the plugin reports and offers, and does not edit them. `next-lvl-backend` in particular needs either
+  the plugin reports and offers, and does not edit them. Project B in particular needs either
   Larastan or a recorded reason, and that is the author's call per project.

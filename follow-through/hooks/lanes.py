@@ -231,7 +231,7 @@ def who(s):
 # --- where a call works (wave 41) -----------------------------------------------------------------
 # A session need not be opened in the repository it works in: it can `cd <lane> && git commit`, call
 # `git -C <lane>`, or edit a file there by absolute path. Every hook used to judge the session's own
-# folder, so on 2026-10-21 a session opened in an empty folder worked in an otaje lane and no
+# folder, so on 2026-10-21 a session opened in an empty folder worked in a project A lane and no
 # follow-through gate saw it. A call is now judged in the working tree each of its parts works in.
 
 EDIT_TOOLS = ("Edit", "Write", "MultiEdit", "NotebookEdit")

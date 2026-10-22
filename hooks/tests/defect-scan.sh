@@ -33,7 +33,7 @@ expect() { # name dir want_code want_substr("" = any)
 
 echo "defect-scan:"
 
-# --- env() outside config: the crm-wigs defect (job posts to a hostless URL after config:cache) ---
+# --- env() outside config: the project C defect (job posts to a hostless URL after config:cache) ---
 d="$ROOT/env"; proj "$d"
 printf '<?php\nclass SendFiles { public function handle() { $u = rtrim(env("MEDIA_URL"), "/"); } }\n' > "$d/app/Jobs/SendFiles.php"
 expect "env() in app is blocked" "$d" 2 "env() outside config"
@@ -46,7 +46,7 @@ d="$ROOT/envdoc"; proj "$d"
 printf '<?php\n// never call env() outside config\nclass A {}\n' > "$d/app/Services/A.php"
 expect "env() in a comment is fine" "$d" 0
 
-# --- money as float: the crm-wigs payments.amount defect ------------------------------------------
+# --- money as float: the project C payments.amount defect -----------------------------------------
 d="$ROOT/money"; proj "$d"
 printf '<?php\nreturn new class { public function up() { Schema::create("payments", function ($t) { $t->double("amount"); }); } };\n' \
   > "$d/database/migrations/2026_01_01_000000_create_payments.php"
@@ -57,20 +57,20 @@ printf '<?php\nreturn new class { public function up() { Schema::create("m", fun
   > "$d/database/migrations/2026_01_01_000000_create_m.php"
 expect "a non-money double is fine" "$d" 0
 
-# --- an irreversible effect inside a transaction: the next-lvl invoice defect ---------------------
+# --- an irreversible effect inside a transaction: the project B invoice defect --------------------
 d="$ROOT/mail"; proj "$d"
 printf '<?php\nclass InvoiceService { public function send() { return DB::transaction(function () {\n  $x = 1;\n  $sent = Mail::to("a@b.c")->send($mailable);\n  return $sent; }); } }\n' \
   > "$d/app/Services/InvoiceService.php"
 expect "mail inside a transaction warns" "$d" 1 "irreversible side effect"
 
-# --- a broadcast event inside a transaction: the fam-sync TaskDeleted defect ----------------------
+# --- a broadcast event inside a transaction: the project D TaskDeleted defect ---------------------
 d="$ROOT/ev"; proj "$d"
 printf '<?php\nclass TaskDeleted implements ShouldBroadcast { }\n' > "$d/app/Events/TaskDeleted.php"
 printf '<?php\nclass TaskService { public function del() { DB::transaction(function () {\n  TaskDeleted::dispatch(1); }); } }\n' \
   > "$d/app/Services/TaskService.php"
 expect "broadcast w/o afterCommit warns" "$d" 1 "ShouldDispatchAfterCommit"
 
-# …and the same shape that fam-sync had already solved must stay quiet — this is what the first
+# …and the same shape that project D had already solved must stay quiet — this is what the first
 # version of the audit script cried wolf on.
 d="$ROOT/ev2"; proj "$d"
 printf '<?php\nclass FamilyTouched implements ShouldBroadcast, ShouldDispatchAfterCommit { }\n' > "$d/app/Events/FamilyTouched.php"

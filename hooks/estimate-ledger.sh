@@ -337,7 +337,7 @@ PROJECT_NAME="$(basename "$(printf '%s' "$PROJECT_ABS" | sed -E 's#--claude-work
 # Where the task's transcript is, one path per line. A session files its transcript under the folder it was
 # opened in, so a session that worked here from another folder is under that folder's key, where this project's
 # own directories never look (2026-10-21: «no transcript events in the task window — nothing recorded» for a
-# task done entirely from `ra-devs-laravel-back`). So: this project's directories, worktrees included; the
+# task done entirely from an empty folder with no git). So: this project's directories, worktrees included; the
 # session that is stopping (ledger-record.sh passes its transcript); and every session that worked in this
 # project from outside it (session-repos.py remembers them).
 TRANSCRIPTS="$(

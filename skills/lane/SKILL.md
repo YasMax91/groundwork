@@ -10,7 +10,7 @@ through the shared Traefik, a dev database cloned from the main checkout's, an e
 data; the main checkout keeps the main stack.
 
 `lane-guard` refuses any `sail …` from a worktree whose `.env` still points at the main stack or the main
-dev database — that is how a lane ended up testing another session's code (otaje, 2026-09).
+dev database — that is how a lane ended up testing another session's code (project A, 2026-09).
 
 ## Steps
 

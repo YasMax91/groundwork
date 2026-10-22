@@ -12,7 +12,7 @@
 #     and the closing report.
 #   Stop — the last assistant message is read the way coverage-claim.sh reads it. BLOCKING since
 #     v0.44.0 (GW34-AC1): `decision: block`, reason fed back to the model, one re-entry. Warn-only
-#     from v0.42.0 through `systemMessage`, which only the user sees — otaje logged 149 triggers while
+#     from v0.42.0 through `systemMessage`, which only the user sees — project A logged 149 triggers while
 #     the jargon complaints continued.
 #
 # Every trigger is logged to .claude/groundwork/plain-language.log.
