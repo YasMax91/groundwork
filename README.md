@@ -255,73 +255,230 @@ companion plugins and per-project configuration are further down this file.
 
 ## How it works — the pipeline
 
+### A task, step by step
+
 ```mermaid
 flowchart TD
-    A[Your task] --> B{Classify L0 – L4}
+    hIntent>"UserPromptSubmit<br/>task-intent.sh"]:::hook
+    task(["a task, stated in chat"]):::you
+    eff>"effort.ts · each request<br/>the session's effort<br/>L0 medium · L1/L2 high<br/>L3 xhigh · L4 max"]:::mod
+    hIntent ~~~ disc
+    task --> disc
+    eff ~~~ disc
 
-    B -->|L0 typo / comment| L0[Edit + automatic gates<br/>nothing else]
-    B -->|L1 small bug fix| L1[Failing test → fix<br/>live-exercise the one thing fixed]
-    B -->|L2 – L4| D1
-
-    subgraph DISC [Discovery — no edits]
-        D1[Read AGENTS.md · inspect via Boost] --> D2[Map connections outward<br/>impact-mapper, cache-aware]
-        D2 --> D3[Walk the 8 blind-spot categories]
+    subgraph disc ["start-task · discovery"]
+        direction LR
+        d0("Boost MCP<br/>php-lsp · sentry"):::ext ~~~ d2
+        d1["the code it names<br/>L0/L1: a self-trace"]:::skill --> d2(["impact-mapper · L2+<br/>session model<br/>medium · high · high"]):::agent
+        d2 --> d3(["blind-spot-mapper<br/>Opus · L3/L4<br/>L2: optional<br/>high · xhigh · max"]):::agent
+        d2 -.-> d4[["deep-discovery-run.js<br/>L3/L4 · opt-in"]]:::deep
     end
 
-    D3 --> R1[First response opens in plain language<br/>then 15 sections, each headed in your words]
-    R1 --> R2[2–3 candidate approaches<br/>recommended one first]
-    R2 --> R3[Brief before the question<br/>what I found · why it is your call · what each answer changes]
-    R3 --> R4[Interview: AskUserQuestion rounds<br/>≤4 questions, recommendation first<br/>L2 offers the unbounded interview as a choice]
-    R4 --> R5{Frontier still refilling at the cap?}
-    R5 -->|yes| G[Offer the unbounded interview · never start it]
-    G --> R4
-    R5 -->|no| CS[Cost of silence: what was decided for you<br/>and what each costs if wrong]
-    CS --> CP[Write the checkpoint]
-    CP --> APV{{Your approval — nothing is edited before it}}
-    APV --> SP[Spec: EARS criteria → failing tests]
-    SP --> IM[Implement red → green<br/>OpenAPI in the same slice<br/>sub-request re-maps the blast radius]
-
-    L0 --> F1
-    L1 --> F1
-    IM --> F1
-
-    subgraph FC [Final check]
-        F1[Gates: format · analyse · tests · OpenAPI] --> F2[LIVE run against the running app<br/>HTTP · browser · consumers]
-        F2 -->|L2+| F3[Fresh-context review vs the spec]
+    disc -.->|"an external API"| gi
+    subgraph gi ["ground-integration"]
+        direction LR
+        g0("Context7<br/>official docs"):::ext ~~~ g1(["grounded-researcher<br/>Sonnet<br/>medium · high · high"]):::agent
+        g1 --> g2["capability matrix<br/>UNKNOWN: your call"]:::skill
+        g1 -.-> g3[["deep-grounding-run.js<br/>L3/L4 · opt-in"]]:::deep
+        g1 ~~~ hGi>"SubagentStop<br/>agent-contract.sh"]:::hook
     end
 
-    F1 -->|L0: the gates are the whole check| H
-    F2 -->|L1: the one thing fixed, live| H
+    gi -.-> plan
+    subgraph plan ["start-task · plan"]
+        direction LR
+        p1["2–3 approaches · L2+<br/>then the interview<br/>L0/L1 ≤ 1 question<br/>L2 ≤ 2 · L3/L4 ≤ 4 rounds"]:::skill --> p2["what was decided<br/>for you"]:::skill
+        p2 --> p3[("checkpoint")]:::skill
+        p2 ~~~ hPlan>"PostToolUse<br/>plain-language.sh<br/>SessionStart · PreCompact"]:::hook
+    end
 
-    F3 --> H[Frontend handoff + runnable request package]
-    H --> C{{Commit? — never without your yes}}
+    plan --> spec["spec · L2+<br/>docs/ai/specs/<br/>EARS criteria,<br/>each a failing test"]:::skill
+    spec --> ok{{"your approval<br/>L1: unless 'apply now'<br/>L0: none"}}:::you
+    ok --> impl
+
+    subgraph impl ["implement-approved"]
+        direction LR
+        i0("Boost MCP"):::ext ~~~ i1["one TDD slice<br/>at a time<br/>OpenAPI in the slice"]:::skill
+        i1 -.->|"a new model,<br/>table, service"| i2(["impact-mapper · L2+<br/>over old + new seeds"]):::agent
+        i1 ~~~ hImpl>"PreToolUse<br/>pre-tool-guard.sh<br/>PostToolUse<br/>format-on-edit.sh<br/>Stop<br/>done-gate · test-gate<br/>openapi-gate · slice-gate<br/>defect-scan"]:::hook
+    end
+
+    impl -.->|"a risky change"| rr
+    subgraph rr ["risk-review"]
+        direction LR
+        r0("semgrep CLI<br/>opt-in"):::opt ~~~ r1["the plan or the diff<br/>file:line per risk"]:::skill
+        r1 -.-> r2[["deep-review-run.js<br/>L3/L4 · opt-in"]]:::deep
+    end
+
+    rr -.-> fc
+    subgraph fc ["final-check"]
+        direction LR
+        f0("playwright"):::ext ~~~ f1["the gates, a live run<br/>HTTP · browser<br/>L0: the gates only<br/>L1: the one fix, live"]:::skill
+        f9("42crunch · opt-in<br/>OpenAPI audit, L3/L4"):::opt ~~~ f1
+        f1 --> f2(["conformance-reviewer<br/>Opus · L2+<br/>high · xhigh · max"]):::agent
+        f1 --> f3(["adversarial-verifier<br/>Opus · L3/L4<br/>and external claims<br/>high · xhigh · max"]):::agent
+        hFc>"SubagentStop<br/>agent-contract.sh<br/>Stop<br/>coverage-claim.sh<br/>slice-gate.sh<br/>ledger-record.sh"]:::hook ~~~ f1
+    end
+
+    fc -.->|"frontend-facing"| ho
+    subgraph ho ["frontend-handoff"]
+        direction LR
+        h1["docs/ai/frontend<br/>requests<br/>OpenAPI snapshot"]:::skill ~~~ hHo>"Stop<br/>handoff-gate.sh"]:::hook
+    end
+    ho -.-> ship
+    subgraph ship ["commit and push"]
+        direction LR
+        c1{{"commit:<br/>your yes"}}:::you --> u1["push to a<br/>shared branch"]:::skill
+        c1 ~~~ hPush>"PreToolUse<br/>push-gate.py"]:::hook
+    end
+
+    classDef skill fill:#3b82f61f,stroke:#3b82f6,stroke-width:1px
+    classDef agent fill:#8b5cf624,stroke:#8b5cf6,stroke-width:1px
+    classDef deep fill:#8b5cf612,stroke:#8b5cf6,stroke-width:1px,stroke-dasharray:5 3
+    classDef ext fill:#2da44e1f,stroke:#2da44e,stroke-width:1px
+    classDef opt fill:#848d971a,stroke:#848d97,stroke-width:1px,stroke-dasharray:5 3
+    classDef hook fill:#d4a72c24,stroke:#9a6700,stroke-width:1px
+    classDef mod fill:#d4a72c12,stroke:#9a6700,stroke-width:1px,stroke-dasharray:5 3
+    classDef you fill:#e5534b1a,stroke:#e5534b,stroke-width:1.5px
+    style disc fill:#848d970f,stroke:#848d97,stroke-width:1px
+    style gi fill:#848d970f,stroke:#848d97,stroke-width:1px,stroke-dasharray:5 3
+    style plan fill:#848d970f,stroke:#848d97,stroke-width:1px
+    style impl fill:#848d970f,stroke:#848d97,stroke-width:1px
+    style rr fill:#848d970f,stroke:#848d97,stroke-width:1px,stroke-dasharray:5 3
+    style fc fill:#848d970f,stroke:#848d97,stroke-width:1px
+    style ho fill:#848d970f,stroke:#848d97,stroke-width:1px,stroke-dasharray:5 3
+    style ship fill:#848d970f,stroke:#848d97,stroke-width:1px
 ```
 
-Levels scale *breadth*, never *proof*: at every level the agent states what stayed unverified and never
-reports green tests as "works live".
+Blue: a step. Violet: an agent, with its model and the effort it gets at L2 · L3 · L4 — defaults that
+`effort.table` overrides (*Models and effort*). Dashed violet: the Workflow script a deep skill runs. Green: another
+plugin, tool or source the step reaches for. Grey dashed: opt-in, not bundled. Amber: the hooks that hold the step;
+dashed amber, the `effort.ts` mod. Red: you. A dashed band runs only when its condition holds. Discovery and
+verification fan out; implementation never does — one TDD slice at a time, no parallel coding agents
+(`guidelines/ai-sdd-process.md` §Fan-out by level).
 
-**Discovery** reads the project's `AGENTS.md`, inspects through Boost rather than memory, and maps the
-connections grep alone misses — events, observers, jobs, policies, FK cascades, the `JsonResource` shape
-and its consumers. The blast-radius cache is reused only when three conditions hold, the third being that
-it still covers the seeds of the work at hand.
+### One turn, event by event
 
-**Before asking, the agent takes a position:** two or three candidate approaches with the recommended one
-first — and if the intent is too unformed to plan at all, it recommends the unbounded interview rather
-than planning on a guess. Questions then arrive as buttons, each led by a recommendation, in plain
-language.
+```mermaid
+sequenceDiagram
+    actor You
+    participant CC as Claude Code
+    participant GW as groundwork
+    participant FT as follow-through
 
-**Nothing is edited before your approval**, and the decisions you make are written to a checkpoint that
-survives a restart or a compaction.
+    Note over CC,FT: SessionStart: a start, a resume, a compaction
+    par groundwork
+        CC->>GW: session-start.sh
+        GW-->>CC: runner, DB engine, git state, checkpoint
+    and follow-through
+        CC->>FT: session_start.py
+        FT-->>CC: the rules, live siblings, a fresh base
+    end
 
-**"Done" requires the running app, not just green tests** — a real HTTP call for an endpoint, a real
-browser for admin/UI (asset actually loads · effective computed style · no persisted state masking it).
-On L2+ every consumer of a touched shape is verified and a reported defect gets its whole sibling class
-enumerated. When something could not be verified, that is stated rather than glossed over.
+    You->>CC: a prompt
+    Note over CC,FT: UserPromptSubmit
+    par groundwork
+        CC->>GW: task-intent.sh
+        GW-->>CC: a task, no mode: start-task<br/>an old hook list: /reload-plugins
+    and follow-through
+        CC->>FT: prompt_submit.py
+        FT-->>CC: what changed around you<br/>an old hook list: /reload-plugins
+    end
+    Note over CC,GW: effort.ts, each request: the level's effort
 
-**The gates are honest about themselves:** a skip (runner unavailable, test DB busy, generator
-unreachable) is a *visible* notice, not a silent success, and committing does not disarm them — they read
-the working tree plus unpushed commits.
+    loop every tool call a hook's matcher names
+        Note over CC,FT: PreToolUse
+        par groundwork
+            CC->>GW: stdin-guard.sh: an empty stdin
+            CC->>GW: lane-guard.py: the lane's own stack
+            CC->>GW: pre-tool-guard.sh: runner, migrations
+            CC->>GW: push-gate.py: a shared branch
+            CC->>GW: session-repos.py: where it works
+        and follow-through
+            CC->>FT: guard.py
+            FT-->>CC: ask: a destructive command<br/>deny once: a sibling's tree or file
+        end
+        Note over CC,FT: PostToolUse
+        par groundwork
+            CC->>GW: format-on-edit.sh: Pint
+            CC->>GW: trim-output.sh: off by default
+            CC->>GW: plain-language.sh: a question
+            CC->>GW: suite-record.py: a green run
+        and follow-through
+            CC->>FT: post_tool.py: files, deploys, mirror
+        end
+    end
 
+    opt a researcher, verifier or reviewer returns
+        Note over CC,GW: SubagentStop
+        CC->>GW: agent-contract.sh
+        GW-->>CC: no sources, verdict, AC table: back once
+    end
+
+    Note over CC,FT: Stop
+    par groundwork, the tree
+        CC->>GW: done-gate · test-gate · openapi-gate
+        CC->>GW: slice-gate · defect-scan · handoff-gate
+        CC->>GW: ledger-record
+    and groundwork, the reply
+        CC->>GW: coverage-claim · estimate-claim
+        CC->>GW: estimate-docs · plain-language
+    and follow-through
+        CC->>FT: stop_gate.py: 9 checks, one block
+    end
+    alt a gate blocks
+        CC->>CC: the reason goes to the model,<br/>the turn goes on
+    else none blocks
+        CC-->>You: the answer
+    end
+
+    Note over CC,GW: PreCompact, before a compaction: pre-compact.sh
+    Note over CC,FT: SessionEnd: lane-idle.py · session_end.py
+```
+
+Claude Code runs every hook that matches an event in parallel, both plugins' alike, and hands the model every
+`additionalContext` they return ([hooks reference](https://code.claude.com/docs/en/hooks)). When PreToolUse decisions
+differ, deny wins over ask and ask over allow, so follow-through's prompt never lifts a groundwork denial. A Stop block
+sends its reason to the model and the turn goes on. On that re-entry (`stop_hook_active`) the reply gates, `slice-gate`
+and follow-through stay silent; `done-gate`, `test-gate`, `openapi-gate`, `defect-scan` and `handoff-gate` block again
+while their failure holds, and after eight continuations in a row with no tool call between them Claude Code ends the
+turn anyway. A tool call's hooks judge the repository the call works in, and the tree gates also run in every
+repository the session changed outside its folder — *The gates judge where the work is*.
+
+### The plugins and what they share
+
+```mermaid
+flowchart LR
+    pack["groundwork-pack<br/>a dependency list"]:::own
+    pack --> gw["groundwork<br/>17 skills · 5 agents<br/>25 hook commands<br/>effort.ts · 3 workflows"]:::own
+    pack --> ft["follow-through<br/>6 hook commands<br/>the status skill"]:::own
+    pack --> off["claude-plugins-official<br/>php-lsp · context7<br/>playwright · sentry"]:::ext
+    pack -.-x optin["not bundled<br/>semgrep CLI · 42crunch"]:::opt
+
+    gw -->|"init installs"| boost[("Laravel Boost MCP<br/>composer laravel/boost")]:::ext
+    gw --> shared
+    ft --> shared
+    subgraph shared ["what they share"]
+        direction TB
+        lane[(".claude/lane.json<br/>lane.py writes it<br/>guard.py reads it")]:::state
+        reg[("follow-through/sessions/<br/>in the git common dir<br/>lane-idle.py and<br/>in-cwd.sh read it")]:::state
+        code["gw_repo.py<br/>gw_registration.py<br/>groundwork's, copied<br/>byte for byte"]:::own
+        lane ~~~ reg ~~~ code
+    end
+    ft -->|"status skill"| status[("docs/ai/status.md<br/>and its mirror")]:::state
+
+    classDef own fill:#3b82f61f,stroke:#3b82f6,stroke-width:1px
+    classDef ext fill:#2da44e1f,stroke:#2da44e,stroke-width:1px
+    classDef opt fill:#848d971a,stroke:#848d97,stroke-width:1px,stroke-dasharray:5 3
+    classDef state fill:#d4a72c24,stroke:#9a6700,stroke-width:1px
+    style shared fill:#848d970f,stroke:#848d97,stroke-width:1px
+```
+
+Neither plugin needs the other. groundwork reads follow-through's session registry only when it exists: `lane-idle.py`
+keeps a lane running while another session's entry there is fresh, and `in-cwd.sh` shows, without blocking, the Stop
+verdict of a repository another live session works in. follow-through reads `.claude/lane.json` only when `lane.py up`
+wrote it, to ask before a command stops a sibling lane's containers. It runs its own copies of groundwork's
+`gw_repo.py`, the reader of a Bash line, and `gw_registration.py`, the out-of-date hook list notice; a test fails when a
+copy differs. What each external plugin costs, and why two stay out of the bundle: *Companion plugins*.
 
 ## Grounding split
 
