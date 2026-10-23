@@ -345,7 +345,7 @@ Boost, and docs, labelling anything assumed), installs Boost, and drops `.ground
 
 ## Any project — `follow-through`
 
-A third plugin in this marketplace, for every repository — Laravel or not, initialised or not. The
+A second plugin in this marketplace, for every repository — Laravel or not, initialised or not. The
 2026-10-05 sweep of 2472 user messages across 25 projects found the costliest complaints are not about
 Laravel at all: the turn that ends on «Беру следующий шаг», the question written as prose, «залогинься и
 пришли скрин», "it works" on a screen nobody looked at, a client text full of «—» and field names, and a
