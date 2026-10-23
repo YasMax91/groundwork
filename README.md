@@ -258,6 +258,11 @@ companion plugins and per-project configuration are further down this file.
 ### A task, step by step
 
 ```mermaid
+---
+config:
+  flowchart:
+    wrappingWidth: 400
+---
 flowchart TD
     hIntent>"UserPromptSubmit<br/>task-intent.sh"]:::hook
     task(["a task, stated in chat"]):::you
@@ -298,7 +303,7 @@ flowchart TD
     subgraph impl ["implement-approved"]
         direction LR
         i0("Boost MCP"):::ext ~~~ i1["one TDD slice<br/>at a time<br/>OpenAPI in the slice"]:::skill
-        i1 -.->|"a new model,<br/>table, service"| i2(["impact-mapper · L2+<br/>over old + new seeds"]):::agent
+        i1 -.-> i2(["impact-mapper · L2+<br/>a new model, table<br/>or service: re-mapped<br/>over old + new seeds"]):::agent
         i1 ~~~ hImpl>"PreToolUse<br/>pre-tool-guard.sh<br/>PostToolUse<br/>format-on-edit.sh<br/>Stop<br/>done-gate · test-gate<br/>openapi-gate · slice-gate<br/>defect-scan"]:::hook
     end
 
@@ -447,6 +452,11 @@ repository the session changed outside its folder — *The gates judge where the
 ### The plugins and what they share
 
 ```mermaid
+---
+config:
+  flowchart:
+    wrappingWidth: 400
+---
 flowchart LR
     pack["groundwork-pack<br/>a dependency list"]:::own
     pack --> gw["groundwork<br/>17 skills · 5 agents<br/>25 hook commands<br/>effort.ts · 3 workflows"]:::own
@@ -454,7 +464,7 @@ flowchart LR
     pack --> off["claude-plugins-official<br/>php-lsp · context7<br/>playwright · sentry"]:::ext
     pack -.-x optin["not bundled<br/>semgrep CLI · 42crunch"]:::opt
 
-    gw -->|"init installs"| boost[("Laravel Boost MCP<br/>composer laravel/boost")]:::ext
+    gw --> boost[("Laravel Boost MCP<br/>composer laravel/boost<br/>init installs it")]:::ext
     gw --> shared
     ft --> shared
     subgraph shared ["what they share"]
@@ -464,7 +474,7 @@ flowchart LR
         code["gw_repo.py<br/>gw_registration.py<br/>groundwork's, copied<br/>byte for byte"]:::own
         lane ~~~ reg ~~~ code
     end
-    ft -->|"status skill"| status[("docs/ai/status.md<br/>and its mirror")]:::state
+    ft --> status[("docs/ai/status.md<br/>and its mirror<br/>the status skill")]:::state
 
     classDef own fill:#3b82f61f,stroke:#3b82f6,stroke-width:1px
     classDef ext fill:#2da44e1f,stroke:#2da44e,stroke-width:1px
