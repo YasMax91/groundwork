@@ -40,7 +40,7 @@ lanes, its containers.
 | overlap (`lanes`) | first edit of a file a live sibling edited | denied once with the sibling's name: message it (ListAgents → SendMessage), then retry |
 | a sibling's process (`lanes`) | `docker stop`/`kill`/`compose down` naming a sibling's container or port | permission prompt |
 | freshness (`freshness`) | "done" while the base moved under files you changed | Stop blocks once: rebase and re-run |
-| status (`status`) | a commit, merge, push or deploy with `docs/ai/status.md` untouched; the file changed and its `mirror:` artifact not republished | Stop blocks once; escape «статус не меняется: <почему>» |
+| status (`status`) | a commit or deploy with `docs/ai/status.md` untouched; a push that changed it on the integration branch, its `mirror:` artifact not republished | Stop blocks once; escape «статус не меняется: <почему>» |
 | memory | session start | memory facts naming repo paths that no longer exist |
 
 `docs/ai/status.md` is created by the `follow-through:status` skill — from an existing «Ревизия»

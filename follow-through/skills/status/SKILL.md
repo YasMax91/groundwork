@@ -6,8 +6,9 @@ description: Create or refresh the repository's status file, docs/ai/status.md �
 
 `docs/ai/status.md` is the plan's state, in the repository, versioned. Every session of the repository
 reads it (siblings' `doing` rows reach you through follow-through's awareness block), and the Stop gate
-refuses a commit, merge, push or deploy that did not update it. A «Ревизия» artifact, when there is one,
-is a **mirror** of this file — rebuilt from it, never edited on its own.
+holds a turn that committed or deployed without updating it, or whose push changed it on the integration
+branch while its mirror still shows the previous version. A «Ревизия» artifact, when there is one, is a
+**mirror** of this file — rebuilt from it, never edited on its own.
 
 ## Shape
 

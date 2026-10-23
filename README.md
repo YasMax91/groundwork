@@ -45,17 +45,18 @@ companion plugins and per-project configuration are further down this file.
   `final-check`, `estimate`, `init`. Discovery fans out via the `impact-mapper` agent (scaled by task level
   L0–L4) — the full blast radius before planning, so changes stay scoped without missing a consumer.
   Two review gates: `adversarial-verifier` (is the "it works" claim true?) and `conformance-reviewer`
-  (does the diff satisfy the spec's acceptance criteria?). A converge re-check and ADR capture
-  (`docs/ai/adr/`) close out cross-cutting L3/L4 work.
+  (does the diff satisfy the spec's acceptance criteria?). Each agent runs on the model its role needs —
+  `conformance-reviewer`, `adversarial-verifier` and `blind-spot-mapper` on Opus, `grounded-researcher` on
+  Sonnet, `impact-mapper` on the session's — at the effort the task's level sets (see *Models and effort*). A
+  converge re-check and ADR capture (`docs/ai/adr/`) close out cross-cutting L3/L4 work.
 - **Approaches before questions** — the first response shows the agent's 2–3 candidate ways to solve the
   task, recommended one first, with the reason and what it forecloses, *before* the interview — so you
   choose between shapes of a solution instead of ratifying one. When a single path is plainly right it
   says so in one line rather than inventing alternatives; at L3/L4 the same options feed the ADR. And when
-  the intent is too unformed to plan at all — a problem rather than a change, no statable definition of
-  "done", or an interview whose questions keep regenerating — the unbounded interview is not just offered
-  but **recommended**, instead of planning on top of a guess. Accept it and the agent runs that interview
-  **right there**, without you typing the command. `/grill` stays the manual way in for stress-testing
-  something that is not a task yet.
+  the intent is too unformed to plan at all — a problem rather than a change, or no statable definition of
+  "done" — the unbounded interview is not just offered but **recommended**, instead of planning on top of a
+  guess. Accept it and the agent runs that interview **right there**, without you typing the command. `/grill`
+  stays the manual way in for stress-testing something that is not a task yet.
 - **Blast radius that follows the task** — a new sub-request mid-session is treated as a scope change: its
   seeds are compared against the cached impact map, and a miss re-maps over the union of old and new seeds
   (a targeted self-trace at L0/L1). The cheap comparison runs at every level, because three small
@@ -66,11 +67,11 @@ companion plugins and per-project configuration are further down this file.
   you can click through and still land somewhere defensible; scaled by level (L0/L1 barely ask, L2 up to
   two rounds, L3/L4 up to four), and every answer is recorded so a compaction never re-asks it. Money,
   permissions, what the client sees, and external-integration behaviour carry a round of their own from
-  L2 up however settled the request sounds, and the first round always offers the unbounded interview as
-  a choice — you pick the depth instead of learning later that you were not asked. Whatever the agent
-  still decided for you is listed before the plan as the **cost of silence**: what was assumed, what it
-  costs if wrong, and the one line that changes it. The `grill` skill runs the same interview standalone
-  — to stress-test a plan, a decision, or an idea that never becomes code.
+  L2 up however settled the request sounds, and at those levels the first round offers the unbounded interview
+  as a choice — you pick the depth instead of learning later that you were not asked. Whatever the agent still
+  decided for you is listed before the plan as the **cost of silence**: what was assumed, what it costs if
+  wrong, and the one line that changes it. The `grill` skill runs the same interview standalone — to
+  stress-test a plan, a decision, or an idea that never becomes code.
 - **Plain language first** — every text you read in chat opens with the lived consequence in everyday
   words and keeps the code, field name, or status number after it: "клиент нажимает «Оплатить» и видит
   ошибку, деньги не списываются (внутренний код 2406)". A layer, not a simplification — nothing
@@ -136,8 +137,9 @@ companion plugins and per-project configuration are further down this file.
 - **The handoff is gated, not requested** — a Stop gate blocks "done" when the frontend-facing
   surface changed and no document under `docs.frontend` changed with it, naming the files. Committing
   does not disarm it, and one handoff does not cover the next change on the same branch. A change the
-  frontend genuinely cannot see is waived per file, with the reason recorded — so the omission is
-  always a decision someone made, never something that quietly did not happen.
+  frontend genuinely cannot see is waived per file in `.claude/groundwork/handoff-waiver` (a `# reason:` line
+  is echoed back) — so the omission is always a decision someone made, never something that quietly did not
+  happen.
 - **The frontend reads it himself** — `install-portal` puts a token-gated page on development and
   staging that serves `docs/ai/frontend` to a reader with no account in the backend: sections, features,
   the dated deltas under each, downloads for the `.http` packages and OpenAPI snapshots, and an
@@ -168,60 +170,66 @@ companion plugins and per-project configuration are further down this file.
   code cannot say which test closed which criterion), and **Reviewed by**, left empty for a person. The
   file states in its own last line that an unsigned receipt is not a review. The same AC table goes into
   the PR body.
-- **TDD** — `tdd-protocol`: test-first (red→green→refactor) for L2+ features and bug fixes; the test
-  suite is a Stop gate. The layered split matches the standards — feature tests for the contract,
-  unit tests for services/calculations/state transitions. Acceptance criteria are EARS statements with
-  stable IDs, each linked to its fail-first test.
+- **TDD** — `tdd-protocol`: test-first (red→green→refactor) for L2+ features and bug fixes; the change's own
+  tests are a Stop gate, and the whole suite runs before a shared push only when something shared changed (see
+  *Tests*). The layered split matches the standards — feature tests for the contract, unit tests for
+  services/calculations/state transitions. Acceptance criteria are EARS statements with stable IDs, each
+  linked to its fail-first test.
 - **Grounding** — `grounding-protocol` + the `ground-integration` skill + the `grounded-researcher`
   and `adversarial-verifier` agents. Read reality, never guess: executable proof covers internal feature
   endpoints as well as external sandboxes, and a claim resting on official docs or an internal project
   doc (`AGENTS.md` / CRD) is cited — source + quote — **in the answer itself**, or marked `UNKNOWN`.
 - **Deep skills (L3/L4, opt-in)** — `deep-grounding` · `deep-discovery` · `deep-review`: Workflow-driven
-  multi-agent escalations of grounding / discovery / review, each finding adversarially verified.
-  ~15× tokens, gated to explicit invocation; graceful fallback to the single-agent skill when the
-  `Workflow` tool is unavailable. As of v0.26.0 the orchestration ships as **executable workflow
+  multi-agent escalations of grounding / discovery / review — each review finding and capability row
+  adversarially verified, and in discovery the dynamic edges (up to `args.maxEdges`, 12 by default; the rest
+  reported unchecked). ~15× tokens, gated to explicit invocation; graceful fallback to the single-agent skill
+  when the `Workflow` tool is unavailable. As of v0.26.0 the orchestration ships as **executable workflow
   scripts** in `workflows/`, not as reference text the model retypes each run — so the fan-out, the
-  adversarial panel and the dedup are identical every time, and a stopped run resumes from its cached
-  agent results instead of starting over. The skills stay the entry points (level gating, cost
-  disclosure, seed collection) and call the scripts with `args`; each script is also runnable directly
-  as `/groundwork:deep-review-run`, `/groundwork:deep-discovery-run`, `/groundwork:deep-grounding-run`
-  when you want the orchestration without the gating. Every script returns its own counts — findings
-  examined vs confirmed, seeds mapped vs failed, edges found vs verified — so the report carries a
-  denominator instead of an unquantified list.
-- **The standards say what is enforced and what is not** — `laravel-standards` opens with the six rules
-  a hook actually holds (each row naming the hook file and its opt-out) and states plainly that the rest
-  of the page — thin controllers, logic in services, transactions, guarded transitions, money as
-  decimal, ULIDs at the edge — is an instruction nothing checks automatically, caught if at all by
-  `conformance-reviewer` and `risk-review`. It also carries the framework baseline: versions come from
-  `composer.lock`, and a project past its bug-fix window (Laravel 12 since 2026-08-13) hears about it
-  once per session from the `SessionStart` hook.
-- **Standards + gates** — `laravel-standards` + hooks: Pint on edit, static analysis and the test
-  suite as done-gates, and a `PreToolUse` enforcement guard that denies host Laravel/PHP commands
-  (use the runner) and edits to shipped migrations — opt-out per project. A second `PreToolUse` hook,
-  `stdin-guard`, runs every Bash command as `true | ( … )`: a command that reads stdin it was never
-  given (`python3 -` with the heredoc on another command, `cat > f`, `artisan tinker file.php`) ends
-  at once instead of hanging in the background and holding the session open. It applies in every
-  repo; `gates.isolate_stdin: false` turns it off. A `cd` inside a command no longer carries over to
-  the next one. Every gate honors the declared
-  `runner`: a `runner: host` project runs host commands and is never denied them, and a command that
-  cannot run at all (missing binary, undefined script) is reported as an environment problem rather than a
-  red. All hooks are covered by tests — `bash hooks/tests/all.sh` (549 cases, 25 suites), run on every push by `.github/workflows/ci.yml`.
-- **A closed slice names what proves it** — the other Stop gates read the repository; `slice-gate` reads
-  the task. A slice ticked `[x]` in the checkpoint carries `test: <path>` (the file must exist), or
-  `manual: <what a person observed>` ("verified" is not an observation), or `abandoned: <reason>` — which
-  makes the task reportable and never complete, so an impossible slice is handed off instead of quietly
-  deleted. At `Mode: Done` it subtracts the `(ACn)` ids the slices claim from the ones the spec carries
-  and refuses on the difference: removing a slice no longer removes the obligation. It **executes
-  nothing** — two file reads, no runner — and it refuses a test file whose assertions cannot fail
-  (`assertTrue(true)`, no assertion at all). Rows recording a commit, a document or a live check are
-  journal entries and are never refused on. A checkpoint written before this grammar — no `(ACn)` and no
-  proof label anywhere — gets one explanatory notice instead of a refusal, and the gate arms itself the
-  moment one slice speaks the new format, so an upgrade never blocks finished work. Opt out with
-  `gates.slice_ledger: false`.
-- **A gate that did not run says so** — the hooks' skip paths (runner unavailable, test DB busy, generator
-  unreachable) exit with a *visible* non-blocking notice instead of a silent success, because a message on
-  a zero exit goes to the debug log and reaches nobody. And committing no longer disarms them: the gates
-  read the working tree **plus unpushed commits** (`gates.check_unpushed`), so the last Stop of a task —
+  adversarial panel and the dedup are identical every time, and a stopped run resumes from its cached agent
+  results instead of starting over. The skills stay the entry points (level gating, cost disclosure, seed
+  collection) and call the scripts with `args`; each script is also runnable directly as
+  `/groundwork:deep-review-run`, `/groundwork:deep-discovery-run`, `/groundwork:deep-grounding-run` when you
+  want the orchestration without the gating. Every script returns its own counts — findings examined vs
+  confirmed, seeds mapped vs failed, edges found vs verified — so the report carries a denominator instead of
+  an unquantified list.
+- **The standards say what is enforced and what is not** — `laravel-standards` opens with the eight rules a
+  hook actually holds (each row naming the hook file and its opt-out) and states plainly that the rest of the
+  page — thin controllers, logic in services, transactions, guarded transitions, money as decimal beyond the
+  migration `float`/`double` check, ULIDs at the edge — is an instruction nothing checks automatically, caught
+  if at all by `conformance-reviewer` and `risk-review`. It also carries the framework baseline: versions come
+  from `composer.lock`, and a project past its bug-fix window (Laravel 12 since 2026-08-13) hears about it
+  from the `SessionStart` hook at every session start, resume and compaction.
+- **Standards + gates** — `laravel-standards` + hooks: Pint on edit, static analysis and the change's tests as
+  done-gates, and a `PreToolUse` enforcement guard that denies host Laravel/PHP commands (use the runner) and
+  edits to shipped migrations — opt-out per project. A second `PreToolUse` hook, `stdin-guard`, runs every
+  Bash command as `true | ( … )`: a command that reads stdin it was never given (`python3 -` with the heredoc
+  on another command, `cat > f`, `artisan tinker file.php`) ends at once instead of hanging in the background
+  and holding the session open. It applies in every repo; `gates.isolate_stdin: false` turns it off. A `cd`
+  inside a command no longer carries over to the next one. Every gate honors the declared `runner`: a `runner:
+  host` project runs host commands and the runner guard never denies them (only the lane guard can, when a
+  worktree's `.env` would reach the main checkout's stack or database), and a command that cannot run at all
+  (missing binary, undefined script) is reported as an environment problem rather than a red. All hooks are
+  covered by tests — `bash hooks/tests/all.sh` (902 cases in 28 suites on macOS, 894 on Linux, plus
+  follow-through's 132 tests), run on every push by `.github/workflows/ci.yml`.
+- **A closed slice names what proves it** — the other Stop gates read the repository or the agent's last
+  message; `slice-gate` reads the task. A slice ticked `[x]` in the checkpoint carries `test: <path>` (the
+  file must exist), or `manual: <what a person observed>` ("verified" is not an observation), or `abandoned:
+  <reason>` — which makes the task reportable and never complete, so an impossible slice is handed off instead
+  of quietly deleted. At `Mode: Done` it subtracts the `(ACn)` ids the slices claim from the ones the spec
+  carries and refuses on the difference — up to three refusals in a row with nothing newly proven, after which
+  it lets the stop through: removing a slice no longer removes the obligation. It **executes nothing** — it
+  reads the checkpoint, the spec and the test files the slices name; no runner — and it refuses a test file
+  whose assertions cannot fail (`assertTrue(true)`, no assertion at all). Rows recording a commit, a document
+  or a live check are journal entries and are never refused on. A checkpoint written before this grammar — no
+  `(ACn)` and no proof label anywhere — gets a notice instead of a refusal (on a zero exit, so it lands in the
+  debug log, not the transcript), and the gate arms itself the moment one slice speaks the new format, so an
+  upgrade never blocks finished work. Opt out with `gates.slice_ledger: false`.
+- **A gate that did not run says so** — the static-analysis and test gates' skip paths (runner unavailable,
+  test DB busy) and the OpenAPI gate's unreachable generator exit with a *visible* non-blocking notice instead
+  of a silent success, because a message on a zero exit goes to the debug log and reaches nobody. Two paths
+  still skip in silence: the OpenAPI gate when the runner itself is unavailable, and any gate whose
+  `commands.*` override names a Sail binary that is not there. And committing no longer disarms them: the
+  gates read the working tree **plus unpushed commits** (`gates.check_unpushed`), so the last Stop of a task —
   the one right after the commit, where "done" is announced — still verifies the work.
 - **Parallel-session safety** — two sessions in one checkout share the test database, and the falsely-red
   gates that follow (`1412 Table definition has changed` → `1146 doesn't exist`) cost real debugging time.
@@ -257,7 +265,7 @@ flowchart TD
 
     subgraph DISC [Discovery — no edits]
         D1[Read AGENTS.md · inspect via Boost] --> D2[Map connections outward<br/>impact-mapper, cache-aware]
-        D2 --> D3[Walk the 7 blind-spot categories]
+        D2 --> D3[Walk the 8 blind-spot categories]
     end
 
     D3 --> R1[First response opens in plain language<br/>then 15 sections, each headed in your words]
@@ -273,14 +281,17 @@ flowchart TD
     APV --> SP[Spec: EARS criteria → failing tests]
     SP --> IM[Implement red → green<br/>OpenAPI in the same slice<br/>sub-request re-maps the blast radius]
 
-    L0 --> FC
-    L1 --> FC
-    IM --> FC
+    L0 --> F1
+    L1 --> F1
+    IM --> F1
 
     subgraph FC [Final check]
         F1[Gates: format · analyse · tests · OpenAPI] --> F2[LIVE run against the running app<br/>HTTP · browser · consumers]
-        F2 --> F3[Fresh-context review vs the spec]
+        F2 -->|L2+| F3[Fresh-context review vs the spec]
     end
+
+    F1 -->|L0: the gates are the whole check| H
+    F2 -->|L1: the one thing fixed, live| H
 
     F3 --> H[Frontend handoff + runnable request package]
     H --> C{{Commit? — never without your yes}}
@@ -360,10 +371,12 @@ common dir shows each session the others (branch, task, files, progress) and how
 branch moved; an empty worktree starts from the freshest `origin/development` (the app branches from
 `origin/HEAD`); a file another live session is editing stops once with that session's name; a
 `docs/ai/status.md` (created by `follow-through:status`, mirrored to a «Ревизия» artifact) must move in
-the same turn as a commit, merge, push or deploy. Since v0.4.0 every check judges the tree each command or
-edited file is in, not the folder the session was opened in: `cd <lane> && git reset --hard` asks when the
-lane has uncommitted changes, `cd <lane> && git commit` needs the lane's status, and a session working in a
-lane from outside is registered there. Details: [follow-through/README.md](follow-through/README.md).
+the same turn as a commit or a deploy, and a push or `gh pr merge` that leaves the integration branch's status
+ahead of its mirror republishes the mirror in the same turn. Since v0.4.0 every check judges the tree each
+command or edited file is in, not the folder the session was opened in: `cd <lane> && git reset --hard` asks
+when the lane has uncommitted changes, `cd <lane> && git commit` needs the lane's status, and a session
+working in a lane from outside is registered there. Details:
+[follow-through/README.md](follow-through/README.md).
 
 Stop checks block with one re-entry; the destructive check only ever asks, never allows or denies.
 Every trigger is logged to `~/.claude/follow-through/triggers.log`. Each check is switched off in
@@ -377,13 +390,14 @@ hand-back 28 (5); language 67 (6, mostly English client texts written outside an
 
 `hooks/gw_tests.py` sorts a change's tests into two circles. *Close*: changed tests, tests named after a
 changed class, tests calling a method changed on the diff's lines, the tests of a changed route (names,
-URIs, the controller's routes), of a changed config key, translation key, migration column or document.
-*Wide*: tests merely naming a changed class, a migration's table, the routes of an action using a changed
-form request. A change to a *shared* file — dependencies, `phpunit.xml`, the base test class, `bootstrap/`,
-providers, middleware, a migration that drops, renames, retypes or adds a NOT NULL column to an existing
-table, a routes line changing middleware or a group — can only be checked by the whole suite.
+URIs, the controller's routes), of a changed config key, translation key or document. *Wide*: tests merely
+naming a changed class, a migration's table or column, the routes of an action using a changed form request. A
+change to a *shared* file — dependencies, `phpunit.xml`, the base test class, `bootstrap/`, providers,
+middleware, a migration that drops, renames, retypes or adds a NOT NULL column to an existing table, a routes
+line changing middleware or a group — can only be checked by the whole suite.
 
-- **Stop gate** (`test-gate.sh`): the close circle, minus files already green on this exact code, cut to
+- **Stop gate** (`test-gate.sh`, when a PHP file changed — a change with no PHP file runs nothing at Stop, and
+  its tests wait for the push check): the close circle, minus files already green on this exact code, cut to
   `gates.test_budget_seconds` (default 180) by recorded durations; what did not fit is named and left to the
   push check. A run is stopped at twice the budget (never past 540 s) with "nothing verified", instead of
   being killed silently by the hook timeout.
@@ -414,10 +428,12 @@ changed `bootstrap/app.php`, and no gate ran. Now (`gw_repo.py`, `session-repos.
 - **A tool call is judged where it works.** The Bash line is read for `cd` / `pushd` / `popd`, `git -C`,
   `--git-dir` / `--work-tree`, `NAME=value` then `$NAME`, subshells, `$(…)`, `bash -c` and `bash <<EOF`, and a
   git that `sudo`, `xargs` or `gtimeout` runs; an Edit or a Write by its path. A `cd` that may not happen —
-  after `&&` or `||`, inside an `if` or a loop, into a folder that does not exist yet — holds only for what `&&`
-  chains after it, and a function's body runs where it is called. `push-gate.py`, `lane-guard.py` and
-  `suite-record.py` judge each command in its own repository; the other tool hooks run in the call's
-  repository. Every hook runs at the root of the project the session's folder is in, a subfolder included.
+  after `&&` or `||`, or into a folder that does not exist yet — holds only for what `&&` chains after it; one
+  inside an `if`, a loop or a `case` holds to the end of that body, after which the folder is unknown; and a
+  command inside a function's body counts as run in a folder the line does not name. `push-gate.py`,
+  `lane-guard.py` and `suite-record.py` judge each command in its own repository; the other tool hooks run in
+  the call's repository. Every hook runs at the root of the project the session's folder is in, a subfolder
+  included.
 - **A push the line does not place is refused.** `cd "$LANE" && git push origin HEAD:development`, with a
   `$LANE` the line does not set, is denied when it may reach a shared branch, with the request to write the
   path out; a branch the line does not name is judged as a shared one.
@@ -425,9 +441,9 @@ changed `bootstrap/app.php`, and no gate ran. Now (`gw_repo.py`, `session-repos.
   Groundwork repository the session changes outside its own folder (`~/.claude/groundwork/sessions/`);
   reading — `git status/log/diff`, `cat`, `grep`, `ls` — is not remembered. At Stop, the gates that judge a
   working tree (analysis, tests, OpenAPI, slices, defects, handoff, the ledger) run in the session's folder and
-  in each remembered repository, each verdict headed with its path — shown without blocking while another live
-  session works there; the gates that judge the reply run in the session's project or, outside one, in the
-  first remembered repository.
+  in each remembered repository, each remembered repository's verdict headed with its path — shown without
+  blocking while another live session works there; the gates that judge the reply run in the session's project
+  or, outside one, in the first remembered repository.
 - **The ledger finds the transcript where it is.** A session files its transcript under the folder it was
   opened in: the Stop hook passes it on, and `estimate-ledger.sh --record` run in a lane finds it through the
   registry.
@@ -459,30 +475,30 @@ false` turns the mod off; `effort.table.<main|mapping|checkers>.<L0..L4>` overri
 `groundwork:lane` (`hooks/lane.py up`) turns a worktree into a lane: its own Compose project and
 `<app>-<lane>.localhost` behind the shared Traefik, a dev database cloned from the main checkout's, a
 migrated test database of its own (with the lane's working copy of `phpunit.xml` pointed at it and marked
-`skip-worktree`), and `vendor/`/`node_modules/` cloned copy-on-write. `lane-guard.py` refuses `sail …`
-from a worktree whose `.env` still points at the main stack or the main dev database. The test-gate lock
-lives in the git common dir, keyed by the test database, so every worktree sees it. Verified on project A:
-two lanes ran the same 989 tests at the same time, 989 of 989 each, no deadlock — the shared test
-database gave 167 and 123 failures on the same run. `lane.py down [--purge]` stops the lane and, with
-`--purge`, drops its databases and volumes. A lane starts without Horizon, scheduler or queue workers
-(`lane.py up --full` adds them), and `lane-idle.py` stops its containers when the last session working in it
-closes — one opened there, or one that worked there from another folder. Once its stack is up, a new lane
-gets what git does not carry: `public/storage` as a relative link
-from `artisan storage:link --relative`, and the generated OpenAPI document its contract tests read
-(`commands.openapi_generate`, else l5-swagger's own command). When Docker's predefined address pools are used up —
-about 30 networks on Docker Desktop, one per Compose project, stopped ones included — `up` says so, names
-the networks no container uses for the owner to remove, and offers `lane.py up --own-subnet`: the lane's
-networks take a /24 of their own in 10.213.0.0/16 from `.claude/lane-compose.yml`, which the lane's
-`COMPOSE_FILE` names, never committed. A lane whose stack did not start ends on `lane NOT ready`, exit
-status 1. Every hook runs where the work is (`in-cwd.sh`), so a session opened in the main checkout and
+`skip-worktree`), and `vendor/`/`node_modules/` cloned copy-on-write. `lane-guard.py` refuses `sail …` and
+`artisan …` from a worktree with no `.env` of its own, or one whose `.env` still points at the main stack or
+the main dev database. The test-gate lock lives in the git common dir, keyed by the test database, so every
+worktree sees it. Verified on project A: two lanes ran the same 989 tests at the same time, 989 of 989 each,
+no deadlock — the shared test database gave 167 and 123 failures on the same run. `lane.py down [--purge]`
+takes the lane's stack down (`sail down`: containers and networks removed, volumes kept) and, with
+`--purge`, also drops its databases and volumes and restores the committed `phpunit.xml`. A lane starts
+without Horizon, scheduler or queue workers (`lane.py up --full` adds them), and `lane-idle.py` stops its
+containers when the last session working in it closes — one opened there, or one that worked there from
+another folder. Once its stack is up, a new lane gets what git does not carry: `public/storage` as a
+relative link from `artisan storage:link --relative`, and the generated OpenAPI document its contract tests
+read (`commands.openapi_generate`, else l5-swagger's own command). When Docker's predefined address pools
+are used up — about 30 networks on Docker Desktop, one per Compose project, stopped ones included — `up`
+says so, names the networks no container uses for the owner to remove, and offers `lane.py up --own-subnet`:
+the lane's networks take a /24 of their own in 10.213.0.0/16 from `.claude/lane-compose.yml`, which the
+lane's `COMPOSE_FILE` names, never committed. A lane whose stack did not start ends on `lane NOT ready`,
+exit status 1. Every hook runs where the work is (`in-cwd.sh`), so a session opened in the main checkout and
 working in a worktree is judged on the worktree — see «The gates judge where the work is».
 
 ## Companion plugins — `groundwork-pack`
 
-A second, component-free plugin in this marketplace: its manifest is nothing but a `dependencies`
-list, so one install pulls this plugin plus the external plugins the pipeline leans on. The workflow
-plugin stays self-contained — install `groundwork` on its own and nothing external is
-required.
+A third, component-free plugin in this marketplace: its manifest is nothing but a `dependencies` list, so one
+install pulls this plugin, `follow-through` and the external plugins the pipeline leans on. The workflow
+plugin stays self-contained — install `groundwork` on its own and nothing external is required.
 
 ```
 /plugin marketplace add anthropics/claude-plugins-official
@@ -530,9 +546,10 @@ with tool search disabled, every schema loads upfront.
 **Subagents reach MCP by server name.** A subagent's `tools` list is an allowlist that drops every MCP
 server it does not name, so the agents grant themselves exactly what their job needs — `impact-mapper`
 gets `mcp__laravel-boost` and nothing else; `grounded-researcher` and `adversarial-verifier` also get
-`mcp__context7`. Two consequences worth knowing: a Boost server registered under a different name is
-invisible to them (`init` fixes the name for this reason), and the `LSP` tool is main-session only, so
-symbol-level navigation belongs to `start-task`, never to the mapper.
+Context7 under both names it registers as — `mcp__context7` (a project server) and
+`mcp__plugin_context7_context7` (the plugin this bundle installs). Two consequences worth knowing: a Boost
+server registered under a different name is invisible to them (`init` fixes the name for this reason), and the
+`LSP` tool is main-session only, so symbol-level navigation belongs to `start-task`, never to the mapper.
 
 Both marketplaces have to be configured: a dependency whose marketplace is missing stays unresolved
 and disables the bundle. Cross-marketplace resolution is opt-in — `allowCrossMarketplaceDependenciesOn`
@@ -594,10 +611,12 @@ read-only-while-planning gate.
 
 `gates.openapi_on_stop` (default **on**) blocks "done" when the API contract surface changed but the
 OpenAPI spec did not, then regenerates the document and blocks again if generation errors or warns.
-It no-ops silently unless the project has `darkaonline/l5-swagger` or `zircote/swagger-php`; override
-the generate command with `commands.openapi_generate`, the watched paths with `openapi.surface[]`
-(defaults to `routes/`, `app/Http/Controllers/`, `app/Http/Requests/`, `app/Http/Resources/`), and
-force it on for a project with a hand-maintained document via `openapi.enabled: true`.
+It no-ops silently unless the project has `darkaonline/l5-swagger`, `zircote/swagger-php` or `dedoc/scramble`
+(for Scramble the evidence is the exported document at `openapi.spec_path`, regenerated with
+`scramble:export`); override the generate command with `commands.openapi_generate`, the watched paths with
+`openapi.surface[]` (defaults to `routes/`, `app/Http/Controllers/`, `app/Http/Requests/`,
+`app/Http/Resources/`), and force it on for a project with a hand-maintained document via `openapi.enabled:
+true` (`false` turns it off).
 
 `gates.task_intent` (default **on**) and `gates.agent_contract` (default **on**) are the two engine-level
 enforcements added in v0.27.0, each replacing a rule that existed only as a sentence in a prompt.
@@ -611,13 +630,14 @@ commands, and once a mode is set — and it fires at most once per session while
 because a reminder that repeats every prompt only teaches the reader to skip it. The mode appearing
 resets it for the next task.
 
-The second is a `SubagentStop` hook on `grounded-researcher` and `adversarial-verifier`. The grounding
-protocol's central rule — never guess; every claim carries a source or is marked `UNKNOWN` — was enforced
-only by the agents' own prompts. Now a research report with no URL, no repository document, no
-`file:line` and no `UNKNOWN` is sent back once to add its evidence, and a verification that ends without
-`CONFIRMED` / `REFUTED` / `UNCERTAIN` is sent back once for its verdict. Both were verified against a live
-subagent on Claude Code 2.1.212 before the design was written: the block does send the agent back, and it
-returned with its sources added.
+The second is a `SubagentStop` hook on `grounded-researcher`, `adversarial-verifier` and, since v0.33.0,
+`conformance-reviewer`. The grounding protocol's central rule — never guess; every claim carries a source or
+is marked `UNKNOWN` — was enforced only by the agents' own prompts. Now a research report with no URL, no
+repository document, no `file:line` and no `UNKNOWN` is sent back once to add its evidence, and a verification
+that ends without `CONFIRMED` / `REFUTED` / `UNCERTAIN` is sent back once for its verdict; a conformance
+review with no AC table (met / partial / unmet) or no `CONFORMS` / `GAPS` / `INSUFFICIENT` verdict is sent
+back once too. The first two were verified against a live subagent on Claude Code 2.1.212 before the design
+was written: the block does send the agent back, and it returned with its sources added.
 
 `gates.analyse_on_stop` (default **on**) blocks "done" when static analysis fails on changed PHP — and
 as of v0.25.0 it can no longer be satisfied by a placeholder. `echo '…'`, `true` and `:` all exit 0, so
@@ -649,14 +669,15 @@ assumptions about the business domain, a provider's terms, a financial or legal 
 the client will do with the result — which is what "I did not realise it worked that way" looks like
 before it becomes a production incident.
 
-`gates.plain_language` (default **on**) is the second gate that reads wording rather than the
-repository, and the first that reads it on your behalf. After an `AskUserQuestion` it checks the
-question, the chips and every option for the plugin's own vocabulary — "blast radius", "cost of
-silence", "красный список", a bare "L2" — and hands the model the chat spelling through
-`additionalContext`, which costs nothing because the question has already been asked. At Stop it reads
-the last message for the same vocabulary and for a missing ask line, and **warns without blocking**,
-logging to `.claude/groundwork/plain-language.log`. Your project's own words — a field name, an error
-code, an endpoint — are not on its list: those belong in chat, after the meaning.
+`gates.plain_language` (default **on**) is the third gate that reads wording rather than the repository —
+after `coverage_claim` and `estimate_claim` — and the first that reads it on your behalf. After an
+`AskUserQuestion` it checks the question, the chips and every option for the plugin's own vocabulary — "blast
+radius", "cost of silence", "красный список", a bare "L2" — and hands the model the chat spelling through
+`additionalContext`, which costs nothing because the question has already been asked. At Stop it reads the
+last message for the same vocabulary and for a missing ask line, and **blocks** (`decision: block`, one
+re-entry; until v0.44.0 it only warned), logging to `.claude/groundwork/plain-language.log`. Your project's
+own words — a field name, an error code, an endpoint — are not on its list: those belong in chat, after the
+meaning.
 
 `gates.trim_tool_output` (default **off**) enables a fail-safe `PostToolUse` trimmer that collapses
 passing-test / clean-analysis spam from noisy commands to save context. It never trims when any
@@ -664,17 +685,36 @@ failure indicator is present and does nothing if it cannot positively locate the
 wrong guess degrades to a no-op. The PostToolUse output field is not fully documented — confirm it
 once with `claude --debug` in your project before enabling.
 
+Keys whose behaviour is described in their own sections, in one place. **Tests:** `gates.test_budget_seconds`
+(180 — the Stop gate's budget), `gates.test_scope` (`"full"` runs the whole suite at every Stop again),
+`commands.test_full` (the whole-suite command, e.g. a parallel one), `gates.full_suite_before_push`
+(`"when-needed"` default · `"always"` · `false`), `gates.full_suite_max_age_hours` (24),
+`gates.shared_branches` (the branches the push check guards; default development, develop, main, master,
+staging, production) and `gates.sqlite_tests_reason` (lets a suite on SQLite run while the project targets
+another engine; the reason is printed with every run). **Models and effort:** `effort.by_level`,
+`effort.table`. **Lanes:** `gates.lane_guard: false` turns off the guard against a worktree that would reach
+the main stack; `gates.lane_idle_stop: false` keeps a lane's stack running when its last session closes.
+**Other:** `gates.defect_scan: false` turns off the Stop scan for the blocked defect classes;
+`gates.check_unpushed: false` makes the Stop gates judge the working tree only, not commits not yet pushed;
+`estimates.ledger: false` turns the estimate ledger off, and `estimates.idle_seconds` (120) and
+`estimates.min_sample` (5) tune how it measures and when a median counts. **Frontend handoff:**
+`gates.handoff_surface` (a regex that replaces the watched paths, default
+`^app/|^routes/|^config/|^database/migrations/|^lang/`), `gates.handoff_surface_exclude` (a regex added to the
+default exclusions — for what this project's frontend provably cannot see), and `gates.handoff_on_stop:
+false`, which is silent only with a `gates.handoff_skip_reason`; without one the gate still says no handoff
+was written.
+
 ## Layout
 
 ```
 .claude-plugin/   plugin.json · marketplace.json
 pack/             groundwork-pack — dependency-only bundle (this plugin + follow-through + companion plugins)
-follow-through/   the project-agnostic plugin — hooks/ (stop_gate.py · guard.py · session_start.py · prompt_submit.py · post_tool.py · session_end.py · lanes.py · render_status.py · ft.py · gw_repo.py (groundwork's, copied) · tests/) · skills/status
+follow-through/   the project-agnostic plugin — hooks/ (hooks.json · gw_registration.py · stop_gate.py · guard.py · session_start.py · prompt_submit.py · post_tool.py · session_end.py · lanes.py · render_status.py · ft.py · gw_repo.py (groundwork's, copied) · tests/) · skills/status
 skills/           start-task · spec · implement-approved · lane · risk-review · final-check · estimate · ground-integration · frontend-handoff · install-portal · client-doc · openapi-audit · grill · init · deep-grounding · deep-discovery · deep-review
 agents/           impact-mapper · blind-spot-mapper · grounded-researcher · adversarial-verifier · conformance-reviewer
-hooks/            hooks.json · lib.sh (shared resolvers) · session-start.sh · pre-compact.sh · task-intent.sh · format-on-edit.sh · done-gate.sh · test-gate.sh · openapi-gate.sh · slice-gate.sh · coverage-claim.sh · plain-language.sh · defect-scan.sh · estimate-claim.sh · estimate-docs.py · estimate-ledger.sh · lane.py · lane-guard.py · lane-idle.py · in-cwd.sh · gw_registration.py · gw_repo.py · session-repos.py · gw_activity.py · effort.ts (mod) · gw_tests.py · test-select.py · test-run.py · suite-record.py · push-gate.py · ledger-record.sh · agent-contract.sh · trim-output.sh · pre-tool-guard.sh · stdin-guard.sh · statusline.sh · tests/all.sh
+hooks/            hooks.json · lib.sh (shared resolvers) · session-start.sh · pre-compact.sh · task-intent.sh · format-on-edit.sh · done-gate.sh · test-gate.sh · openapi-gate.sh · handoff-gate.sh · slice-gate.sh · coverage-claim.sh · plain-language.sh · defect-scan.sh · estimate-claim.sh · estimate-docs.py · estimate-ledger.sh · lane.py · lane-guard.py · lane-idle.py · in-cwd.sh · gw_registration.py · gw_repo.py · session-repos.py · gw_activity.py · effort.ts (mod) · gw_tests.py · test-select.py · test-run.py · suite-record.py · push-gate.py · ledger-record.sh · agent-contract.sh · trim-output.sh · pre-tool-guard.sh · stdin-guard.sh · statusline.sh · tests/all.sh
 workflows/        deep-review-run.js · deep-discovery-run.js · deep-grounding-run.js — the multi-agent orchestration, executed by the runtime
 guidelines/       ai-sdd-process · grounding-protocol · blind-spot-protocol · clarify-protocol · plain-language · openapi-protocol · laravel-standards · tdd-protocol · writing-standards · working-memory
 docs/             skill-hygiene (author-facing) · specs/
-templates/        project/ · specs/ · frontend/ (feature · handoff — both pointing at the runnable request package) · client-doc.md · adr.md
+templates/        project/ · specs/ · frontend/ (feature · handoff — both pointing at the runnable request package) · portal/ (the documentation portal `install-portal` copies) · client-doc.md · adr.md
 ```

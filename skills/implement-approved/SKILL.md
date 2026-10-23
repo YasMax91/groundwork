@@ -56,7 +56,7 @@ Only proceed if the spec/plan was **explicitly approved in this conversation**. 
   - **new seeds outside the map** → the map does not cover this work. Match the response to what the new
     seeds *are*, because `impact-mapper` is the most expensive fan-out in the plugin:
     - a **model, table, or service** among them (couplings fan out invisibly) → **L2+:** re-spawn
-      `impact-mapper` over the **union** of old and new seeds, overwrite the cache, refresh `SEEDS:` and
+      `impact-mapper` (with the level's `effort`, `ai-sdd-process.md` §Fan-out by level) over the **union** of old and new seeds, overwrite the cache, refresh `SEEDS:` and
       `BASE_COMMIT`. **L0/L1:** a targeted self-trace.
     - only a **Resource, FormRequest, view, or string** → a targeted self-trace at any level; re-spawning
       the mapper for a copy change is the ceremony this rule is meant to avoid.

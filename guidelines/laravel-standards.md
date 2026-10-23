@@ -3,7 +3,7 @@
 Curated, opinionated standards for Laravel backends. Stay on the framework's grain. Confirm
 version-specific details with Boost `search-docs` for the installed version rather than recalling them.
 
-**What the engine holds.** Six rules are enforced by hooks: breaking one is denied outright, or the task
+**What the engine holds.** Eight rules are enforced by hooks: breaking one is denied outright, or the task
 cannot end.
 
 | Rule | Hook | Opt-out |
@@ -12,7 +12,7 @@ cannot end.
 | A shipped (git-tracked) migration is never edited | `hooks/pre-tool-guard.sh` | `gates.lock_shipped_migrations` |
 | Formatting runs on every edit | `hooks/format-on-edit.sh` | `gates.format_on_edit` |
 | Static analysis passes before "done" — and a no-op analyser is refused, not counted as clean | `hooks/done-gate.sh` | `gates.analyse_on_stop` + `gates.analyse_skip_reason` |
-| The suite passes before "done"; a suite resolving to SQLite on a project that targets another engine is reported | `hooks/test-gate.sh` | `gates.test_on_stop` |
+| The change's tests pass before "done", and the whole suite before a shared push when something shared changed | `hooks/test-gate.sh`, `hooks/push-gate.py` | `gates.test_on_stop`, `gates.full_suite_before_push` |
 | The OpenAPI document moves together with an API change | `hooks/openapi-gate.sh` | `gates.openapi_on_stop` |
 | `env()` is never read outside `config/`, and money is never `float`/`double` in a migration | `hooks/defect-scan.sh` | `gates.defect_scan` |
 | A suite that resolves to SQLite on a project targeting another engine is refused, not run | `hooks/test-gate.sh` | `gates.sqlite_tests_reason` (a stated reason downgrades it to a notice) |

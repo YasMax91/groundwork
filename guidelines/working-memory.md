@@ -152,7 +152,7 @@ tree, and this checkpoint. The symptoms are recognisable and waste real time —
 mid-run), fixtures overwritten under a running test, an `openapi` gate firing on a **different** session's
 uncommitted controller, and a `task-state.md` describing someone else's task.
 
-What the plugin does: the test gate takes an exclusive lock (`.claude/groundwork/locks/test-db`) around the
+What the plugin does: the test gate takes an exclusive lock (`<git-common-dir>/groundwork/locks/test-db-<test database>`, seen by every worktree) around the
 suite, so parallel runs queue instead of corrupting each other. If the lock cannot be had within
 `gates.test_lock_wait_seconds` (default 45), the gate **skips and says so** rather than reporting a red
 that belongs to no one. Opt out with `gates.test_db_lock: false`.
