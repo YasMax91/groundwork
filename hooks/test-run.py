@@ -40,13 +40,6 @@ def say(msg):
     print(msg, flush=True)
 
 
-def base_cmd(cfg):
-    cmds = cfg.get("commands") or {}
-    if cmds.get("test"):
-        return cmds["test"]
-    return "php artisan test" if str(cfg.get("runner") or "").strip().lower() == "host" else "./vendor/bin/sail artisan test"
-
-
 def selectable(cmd):
     return bool(re.search(r"artisan test|phpunit|/pest( |$)|paratest", cmd))
 
@@ -164,7 +157,7 @@ class Lock:
 class Runner:
     def __init__(self, top, cfg):
         self.top, self.cfg, self.n = top, cfg, 0
-        self.cmd = base_cmd(cfg)
+        self.cmd = gw.test_command(cfg)
 
     def _junit(self):
         d = os.path.join(self.top, "storage", "framework", "testing")

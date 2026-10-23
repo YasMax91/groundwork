@@ -74,6 +74,19 @@ def gates(cfg):
     return (cfg or {}).get("gates") or {}
 
 
+def test_command(cfg):
+    """The command a test run starts: `commands.test`, else `artisan test` through the declared runner.
+
+    test-run.py runs it and push-gate.py names it in a denial: the gate named Sail's on a `runner: host`
+    project, where the runner starts `php artisan test` (0.52.1).
+    """
+    cfg = cfg or {}
+    test = (cfg.get("commands") or {}).get("test")
+    if test:
+        return test
+    return "php artisan test" if str(cfg.get("runner") or "").strip().lower() == "host" else "./vendor/bin/sail artisan test"
+
+
 # ------------------------------------------------------------------------------------------- trees ---
 
 def worktree_tree(cwd=None):

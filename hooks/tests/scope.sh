@@ -265,6 +265,10 @@ has "…naming the runner"                                  "test-run.py\" --for
 has "…and the whole-suite command it will use"            "--parallel --processes=4" "$(reason 'git push origin development')"
 eq "HEAD:development spec: deny"                          deny  "$(push 'git push origin HEAD:development')"
 eq "gh pr merge: deny"                                    deny  "$(push 'gh pr merge 12 --squash')"
+printf '{ "runner": "host" }\n' > .groundwork.json
+has "runner: host, no commands: names php artisan test"   'it runs `php artisan test`)' "$(reason 'git push origin development')"
+printf '{}\n' > .groundwork.json
+has "no runner, no commands: names sail artisan test"     'it runs `./vendor/bin/sail artisan test`)' "$(reason 'git push origin development')"
 cfg; git commit -qam "config" 2>/dev/null
 python3 "$HOOKS/suite-record.py" --record >/dev/null
 eq "after a green whole run on this code: allow"          allow "$(push 'git push origin development')"

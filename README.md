@@ -209,7 +209,7 @@ companion plugins and per-project configuration are further down this file.
   host` project runs host commands and the runner guard never denies them (only the lane guard can, when a
   worktree's `.env` would reach the main checkout's stack or database), and a command that cannot run at all
   (missing binary, undefined script) is reported as an environment problem rather than a red. All hooks are
-  covered by tests — `bash hooks/tests/all.sh` (902 cases in 28 suites on macOS, 894 on Linux, plus
+  covered by tests — `bash hooks/tests/all.sh` (904 cases in 28 suites on macOS, 896 on Linux, plus
   follow-through's 132 tests), run on every push by `.github/workflows/ci.yml`.
 - **A closed slice names what proves it** — the other Stop gates read the repository or the agent's last
   message; `slice-gate` reads the task. A slice ticked `[x]` in the checkpoint carries `test: <path>` (the

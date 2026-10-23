@@ -139,8 +139,7 @@ def main():
         if gw.push_mode(cfg) == "off":
             continue
         shared = gw.gates(cfg).get("shared_branches") or gw.SHARED_BRANCHES
-        cmds = cfg.get("commands") or {}
-        whole_cmd = cmds.get("test_full") or cmds.get("test") or "./vendor/bin/sail artisan test"
+        whole_cmd = (cfg.get("commands") or {}).get("test_full") or gw.test_command(cfg)
         if kind == "push":
             # A branch the line does not name (`git push origin "$BR"`) may be a shared one: judged as such.
             targets = [(src, dst or "a branch the line does not name (write it out if it is not a shared one)")

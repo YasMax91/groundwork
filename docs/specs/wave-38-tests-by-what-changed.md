@@ -152,6 +152,12 @@
   was never set up — one expression swapped for one that matches nothing fails the suite on both systems,
   naming the edit. `all.sh` green on macOS and in the container (`effort` skipped there: no Node 22.6+). No
   hook changed.
+- **v0.52.1 (2026-10-23) — the denial names the command the runner starts.** On a `runner: host` project with no
+  `commands.test` or `commands.test_full`, the push gate's whole-suite denial said the suite runs
+  `./vendor/bin/sail artisan test`, while `test-run.py` runs `php artisan test` there: the gate built the
+  command itself, with Sail as its only default. What the gate demanded was right; only the named command was
+  wrong. `gw_tests.test_command` now answers for both hooks. `scope.sh` checks both defaults — `php artisan
+  test` under `runner: host`, Sail's with no runner declared; the host check fails on 0.52.0.
 
 ## Not in this wave
 
